@@ -69,6 +69,7 @@ namespace omni
 			template<typename Val> struct ConstTraits;
 			template<typename Val> struct NConstTraits;
 			template<typename Base, typename Tr> class Iterator;
+			template<typename In> bool equal(In, In, In);
 		} // implementation defined
 
 
@@ -2021,7 +2022,7 @@ private:
 		if (size() != other.size())
 			return false;
 
-		return std::equal(begin(),
+		return details::equal(begin(),
 			end(), other.begin());
 	}
 
@@ -3012,7 +3013,7 @@ private:
 		if (size() != other.size())
 			return false;
 
-		return std::equal(begin(),
+		return details::equal(begin(),
 			end(), other.begin());
 	}
 
@@ -5174,6 +5175,26 @@ template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
 	ptrdiff_t operator-(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
 {
 	return x.base() - y.base();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Are two sequences equal?
+/**
+@param first1 The begin of the first sequence.
+@param last1 The end of the first sequence.
+@param first2 The begin of the second sequence.
+@return @b true if two sequences are equal, otherwise @b false.
+*/
+template<typename In> inline
+	bool equal(In first1, In last1, In first2)
+{
+#if defined(_MSC_VER) && (1400 == _MSC_VER)
+	// avoid VS8.0 checked iterators
+	return stdext::unchecked_equal(first1, last1, first2);
+#else
+	return std::equal(first1, last1, first2);
+#endif // (1400 == _MSC_VER)
 }
 
 		} // details namespace
