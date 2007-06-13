@@ -7,6 +7,8 @@
 //	copies. Permission to modify the code and to distribute modified code
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
+//
+//		http://omni.sourceforge.net
 //////////////////////////////////////////////////////////////////////////
 /** @file
 @brief Fast memory management.
