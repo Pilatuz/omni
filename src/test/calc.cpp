@@ -23,9 +23,7 @@
 #include <float.h>
 #include <math.h>
 
-#include <tchar.h>
-
-using namespace omni::calc;
+using namespace omni;
 
 template class omni::calc::Calculator<double>;
 template class omni::calc::Calculator<float>;
@@ -37,26 +35,25 @@ template double omni::calc::evalf(const std::string&);
 template long omni::calc::evali(const std::wstring&);
 template long omni::calc::evali(const std::string&);
 
+
 namespace {
 
 //////////////////////////////////////////////////////////////////////////
 // float testing
-	bool ftest_(const _TCHAR *str, double x, const Calculator<double> &c)
+template<typename Ch, typename T>
+	bool ftest(const calc::Calculator<T> &c, const Ch *expr, T etalon, T epsilon)
 	{
-		double a = c(str);
-		return fabs(a - x) <= DBL_EPSILON;
+		const T x = c(expr);
+		return fabs(x - etalon) <= epsilon;
 	}
 
-	bool ftest(const _TCHAR *str, double x)
+//////////////////////////////////////////////////////////////////////////
+// integer testing
+template<typename Ch, typename T>
+	bool itest(const calc::Calculator<T> &c, const Ch *expr, T etalon)
 	{
-		double a = evalf(str);
-		return fabs(a - x) <= DBL_EPSILON;
-	}
-
-	bool itest(const _TCHAR *str, long x)
-	{
-		long a = evali(str);
-		return a == x;
+		const T x = c(expr);
+		return x == etalon;
 	}
 
 } // namespace
@@ -67,14 +64,14 @@ bool test_calc(std::ostream &os)
 #define TEST(expr) if (!(expr)) { os << "expression failed: \"" \
 	<< #expr << "\" at line " << __LINE__ << "\n"; return false; }
 
-# define TESTF(a) ftest(_T(#a), a)
-# define TESTI(a) itest(_T(#a), a)
+# define TESTF(expr, eps) (ftest(calc::Calculator<double>(), L#expr, expr, eps) && ftest(calc::Calculator<double>(), #expr, expr, eps))
+# define TESTI(expr) (itest(calc::Calculator<int>(), L#expr, expr) && itest(calc::Calculator<int>(), #expr, expr))
 
-	TEST(TESTF( 2 + 2 * 2 ));
+	TEST(TESTF( 2 + 2 * 2.0, DBL_EPSILON ));
 	TEST(TESTI( 2 + 2 * 2 ));
 	TEST(TESTI( 0 -0+ 00 + 0x0 + 0xFF + 045 * 15));
-	TEST(TESTF(  (  2  +  2  )  *  2  ));
-	TEST(itest(_T("0"), 0));
+	TEST(TESTF(  (  2  +  2  )  *  2.0 , DBL_EPSILON ));
+	TEST(TESTI( 0 ));
 	TEST(TESTI(  (  2  +  2  )  *  2  ));
 	TEST(TESTI(  -2+2*2+2-(-2+2)*(2+2)*2-2  ));
 	//TEST(TESTI( abs(-1) - 1 ));
@@ -82,14 +79,16 @@ bool test_calc(std::ostream &os)
 
 	using namespace omni::util;
 
-	TEST(ftest_(_T("1000 ms"), 1.0, time()));
-	TEST(ftest_(_T("-5 dB"), dB2line(-5.0), ratio()));
+	TEST(ftest(calc::time(), "1000 ms", 1.0, DBL_EPSILON));
+	TEST(ftest(calc::ratio(), "-5 dB", dB2line(-5.0), DBL_EPSILON));
+	TEST(ftest(calc::freq(), "22/4.5 kHz kHz", 22/4.5*1.0e6, 1.0e-5));
 
-	TEST(ftest_(_T("sin(30 degr) + cos(60 degr)"),
-		sin(deg2rad(30)) + cos(deg2rad(60)), sci()));
+	TEST(ftest(calc::sci(), "sin(30 degr) + cos(60 degr)",
+		sin(deg2rad(30)) + cos(deg2rad(60)), DBL_EPSILON));
 
 # undef TESTF
 # undef TESTI
+#undef TEST
 
 	return true;
 }

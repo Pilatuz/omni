@@ -84,45 +84,38 @@ namespace omni
 	{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Калькулятор.
+/// @brief The calculator tool.
 /**
-		Класс содержит две таблицы функций: префиксную и постфиксную.
-	Используется для смены набора функций при вычислении выражений.
+		This class performs evaluation of the string expressions.
 
-		Калькуляторы можно копировать.
+		There are two function tables: prefix() and suffix().
 
-		TODO: detail description
-
-@param T тип возвращаемого значения, например double, float, int.
-
+@param T The type of the evaluation result.
 @see @ref omni_calc
 */
 template<typename T>
 class Calculator {
 public:
-	typedef FuncTable<T> TableType;  ///< @brief The table of functions.
+	typedef FuncTable<T> TableType;  ///< @brief The function table.
 	typedef           T  ValueType;  ///< @brief The value type.
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @name Вычислить выражение
+/// @name Evaluation
 /// @{
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вычислить первое выражение из потока ввода.
+/// @brief Evaluate first expression.
 /**
-		Метод вычисляет первое выражение из потока ввода @a expression
-	пока не будет достигнуто окончание выражения (которое может не
-	совпадать с окончанием потока ввода).
+		This method evaluates the first expression from the input stream.
 
-		Если поток ввода не содержит выражения или выражение некорректно,
-	будет сгенерировано исключение.
+	If input stream has no valid expression the exception will be thrown.
 
-@param[in,out] expression Поток ввода.
-@return Значение выражения.
-@throw omni::calc::ex::SyntaxError Если выражение некорректно.
-@throw omni::calc::ex::CalculationError Если выражение содержит вычислительные ошибки.
+@param[in,out] expression The input stream.
+@return The evaluation result.
+@throw omni::calc::ex::SyntaxError If expression is invalid.
+@throw omni::calc::ex::CalculationError If expression has any errors.
 */
 	template<typename Ch, typename Tr>
 		ValueType operator()(std::basic_istream<Ch, Tr> &expression) const
@@ -132,7 +125,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вычислить выражение из строки.
+/// @brief Evaluate expression from string.
 /**
 		Метод вычисляет выражение из строки @a expression.
 
@@ -152,7 +145,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вычислить выражение из C-строки.
+/// @brief Evaluate expression from C-string.
 /**
 		Метод вычисляет выражение из C-строки @a expression.
 
@@ -174,15 +167,12 @@ public:
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-/// @name Таблицы функций
+/// @name Function tables.
 /// @{
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Таблица префиксных функций
-/**
-		Метод возвращает таблицу префиксных функций.
-*/
+/// @brief The prefix function table.
 	const TableType& prefix() const
 	{
 		return m_prefix;
@@ -190,10 +180,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Таблица префиксных функций
-/**
-		Метод возвращает таблицу префиксных функций.
-*/
+/// @brief The prefix function table.
 	TableType& prefix()
 	{
 		return m_prefix;
@@ -201,10 +188,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Таблица суффиксных функций
-/**
-		Метод возвращает таблицу суфиксных функций.
-*/
+/// @brief The suffix function table.
 	const TableType& suffix() const
 	{
 		return m_suffix;
@@ -212,10 +196,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Таблица суффиксных функций
-/**
-		Метод возвращает таблицу суфиксных функций.
-*/
+/// @brief The suffix function table.
 	TableType& suffix()
 	{
 		return m_suffix;
@@ -225,16 +206,15 @@ public:
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-/// @name Свойства
+/// @name Properties
 /// @{
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Целочисленная арифметика
+/// @brief Is integer arithmetic?
 /**
-		Метод возвращает @b true если калькулятор предназначен для вычисления
-	только целочисленных выражений, иначе @b false (т.е. калькулятор
-	предназначен для вычисления вещественных выражений).
+@return @b true if calculator is for integer numbers,
+	or @b false if calculator is for float numbers.
 */
 	bool is_integer() const
 	{
@@ -246,8 +226,8 @@ public:
 //////////////////////////////////////////////////////////////////////////
 
 private:
-	TableType m_prefix;
-	TableType m_suffix;
+	TableType m_prefix; ///< @brief The prefix function table.
+	TableType m_suffix; ///< @brief The suffix function table.
 };
 
 	} // Calculator
@@ -1066,10 +1046,10 @@ template<typename T, typename Ch, typename Tr>
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Level 3 expression parsing
+/// @brief Level 4 expression parsing.
 /**
 		Функция пробует прочитать число, унарный плюс или минус, скобки или
-	вызов префиксной функции. Затем пробует выполнить вызов суффиксной функции.
+	вызов префиксной функции.
 
 		Генерирует исключение если нет закрывающей скобки, неправильный
 	вызов префиксной функции или встретился неправильный символ.
@@ -1078,12 +1058,11 @@ template<typename T, typename Ch, typename Tr>
 
 @param[in,out] is The input stream.
 @param[in] calculator The calculator.
-@param[in] enable_suffix Активировать вычисление суффиксных функций
 @return Результат
 @throw omni::calc::SyntaxError В случае синтаксической ошибки
 */
 template<typename T, typename Ch, typename Tr>
-	T level_3(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator, bool enable_suffix)
+	T level_4(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
 {
 	T x = T();
 
@@ -1099,9 +1078,9 @@ template<typename T, typename Ch, typename Tr>
 			typename traits_type::char_type cx = traits_type::to_char_type(meta);
 
 			if (traits_type::eq(cx, calc_traits::OP_ADD)) // unary "+"
-				x = +level_3(is.ignore(), calculator, false);
+				x = +level_4(is.ignore(), calculator);
 			else if (traits_type::eq(cx, calc_traits::OP_SUB)) // unary "-"
-				x = -level_3(is.ignore(), calculator, false);
+				x = -level_4(is.ignore(), calculator);
 			else if (traits_type::eq(cx, calc_traits::BRACE_OPEN)) // braces
 			{
 				x = level_1(is.ignore(), calculator);
@@ -1150,20 +1129,12 @@ template<typename T, typename Ch, typename Tr>
 			throw err::SyntaxError("unexpected end of input stream");
 	}
 
-	// suffix function call
-	if (enable_suffix)
-	{
-		std::wstring func_name = get_func_name(is);
-		if (!func_name.empty())
-			x = calculator.suffix()(func_name, x);
-	}
-
 	return x;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Level 2 expression parsing
+/// @brief Level 3 expression parsing.
 /**
 		Функция выполняет бинарное умножение и деление.
 
@@ -1175,9 +1146,9 @@ template<typename T, typename Ch, typename Tr>
 @throw omni::calc::DivisionByZero В случае целочисленного деления на ноль
 */
 template<typename T, typename Ch, typename Tr>
-	T level_2(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
+	T level_3(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
 {
-	T x = level_3(is, calculator, true);
+	T x = level_4(is, calculator);
 
 	while ((is >> std::ws) && !is.eof())
 	{
@@ -1189,11 +1160,11 @@ template<typename T, typename Ch, typename Tr>
 		typename traits_type::char_type cx = traits_type::to_char_type(meta);
 		if (traits_type::eq(cx, calc_traits::OP_MUL))
 		{
-			x *= level_3(is.ignore(1), calculator, true);
+			x *= level_4(is.ignore(1), calculator);
 		}
 		else if (traits_type::eq(cx, calc_traits::OP_DIV))
 		{
-			T z = level_3(is.ignore(1), calculator, true);
+			T z = level_4(is.ignore(1), calculator);
 			if (calculator.is_integer() && (T() == z))
 				throw err::DivisionByZero();
 			x /= z;
@@ -1207,9 +1178,43 @@ template<typename T, typename Ch, typename Tr>
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Level 1 expression parsing
+/// @brief Level 2 expression parsing.
 /**
 		Функция выполняет бинарное сложение и вычитание.
+
+@param[in,out] is The input stream.
+@param[in] calculator The calculator.
+@return The evaluation result.
+*/
+template<typename T, typename Ch, typename Tr>
+	T level_2(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
+{
+	T x = level_3(is, calculator);
+
+	while ((is >> std::ws) && !is.eof())
+	{
+		typedef std::basic_istream<Ch, Tr> istream_type;
+		typedef istream_type::traits_type traits_type;
+		typedef CharConst<Ch> calc_traits;
+
+		typename traits_type::int_type meta = is.peek();
+		typename traits_type::char_type cx = traits_type::to_char_type(meta);
+		if (traits_type::eq(cx, calc_traits::OP_ADD))
+			x += level_3(is.ignore(1), calculator);
+		else if (traits_type::eq(cx, calc_traits::OP_SUB))
+			x -= level_3(is.ignore(1), calculator);
+		else
+			break;
+	}
+
+	return x;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Level 1 expression parsing.
+/**
+		Performs suffix function calculation.
 
 @param[in,out] is The input stream.
 @param[in] calculator The calculator.
@@ -1222,16 +1227,9 @@ template<typename T, typename Ch, typename Tr>
 
 	while ((is >> std::ws) && !is.eof())
 	{
-		typedef std::basic_istream<Ch, Tr> istream_type;
-		typedef istream_type::traits_type traits_type;
-		typedef CharConst<Ch> calc_traits;
-
-		typename traits_type::int_type meta = is.peek();
-		typename traits_type::char_type cx = traits_type::to_char_type(meta);
-		if (traits_type::eq(cx, calc_traits::OP_ADD))
-			x += level_2(is.ignore(1), calculator);
-		else if (traits_type::eq(cx, calc_traits::OP_SUB))
-			x -= level_2(is.ignore(1), calculator);
+		std::wstring func_name = get_func_name(is);
+		if (!func_name.empty())
+			x = calculator.suffix()(func_name, x);
 		else
 			break;
 	}
