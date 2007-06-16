@@ -215,11 +215,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\omni\matrix.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\omni\matrix.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\omni\misc.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\src\omni\misc.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\omni\mxmath.h"
 				>
 			</File>
 			<File
@@ -254,6 +266,42 @@
 				RelativePath="..\..\src\omni\util.hpp"
 				>
 			</File>
+			<Filter
+				Name="dsp"
+				>
+				<File
+					RelativePath="..\..\src\omni\codec.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\omni\codec.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\omni\delay.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\omni\delay.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\omni\filter.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\omni\filter.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\omni\modem.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\omni\modem.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="TEST Files"
