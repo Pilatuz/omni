@@ -68,10 +68,6 @@ namespace omni
 		{
 			template<typename T, typename Ch, typename Tr>
 				T eval(std::basic_istream<Ch, Tr>&, const Calculator<T>&);
-			template<typename T, typename Ch, typename Tr, typename Ax>
-				T eval(const std::basic_string<Ch, Tr, Ax>&, const Calculator<T>&);
-			template<typename T, typename Ch>
-				T eval(const Ch*, const Calculator<T>&);
 			bool check_func_name(const std::wstring &name);
 		}
 		/// @endcond
@@ -114,8 +110,8 @@ public:
 
 @param[in,out] expression The input stream.
 @return The evaluation result.
-@throw omni::calc::ex::SyntaxError If expression is invalid.
-@throw omni::calc::ex::CalculationError If expression has any errors.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
 */
 	template<typename Ch, typename Tr>
 		ValueType operator()(std::basic_istream<Ch, Tr> &expression) const
@@ -127,52 +123,56 @@ public:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Evaluate expression from string.
 /**
-		Метод вычисляет выражение из строки @a expression.
+		This method evaluates the whole expression from the string.
 
-		Если выражение некорректно или строка содержит более
-	одного выражения будет сгенерировано исключение.
+		If input string has no valid expression the exception will be thrown.
 
-@param[in] expression Строковое выражение.
-@return Значение выражения.
-@throw omni::calc::ex::SyntaxError Если выражение некорректно.
-@throw omni::calc::ex::CalculationError Если выражение содержит вычислительные ошибки.
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
 */
 	template<typename Ch, typename Tr, typename Ax>
 		ValueType operator()(const std::basic_string<Ch, Tr, Ax> &expression) const
 	{
-		return details::eval(expression, *this);
+		std::basic_istringstream<Ch, Tr> is(expression);
+		const ValueType ret = details::eval(is, *this);
+
+		if (!(is >> std::ws).eof())
+			throw err::SyntaxError("expression not fully parsed");
+
+		return ret;
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Evaluate expression from C-string.
 /**
-		Метод вычисляет выражение из C-строки @a expression.
+		This method evaluates the whole expression from the C-string.
 
-		Если выражение некорректно или строка содержит более
-	одного выражения будет сгенерировано исключение.
+		If input C-string has no valid expression the exception will be thrown.
 
-@param[in] expression Строковое выражение.
-@return Значение выражения.
-@throw omni::calc::ex::SyntaxError Если выражение некорректно.
-@throw omni::calc::ex::CalculationError Если выражение содержит вычислительные ошибки.
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
 */
 	template<typename Ch>
 		ValueType operator()(const Ch *expression) const
 	{
-		return details::eval(expression, *this);
+		return (*this)(std::basic_string<Ch>(expression));
 	}
 
 /// @}
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-/// @name Function tables.
+/// @name Function tables
 /// @{
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief The prefix function table.
+/// @brief The prefix function table (read-only).
 	const TableType& prefix() const
 	{
 		return m_prefix;
@@ -188,7 +188,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief The suffix function table.
+/// @brief The suffix function table (read-only).
 	const TableType& suffix() const
 	{
 		return m_suffix;
@@ -238,100 +238,131 @@ private:
 	{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вычислить вещественное выражение из строки
+/// @brief Evaluate the floating-point expression from the string.
 /**
-		Функция вычисляет вещественное выражение из строки @a expression.
+		This function evaluates the floating-point expression from the string.
 
-		Если выражение некорректно или строка содержит более
-	одного выражения будет сгенерировано исключение.
+		The following operators are supported: "+", "-", "*", "/" and brackets.
+	There is no any additional prefix or suffix functions.
 
-@param[in] expression Строковое выражение
-@return Значение выражения
-@throw omni::calc::SyntaxError Если выражение некорректно
-@throw omni::calc::CalculationError Если выражение содержит вычислительные ошибки
+		If input string has no valid expression the exception will be thrown.
+
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
 @see @ref omni_calc
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double evalf(const std::basic_string<Ch, Tr, Ax> &expression)
+	double atof(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	Calculator<double> x;
 	return x(expression);
 }
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вычислить вещественное выражение из C-строки
+/// @brief Evaluate the floating-point expression from the C-string.
 /**
-		Функция вычисляет вещественное выражение из C-строки @a expression.
+		This function evaluates the floating-point expression from the C-string.
 
-		Если выражение некорректно или строка содержит более
-	одного выражения будет сгенерировано исключение.
+		The following operators are supported: "+", "-", "*", "/" and brackets.
+	There is no any additional prefix or suffix functions.
 
-@param[in] expression Строковое выражение
-@return Значение выражения
-@throw omni::calc::SyntaxError Если выражение некорректно
-@throw omni::calc::CalculationError Если выражение содержит вычислительные ошибки
+		If input C-string has no valid expression the exception will be thrown.
+
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
 @see @ref omni_calc
 */
 template<typename Ch> inline
-	double evalf(const Ch *expression)
+	double atof(const Ch *expression)
 {
 	Calculator<double> x;
 	return x(expression);
 }
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вычислить целое выражение из строки
+/// @brief Evaluate the integer expression from the string.
 /**
-		Функция вычисляет целое выражение из строки @a expression.
+		This function evaluates the integer expression from the string.
 
-		Если выражение некорректно или строка содержит более
-	одного выражения будет сгенерировано исключение.
+		The following operators are supported: "+", "-", "*", "/" and brackets.
+	There is no any additional prefix or suffix functions.
 
-@param[in] expression Строковое выражение
-@return Значение выражения
-@throw omni::calc::SyntaxError Если выражение некорректно
-@throw omni::calc::CalculationError Если выражение содержит вычислительные ошибки
+		If input string has no valid expression the exception will be thrown.
+
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
 @see @ref omni_calc
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	long evali(const std::basic_string<Ch, Tr, Ax> &expression)
+	long atoi(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	Calculator<long> x;
 	return x(expression);
 }
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вычислить целое выражение из C-строки
+/// @brief Evaluate the integer expression from the C-string.
 /**
-		Функция вычисляет целое выражение из C-строки @a expression.
+		This function evaluates the integer expression from the C-string.
 
-		Если выражение некорректно или строка содержит более
-	одного выражения будет сгенерировано исключение.
+		The following operators are supported: "+", "-", "*", "/" and brackets.
+	There is no any additional prefix or suffix functions.
 
-@param[in] expression Строковое выражение
-@return Значение выражения
-@throw omni::calc::SyntaxError Если выражение некорректно
-@throw omni::calc::CalculationError Если выражение содержит вычислительные ошибки
+		If input C-string has no valid expression the exception will be thrown.
+
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
 @see @ref omni_calc
 */
 template<typename Ch> inline
-	long evali(const Ch *expression)
+	long atoi(const Ch *expression)
 {
 	Calculator<long> x;
 	return x(expression);
 }
 
-// common calculator: sci
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The scientific calculator.
 const Calculator<double>& sci();
 
-// common calculator: sci
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The scientific calculator: evaluate expression from the string.
+/**
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see sci()
+*/
 template<typename Ch, typename Tr, typename Ax> inline
 	double sci(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	return sci()(expression);
 }
 
-// common calculator: sci
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The scientific calculator: evaluate expression from the C-string.
+/**
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see sci()
+*/
 template<typename Ch> inline
 	double sci(const Ch *expression)
 {
@@ -339,16 +370,36 @@ template<typename Ch> inline
 }
 
 
-// common calculator: ratio
+//////////////////////////////////////////////////////////////////////////
+/// @brief The ratio calculator.
 const Calculator<double>& ratio();
-// common calculator: ratio
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The ratio calculator: evaluate expression from the string.
+/**
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see ratio()
+*/
 template<typename Ch, typename Tr, typename Ax> inline
 	double ratio(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	return ratio()(expression);
 }
 
-// common calculator: ratio
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The ratio calculator: evaluate expression from the C-string.
+/**
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see ratio()
+*/
 template<typename Ch> inline
 	double ratio(const Ch *expression)
 {
@@ -356,16 +407,36 @@ template<typename Ch> inline
 }
 
 
-// common calculator: power
+//////////////////////////////////////////////////////////////////////////
+/// @brief The power calculator.
 const Calculator<double>& power();
-// common calculator: power
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The power calculator: evaluate expression from the string.
+/**
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see power()
+*/
 template<typename Ch, typename Tr, typename Ax> inline
 	double power(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	return power()(expression);
 }
 
-// common calculator: power
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The power calculator: evaluate expression from the C-string.
+/**
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see power()
+*/
 template<typename Ch> inline
 	double power(const Ch *expression)
 {
@@ -373,32 +444,73 @@ template<typename Ch> inline
 }
 
 
-// common calculator: time
+//////////////////////////////////////////////////////////////////////////
+/// @brief The time calculator.
 const Calculator<double>& time();
-// common calculator: time
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The time calculator: evaluate expression from the string.
+/**
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see time()
+*/
 template<typename Ch, typename Tr, typename Ax> inline
 	double time(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	return time()(expression);
 }
 
-// common calculator: time
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The time calculator: evaluate expression from the C-string.
+/**
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see time()
+*/
 template<typename Ch> inline
 	double time(const Ch *expression)
 {
 	return time()(expression);
 }
 
-// common calculator: freq
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The frequency calculator.
 const Calculator<double>& freq();
-// common calculator: freq
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The frequency calculator: evaluate expression from the string.
+/**
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see freq()
+*/
 template<typename Ch, typename Tr, typename Ax> inline
 	double freq(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	return freq()(expression);
 }
 
-// common calculator: freq
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The frequency calculator: evaluate expression from the C-string.
+/**
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see freq()
+*/
 template<typename Ch> inline
 	double freq(const Ch *expression)
 {
@@ -406,16 +518,36 @@ template<typename Ch> inline
 }
 
 
-// common calculator: bits
+//////////////////////////////////////////////////////////////////////////
+/// @brief The bits calculator.
 const Calculator<double>& bits();
-// common calculator: bits
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The bits calculator: evaluate expression from the string.
+/**
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see bits()
+*/
 template<typename Ch, typename Tr, typename Ax> inline
 	double bits(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	return bits()(expression);
 }
 
-// common calculator: bits
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The bits calculator: evaluate expression from the C-string.
+/**
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see bits()
+*/
 template<typename Ch> inline
 	double bits(const Ch *expression)
 {
@@ -423,16 +555,36 @@ template<typename Ch> inline
 }
 
 
-// common calculator: distance
+//////////////////////////////////////////////////////////////////////////
+/// @brief The distance calculator.
 const Calculator<double>& dist();
-// common calculator: distance
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The distance calculator: evaluate expression from the string.
+/**
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see dist()
+*/
 template<typename Ch, typename Tr, typename Ax> inline
 	double dist(const std::basic_string<Ch, Tr, Ax> &expression)
 {
 	return dist()(expression);
 }
 
-// common calculator: distance
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The distance calculator: evaluate expression from the C-string.
+/**
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see dist()
+*/
 template<typename Ch> inline
 	double dist(const Ch *expression)
 {
@@ -448,22 +600,23 @@ template<typename Ch> inline
 	{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Обёртка для пользовательской функции
+/// @brief The user function.
 /**
-		Класс служит обёрткой для функций вида
+		This class is used as wrapper class for user functions:
 @code
 	T (*f)(T)
 @endcode
 
-		Используется для расширения функциональности калькулятора
-	префиксными или суфиксными функциями.
+		The user function can be prefix or suffix.
+
+@see Calculator<T>
 */
 template<typename T>
 class UserFunc {
 public:
-	typedef T (*Function)(T);  ///< @brief Пользовательская функция
-	typedef T Argument;        ///< @brief Тип аргумента пользовательской функции
-	typedef T Result;          ///< @brief Тип результата пользовательской функции
+	typedef T (*Function)(T);  ///< @brief The user function pointer.
+	typedef T Argument;        ///< @brief The argument type.
+	typedef T Result;          ///< @brief The result type.
 
 	friend class FuncTable<T>;
 
@@ -475,14 +628,15 @@ private:
 		: m_func(0)
 	{}
 
+
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Конструктор с заданием пользовательской функции
+/// @brief The main constructor.
 /**
-		Конструктор сохраняет пользовательскую функцию @a f.
+		This constructor holds the user function @a f.
 
-@param[in] f Пользовательская функция
+@param[in] f The user function pointer. Can't be null.
 */
 explicit UserFunc(Function f)
 	: m_func(f)
@@ -492,12 +646,12 @@ explicit UserFunc(Function f)
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Выполнить функцию
+/// @brief Execute function.
 /**
-		Метод вызывает пользовательскую функцию с аргументом @a x.
+		This method executes user function.
 
-@param[in] x Аргумент функции
-@return Результат функции
+@param[in] x The function argument.
+@return The function result.
 */
 	Result operator()(Argument x) const
 	{
@@ -505,35 +659,35 @@ public:
 	}
 
 private:
-	Function m_func;
+	Function m_func; ///< @brief The user function pointer.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Таблица пользовательских функций
+/// @brief The user function table.
 /**
-		Класс представляет собой таблицу пользовательских функций.
-	Позволяет добавлять, удалять и выполнять функцию по строковому имени.
+		This class is a function table.
+	It allows insert, remove, and execute custom function by name.
 */
 template<typename T>
 class FuncTable {
 public:
-	typedef UserFunc<T> Function;   ///< @brief Пользовательская функция
+	typedef UserFunc<T> Function;   ///< @brief The user function.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Добавить пользовательскую функцию
+/// @brief Insert function to the table.
 /**
-		Метод добавляет в таблицу новую пользовательскую функцию @a f
-	с именем @a name. Если имя функции некорректно или функция с таким
-	именем уже существует, то будет сгенерировано исключение.
+		This method inserts the user function @a f to the table.
 
-@param[in] name Имя пользовательской функции
-@param[in] f Пользовательская функция
-@throw omni::calc::InvalidFunctionName
-	Если имя функции не является корректным
-	или функция с таким именем уже существует
+		If function name @a name is invalid or the same function name
+	already exists the exception will be thrown.
+
+@param[in] name The function name.
+@param[in] f The user function.
+@throw omni::calc::err::InvalidFunctionName if function name is invalid
+	or the same function name already exists.
 */
 	void insert(const std::wstring &name, const Function &f)
 	{
@@ -548,13 +702,14 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Удалить пользовательскую функцию
+/// @brief Remove function from the table.
 /**
-		Метод удаляет из таблицы пользовательскую функцию с именем @a name.
+		This method removes the user function from the table.
 
-@param[in] name Имя пользовательской функции
-@throw omni::calc::InvalidFunctionName
-	Если функции с таким именем не существует
+		If the function name is not exists the exception will be thrown.
+
+@param[in] name The function name.
+@throw omni::calc::err::InvalidFunctionName is function name is not exists.
 */
 	void remove(const std::wstring &name)
 	{
@@ -567,12 +722,12 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Проверить задана ли пользовательская функция
+/// @brief Is function exists?
 /**
-		Метод проверяет наличие в таблице функции с именем @a name.
+		This method checks the function with name @a name.
 
-@param[in] name Имя пользовательской функции
-@return @b true Если функция существует, иначе @b false
+@param[in] name The function name.
+@return @b true if function already exists, otherwise @b false.
 */
 	bool exists(const std::wstring &name) const
 	{
@@ -581,16 +736,16 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Выполнить пользовательскую функцию
+/// @brief Execute user function.
 /**
-		Метод выполняет пользовательскую функцию с именем @a name. Если функции
-	с заданным именем нет в таблице, будет сгенерировано исключение.
+		This method executes the user function with name @a name.
 
-@param[in] name Имя пользовательской функции
-@param[in] arg Аргумент пользовательской функции
-@return Результат выполнения пользовательской функции
-@throw omni::calc::UnknownFunctionCall
-	Если функции с заданным именем нет в таблице
+		If the function name not exists the exception will be thrown.
+
+@param[in] name The function name.
+@param[in] arg The function argument.
+@return The function result.
+@throw omni::calc::err::UnknownFunctionCall is function name is not exists.
 */
 	T operator()(const std::wstring &name, T arg) const
 	{
@@ -602,17 +757,18 @@ public:
 	}
 
 private:
-	typedef std::map<std::wstring, Function> Table;
-	Table m_table;
+	typedef std::map<std::wstring, Function> Table; ///< @brief Table type.
+	Table m_table; ///< @brief The function table.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Функция масштабирования (умножение)
+/// @brief The multiplier user function.
 /**
-	Используется в качестве пользовательской функции масштабирования.
+		This class is used as user function.
+	It multiplies argument by @a SCALE value.
 
-		Например, следующий код добавляет в калькулятор функции "Mb" и "Kb":
+		For example, the following code adds "Mb" and "Kb" user functions:
 
 @code
 template<typename T>
@@ -622,6 +778,9 @@ template<typename T>
 		x.suffix().insert(L"Kb", Multiplier<T, 1024>());
 	}
 @endcode
+
+@param T The function argument and result type.
+@param SCALE The multiplier.
 */
 template<typename T, long SCALE>
 class Multiplier: public UserFunc<T> {
@@ -631,7 +790,7 @@ public:
 	typedef typename inherited::Argument Argument; ///< @brief The argument type.
 	typedef typename inherited::Result Result;   ///< @brief The result type.
 
-	enum { scale = SCALE };
+	// enum { scale = SCALE };
 
 public:
 
@@ -644,12 +803,12 @@ public:
 private:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Функция масштабирования
+/// @brief The scale function.
 /**
-		Метод выполняет увеличение аргумента @a x в @a SCALE раз.
+		This static method multiplies argument @a x by @a SCALE.
 
-@param[in] x Аргумент функции
-@return Результат масштабирования
+@param[in] x The function argument.
+@return The function result.
 */
 	static Result func(Argument x)
 	{
@@ -659,11 +818,12 @@ private:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Функция масштабирования (деление)
+/// @brief The divider user function.
 /**
-	Используется в качестве пользовательской функции масштабирования.
+		This class is used as user function.
+	It divides argument by @a SCALE value.
 
-		Например, следующий код добавляет в калькулятор функции "ms" и "us":
+		For example, the following code adds "ms" and "us" user functions:
 
 @code
 template<typename T>
@@ -673,6 +833,9 @@ template<typename T>
 		x.suffix().insert(L"us", Divider<T, 1000*1000>());
 	}
 @endcode
+
+@param T The function argument and result type.
+@param SCALE The divider.
 */
 template<typename T, long SCALE>
 class Divider: public UserFunc<T> {
@@ -682,7 +845,7 @@ public:
 	typedef typename inherited::Argument Argument; ///< @brief The argument type.
 	typedef typename inherited::Result Result;   ///< @brief The result type.
 
-	enum { scale = SCALE };
+	// enum { scale = SCALE };
 
 public:
 
@@ -695,12 +858,12 @@ public:
 private:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Функция масштабирования
+/// @brief The scale function.
 /**
-		Метод выполняет уменьшение аргумента @a x в @a SCALE раз.
+		This static method divides argument @a x by @a SCALE.
 
-@param[in] x Аргумент функции
-@return Результат масштабирования
+@param[in] x The function argument.
+@return The function result.
 */
 	static Result func(Argument x)
 	{
@@ -719,44 +882,41 @@ private:
 		{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Базовое исключение
+/// @brief The basic exception class.
 /**
-		Класс является базовым для всех исключений калькулятора.
+		This class is a basic exception class.
 */
 class Failure: public std::runtime_error {
 	typedef std::runtime_error inherited;
 
 protected:
 	explicit Failure(const std::string &msg);
-	explicit Failure(const char *msg);
 	virtual ~Failure() OMNI_THROW0() {}
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Синтаксическая ошибка
+/// @brief The syntax error.
 /**
-		Исключение генерируется, если в выражении встретилась синтаксическая
-	ошибка. Это может быть:
-
-		- отсутствие ожидаемого выражения
-		- неверно расставленные скобки
+		This exception is thrown if expression has any syntax error:
+			- expected expression is omitted.
+			- invalid brackets.
 */
 class SyntaxError: public Failure {
 	typedef Failure inherited;
 
 public:
 	explicit SyntaxError(const std::string &msg);
-	explicit SyntaxError(const char *msg);
 	virtual ~SyntaxError() OMNI_THROW0() {}
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вызов несуществующей функции
+/// @brief The unknown function call.
 /**
-		Исключение генерируется, если в выражении встретился вызов
-	несуществующей функции. Имя функции возвращается методом funcName().
+		This exception is thrown if the unknown function call found.
+
+	The function name returned by name() method.
 */
 class UnknownFunctionCall: public SyntaxError {
 	typedef SyntaxError inherited;
@@ -766,33 +926,36 @@ public:
 	virtual ~UnknownFunctionCall() OMNI_THROW0() {}
 
 public:
-	const std::wstring& funcName() const;
+	const std::wstring& name() const;
 
 private:
-	std::wstring m_func_name;
+	std::wstring m_name;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Ошибка вычислений
+/// @brief The calculation error.
 /**
-		Исключения является базовым для ошибок вычисления.
+		This is the basic exception for calculation errors.
+	The calculation errors may be thrown during the expression evaluation.
 */
 class CalculationError: public Failure {
 	typedef Failure inherited;
 
 protected:
 	explicit CalculationError(const std::string &msg);
-	explicit CalculationError(const char *msg);
 	virtual ~CalculationError() OMNI_THROW0() {}
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Деление на ноль
+/// @brief Division by zero.
 /**
-		Исключение генерируется если в выражении встречается
-	целочисленное деление на ноль.
+		This exception is thrown if division by zero found during expression
+	evaluation.
+
+@note This exception is thrown only for integer expressions.
+@see Calculator<T>::is_integer()
 */
 class DivisionByZero: public CalculationError {
 	typedef CalculationError inherited;
@@ -803,12 +966,12 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Некорректное имя функций
+/// @brief The function name is invalid.
 /**
-		Исключение используется при операциях с таблицами функций.
-	При добавлении функции генерируется, если имя функции некорректно или
-	функция с таким именем уже существует. При удалении функции генерируется,
-	если функции с таким именем нет.
+		This is exception may be thrown during the function table manipulation.
+
+@see FuncTable<T>::insert()
+@see FuncTable<T>::remove()
 */
 class InvalidFunctionName: public Failure {
 	typedef Failure inherited;
@@ -816,14 +979,13 @@ class InvalidFunctionName: public Failure {
 public:
 	explicit InvalidFunctionName(const std::wstring &func_name);
 	InvalidFunctionName(const std::string &msg, const std::wstring &func_name);
-	InvalidFunctionName(const char *msg, const std::wstring &func_name);
 	virtual ~InvalidFunctionName() OMNI_THROW0() {}
 
 public:
-	const std::wstring& funcName() const;
+	const std::wstring& name() const;
 
 private:
-	std::wstring m_func_name;
+	std::wstring m_name;
 };
 
 		} // err namespace
@@ -838,29 +1000,25 @@ private:
 		{
 
 //////////////////////////////////////////////////////////////////////////
-// @brief Константы
+// @brief Char constants.
 /*
-		Класс содержит константы для обычного (@b char)
-	и расширенного (@b wchar_t) символьных наборов.
+		This class contains constants for single (@b char)
+	and wide (@b wchar_t) characters.
 
-		Константы FLOAT_CHARS и INT_CHARS определяют символы, с которых
-	могут начинаться вещественные и целые числа соответственно.
+		The constants FLOAT_CHARS and INT_CHARS defines symbols, from which
+	the floating-point and integer numbers may be started corresponding.
 
-		Если целое число начинается с OCT_INDICATOR, то число будет
-	интерпретироваться в восьмеричной системе. Если сразу за OCT_INDICATOR
-	расположен символ HEX_INDICATOR1 или HEX_INDICATOR2, то число будет
-	интерпретироваться в шестнадцатеричной системе.
+		The integer numbers may be in octal, decimal or hexadecimal forms
 
-		Константы BRACE_OPEN и BRACE_CLOSE обозначают открывающуюся
-	и закрывающуюся скобки соответственно.
+		The LEFT_BRACKET and RIGHT_BRACKET defines left and right brackets.
 
-		Следующие константы обозначают основные арифметические операции:
-			- OP_ADD - сложение
-			- OP_SUB - вычитание
-			- OP_MUL - умножение
-			- OP_DIV - деление
+		The following constants defines arithmetic operations:
+			- OP_ADD - addition.
+			- OP_SUB - subtraction.
+			- OP_MUL - multiplication.
+			- OP_DIV - division.
 
-@param Ch Тип символа
+@param Ch The char type.
 */
 template<typename Ch>
 class CharConst {
@@ -868,24 +1026,31 @@ public:
 	typedef Ch Char; ///< @brief The char type.
 
 public:
-	static const Char FLOAT_CHARS[]; ///< @brief Цифры вещественного числа
-	static const Char INT_CHARS[];   ///< @brief Цифры целого числа
+	static const Char FLOAT_CHARS[]; ///< @brief The floating-point digits.
+	static const Char INT_CHARS[];   ///< @brief The integer digits.
 
 public:
-	static const Char OCT_INDICATOR;  ///< @brief Индикатор восмеричной или шестнадцатеричной системы счисления
-	static const Char HEX_INDICATOR1; ///< @brief Первый индикатор шестандцатеричной системы счисления
-	static const Char HEX_INDICATOR2; ///< @brief Второй индикатор шестандцатеричной системы счисления
+	static const Char OCT_INDICATOR;  ///< @brief The octal form indicator.
+	static const Char HEX_INDICATOR1; ///< @brief The hexadecimal indicator.
+	static const Char HEX_INDICATOR2; ///< @brief The hexadecimal indicator.
 
-	static const Char BRACE_OPEN;  ///< @brief Открывающая скобка
-	static const Char BRACE_CLOSE; ///< @brief Закрывающая скобка
-	static const Char OP_ADD; ///< @brief Унарный или бинарный плюс
-	static const Char OP_SUB; ///< @brief Унарный или бинарный минус
-	static const Char OP_MUL; ///< @brief Бинарное умножение
-	static const Char OP_DIV; ///< @brief Бинарное деление
+	static const Char LEFT_BRACKET;  ///< @brief The left bracket.
+	static const Char RIGHT_BRACKET; ///< @brief The right bracket.
+
+	static const Char OP_ADD;  ///< @brief The unary or binary plus.
+	static const Char OP_SUB;  ///< @brief The unary or binary minus.
+	static const Char OP_MUL;  ///< @brief The multiplication.
+	static const Char OP_DIV;  ///< @brief The division.
 
 public:
+
+	/// @brief Is floating-point digit?
 	static bool is_float_digit(Char cx);
+
+	/// @brief Is integer digit?
 	static bool is_int_digit(Char cx);
+
+	/// @brief Widen the symbol.
 	static wchar_t widen(Char cx,
 		const std::ctype<Char> &fac);
 };
@@ -903,15 +1068,15 @@ public:
 		{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Прочитать имя функции из потока ввода
+/// @brief Get function name.
 /**
-		Возвращает имя функции из потока ввода @a is.
-	Имя функции не должно начинаться с цифры, не должно содержать пробелов.
-	Может вернуть пустую строку. Для расширенных символов выполняет
-	преобразование @a char в @a wchar_t.
+		This function parses the function name from the input stream.
 
-@param[in,out] is Поток ввода
-@return Имя функции
+		The function name should be started from alpha char
+	and should't contains any white spaces.
+
+@param[in,out] is The input stream.
+@return The function name or empty string.
 */
 template<typename Ch, typename Tr>
 	std::wstring get_func_name(std::basic_istream<Ch, Tr> &is)
@@ -967,15 +1132,16 @@ template<typename Ch, typename Tr>
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Прочитать число из потока ввода
+/// @brief Get number.
 /**
-		Функция пытается прочитать число из потока ввода @a is.
-	Если число прочитано, то оно возвращается в переменной @a x.
+		This function is trying to parse the number from the input stream.
 
-@param[in] is Поток ввода
-@param[out] x Возврашает число
-@param[in] is_integer Is integer calculator?
-@return @b true если число успешно прочитано, иначе @b false
+	If the number has been parsed it is returned in @a x.
+
+@param[in] is The input stream.
+@param[out] x The parsed number.
+@param[in] is_integer Is calculator integer?
+@return @b true If the number is parsed, otherwise @b false.
 */
 template<typename T, typename Ch, typename Tr>
 	bool get_num(std::basic_istream<Ch, Tr> &is, T &x, bool is_integer)
@@ -1048,18 +1214,18 @@ template<typename T, typename Ch, typename Tr>
 //////////////////////////////////////////////////////////////////////////
 /// @brief Level 4 expression parsing.
 /**
-		Функция пробует прочитать число, унарный плюс или минус, скобки или
-	вызов префиксной функции.
+		This function trying to parse the number, unary plus or minus,
+	brackets or prefix function call.
 
-		Генерирует исключение если нет закрывающей скобки, неправильный
-	вызов префиксной функции или встретился неправильный символ.
+		If expression is invalid the exception will be thrown.
 
-		Параметр @a calculator используется для доступа к таблицам функций.
+		The @a calculator reference is used to access the prefix function table.
 
 @param[in,out] is The input stream.
 @param[in] calculator The calculator.
-@return Результат
-@throw omni::calc::SyntaxError В случае синтаксической ошибки
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If syntax error is found.
+@throw omni::calc::err::UnknownFunctionCall If function name is not found.
 */
 template<typename T, typename Ch, typename Tr>
 	T level_4(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
@@ -1081,7 +1247,7 @@ template<typename T, typename Ch, typename Tr>
 				x = +level_4(is.ignore(), calculator);
 			else if (traits_type::eq(cx, calc_traits::OP_SUB)) // unary "-"
 				x = -level_4(is.ignore(), calculator);
-			else if (traits_type::eq(cx, calc_traits::BRACE_OPEN)) // braces
+			else if (traits_type::eq(cx, calc_traits::LEFT_BRACKET)) // brackets
 			{
 				x = level_1(is.ignore(), calculator);
 
@@ -1089,7 +1255,7 @@ template<typename T, typename Ch, typename Tr>
 				meta = (is >> std::ws).peek();
 				cx = traits_type::to_char_type(meta);
 				if (traits_type::eq_int_type(meta, traits_type::eof())
-					|| !traits_type::eq(cx, calc_traits::BRACE_CLOSE))
+					|| !traits_type::eq(cx, calc_traits::RIGHT_BRACKET))
 						throw err::SyntaxError("expected \")\" char");
 				else
 					is.ignore();
@@ -1099,22 +1265,22 @@ template<typename T, typename Ch, typename Tr>
 				std::wstring func_name = get_func_name(is);
 				if (!func_name.empty())
 				{
-					// find open brace
+					// find open bracket
 					meta = (is >> std::ws).peek();
 					cx = traits_type::to_char_type(meta);
 					if (traits_type::eq_int_type(meta, traits_type::eof())
-						|| !traits_type::eq(cx, calc_traits::BRACE_OPEN))
+						|| !traits_type::eq(cx, calc_traits::LEFT_BRACKET))
 							throw err::SyntaxError("expected \"(\" char");
 					else
 						is.ignore();
 
 					T z = level_1(is, calculator);
 
-					// check close brace
+					// check close bracket
 					meta = (is >> std::ws).peek();
 					cx = traits_type::to_char_type(meta);
 					if (traits_type::eq_int_type(meta, traits_type::eof())
-						|| !traits_type::eq(cx, calc_traits::BRACE_CLOSE))
+						|| !traits_type::eq(cx, calc_traits::RIGHT_BRACKET))
 							throw err::SyntaxError("expected \")\" char");
 					else
 						is.ignore();
@@ -1136,14 +1302,14 @@ template<typename T, typename Ch, typename Tr>
 //////////////////////////////////////////////////////////////////////////
 /// @brief Level 3 expression parsing.
 /**
-		Функция выполняет бинарное умножение и деление.
+		This function trying to perform the multiplication and division.
 
-		Генерирует исключение если встретилось целочисленное деление на ноль.
+	The exception will be thrown in case of integer division by zero.
 
 @param[in,out] is The input stream.
 @param[in] calculator The calculator.
 @return The evaluation result.
-@throw omni::calc::DivisionByZero В случае целочисленного деления на ноль
+@throw omni::calc::err::DivisionByZero In case of integer division by zero.
 */
 template<typename T, typename Ch, typename Tr>
 	T level_3(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
@@ -1180,7 +1346,7 @@ template<typename T, typename Ch, typename Tr>
 //////////////////////////////////////////////////////////////////////////
 /// @brief Level 2 expression parsing.
 /**
-		Функция выполняет бинарное сложение и вычитание.
+		This function is trying to perform the binary addition and subtraction.
 
 @param[in,out] is The input stream.
 @param[in] calculator The calculator.
@@ -1214,7 +1380,9 @@ template<typename T, typename Ch, typename Tr>
 //////////////////////////////////////////////////////////////////////////
 /// @brief Level 1 expression parsing.
 /**
-		Performs suffix function calculation.
+		This function is trying to perform suffix function calls.
+
+	The @a calculator reference is used to access the suffix function table.
 
 @param[in,out] is The input stream.
 @param[in] calculator The calculator.
@@ -1239,71 +1407,20 @@ template<typename T, typename Ch, typename Tr>
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Evaluate expression.
+/// @brief Evaluate expression from the input stream.
 /**
-		Функция вычисляет выражение из потока ввода @a is пока не будет достигнуто
-	окончание выражения (которое может не совпадать с окончанием потока ввода).
+		This function evaluates the custom expression from the input stream.
 
-		Если поток ввода не содержит выражения или выражение некорректно,
-	будет сгенерировано исключение.
-
-@param[in,out] expression Поток ввода
-@param[in] calculator Калькулятор
-@return Значение выражения
-@throw omni::calc::SyntaxError Если выражение некорректно
-@throw omni::calc::CalculationError Если выражение содержит вычислительные ошибки
+@param[in,out] expression The input stream.
+@param[in] calculator The calculator.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
 */
 template<typename T, typename Ch, typename Tr>
 	T eval(std::basic_istream<Ch, Tr> &expression, const Calculator<T> &calculator)
 {
 	return level_1(expression, calculator);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Evaluate expression.
-/**
-		Функция вычисляет выражение из строки @a expression.
-
-		Если выражение некорректно или строка содержит более
-	одного выражения будет сгенерировано исключение.
-
-@param[in] expression Строковое выражение
-@param[in] calculator Калькулятор
-@return Значение выражения
-@throw omni::calc::SyntaxError Если выражение некорректно
-@throw omni::calc::CalculationError Если выражение содержит вычислительные ошибки
-*/
-template<typename T, typename Ch, typename Tr, typename Ax>
-	T eval(const std::basic_string<Ch, Tr, Ax> &expression, const Calculator<T> &calculator)
-{
-	std::basic_istringstream<Ch, Tr> is(expression);
-	T x = eval(is, calculator);
-
-	if (!(is >> std::ws).eof())
-		throw err::SyntaxError("expression not fully parsed");
-
-	return x;
-}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Evaluate expression.
-/**
-		Функция вычисляет выражение из C-строки @a expression.
-
-		Если выражение некорректно или строка содержит более
-	одного выражения будет сгенерировано исключение.
-
-@param[in] expression Строковое выражение
-@param[in] calculator Калькулятор
-@return Значение выражения
-@throw omni::calc::SyntaxError Если выражение некорректно
-@throw omni::calc::CalculationError Если выражение содержит вычислительные ошибки
-*/
-template<typename T, typename Ch>
-	T eval(const Ch *expression, const Calculator<T> &calculator)
-{
-	return eval(std::basic_string<Ch>(expression), calculator);
 }
 
 		} // details namespace

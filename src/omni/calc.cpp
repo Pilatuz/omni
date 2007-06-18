@@ -28,9 +28,8 @@ namespace omni
 //////////////////////////////////////////////////////////////////////////
 /** @brief Evaluation tools.
 
-		The calc namespace contains
-		Пространство имен содержит средства для вычисления выражений
-	из потока ввода или строки.
+		The calc namespace contains tools for expression
+	evaluation from the input stream or from the string.
 
 @see @ref omni_calc
 */
@@ -38,39 +37,42 @@ namespace omni
 	{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Научный калькулятор
+// The scientific calculator.
 /**
-		Функция возвращает калькулятор, который может вычислять
-	безразмерные величины.
+		This function returns scientific calculator reference.
+	This calculator can evaluate any non-dimensional expressions.
 
-	Поддерживает следующие префиксные функции:
-		- @b sin синус
-		- @b cos косинус
-		- @b tan тангенс
-		- @b sinh гиперболический синус
-		- @b cosh гиперболический косинус
-		- @b tanh гиперболический тангенс
-		- @b asin арксинус
-		- @b acos арккосинус
-		- @b atan арктангенс
-		- @b sqrt квадратный корень
-		- @b exp экспонента
-		- @b ln натуральный логарифм
-		- @b lg десятичный логарифм
-		- @b floor округление вниз
-		- @b ceil округление вверх
-		- @b abs модуль числа
+		The following operators are supported: "+", "-", "*", "/" and brackets.
 
-	и следующие суфиксные функции:
-		- @b degr, @b deg конвертировать из градусов в радианы
+	The following prefix functions are supported:
+		- @b sin - Sine.
+		- @b cos - Cosine.
+		- @b tan - Tangent.
+		- @b sinh - Hyperbolic sine.
+		- @b cosh - Hyperbolic cosine.
+		- @b tanh - Hyperbolic tangent.
+		- @b asin - Inverse sine.
+		- @b acos - Inverse cosine.
+		- @b atan - Inverse tangent.
+		- @b sqrt - Square root.
+		- @b exp - Exponent.
+		- @b ln - Natural logarithm.
+		- @b lg - Decimal logarithm.
+		- @b floor - Round down.
+		- @b ceil - Round up.
+		- @b abs - Absolute value.
 
-@return Калькулятор
+	The following suffix functions are supported:
+		- @b degr, @b deg - Conversion from degrees to radians.
+
+@return The scientific calculator reference.
 */
 const Calculator<double>& sci()
 {
-	// Aux
-	struct Aux {
-		static Calculator<double> init()
+	// Init
+	struct Init
+	{
+		static Calculator<double> get()
 		{
 			Calculator<double> calculator;
 
@@ -102,27 +104,30 @@ const Calculator<double>& sci()
 		}
 	};
 
-	static Calculator<double> g_CALC = Aux::init();
+	static Calculator<double> g_CALC = Init::get();
 	return g_CALC;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Калькулятор безразмерной величины (отношение)
+// The ratio calculator.
 /**
-		Функция возвращает калькулятор, который может вычислять
-	безразмерные величины.
+		This function returns ratio calculator reference.
+	This calculator can evaluate any non-dimensional expressions.
 
-	Поддерживает следующие суфиксные функции:
-		- @b dB перевод из децибелов по мощности в разы
+		The following operators are supported: "+", "-", "*", "/" and brackets.
 
-@return Калькулятор
+	The following suffix functions are supported:
+		- @b dB - Conversion from dB to linear scale (by power).
+
+@return The ratio calculator reference.
+@see omni::util::dB2line()
 */
 const Calculator<double>& ratio()
 {
-	// Aux
-	struct Aux {
-		static Calculator<double> init()
+	// Init
+	struct Init {
+		static Calculator<double> get()
 		{
 			Calculator<double> calculator;
 
@@ -132,33 +137,36 @@ const Calculator<double>& ratio()
 		}
 	};
 
-	static Calculator<double> g_CALC = Aux::init();
+	static Calculator<double> g_CALC = Init::get();
 	return g_CALC;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Калькулятор мощности в ваттах
+// The power calculator.
 /**
-		Функция возвращает калькулятор, который может вычислять
-	мощность в ваттах.
+		This function returns power (in watt) calculator reference.
 
-	Поддерживает следующие суфиксные функции:
-		- @b MW перевод из мегаватт (1e+6) в ватты
-		- @b KW перевод из киловатт (1e+3) в ватты
-		- @b W пустышка для ввода единицы измерения
-		- @b mW перевод из миливатт (1e-3) в ватты
-		- @b uW перевод из микроватт (1e-6) в ватты
-		- @b dBm перевод из dBm в ватты
-		- @b dBW перевод из dBW в ватты
+		The following operators are supported: "+", "-", "*", "/" and brackets.
 
-@return Калькулятор
+	The following suffix functions are supported:
+		- @b MW - Conversion from megawatts (1.0e+6) to watts.
+		- @b KW - Conversion from kilowatts (1.0e+3) to watts.
+		- @b W - Actual, no conversion.
+		- @b mW - Conversion from milliwatts (1.0e-3) to watts.
+		- @b uW - Conversion from microwatts (1.0e-6) to watts.
+		- @b dBm - Conversion from dBm to watts.
+		- @b dBW - Conversion from dBW to watts.
+
+@return The power calculator reference.
+@see omni::util::dBm2watt()
+@see omni::util::dB2line()
 */
 const Calculator<double>& power()
 {
-	// Aux
-	struct Aux {
-		static Calculator<double> init()
+	// Init
+	struct Init {
+		static Calculator<double> get()
 		{
 			Calculator<double> calculator;
 
@@ -174,33 +182,34 @@ const Calculator<double>& power()
 		}
 	};
 
-	static Calculator<double> g_CALC = Aux::init();
+	static Calculator<double> g_CALC = Init::get();
 	return g_CALC;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Калькулятор времени в секундах
+// The time calculator.
 /**
-		Функция возвращает калькулятор, который может вычислять
-	время в секундах.
+		This function returns time (in seconds) calculator reference.
 
-	Поддерживает следующие суфиксные функции:
-		- @b day, @b days перевод из дней в секунды
-		- @b hour, @b hours перевод из часов в секунды
-		- @b min перевод из минут в секунды
-		- @b sec, @b s пустышка для ввода единицы измерения
-		- @b ms перевод милисекунд (1e-3) в секунды
-		- @b us перевод микросекунд (1e-6) в секунды
-		- @b ns перевод наносекунд (1e-9) в секунды
+		The following operators are supported: "+", "-", "*", "/" and brackets.
 
-@return Калькулятор
+	The following suffix functions are supported:
+		- @b day, @b days - Conversion from days (24*60*60) to seconds.
+		- @b hour, @b hours - Conversion from hours (3600) to seconds.
+		- @b min - Conversion from minutes (60) to seconds.
+		- @b sec, @b s - Actually, no conversion.
+		- @b ms - Conversion from milliseconds (1.0e-3) to seconds.
+		- @b us - Conversion from microseconds (1.0e-6) to seconds.
+		- @b ns - Conversion from nanoseconds (1.0e-9) to seconds.
+
+@return The time calculator reference.
 */
 const Calculator<double>& time()
 {
-	// Aux
-	struct Aux {
-		static Calculator<double> init()
+	// Init
+	struct Init {
+		static Calculator<double> get()
 		{
 			Calculator<double> calculator;
 
@@ -219,30 +228,31 @@ const Calculator<double>& time()
 		}
 	};
 
-	static Calculator<double> g_CALC = Aux::init();
+	static Calculator<double> g_CALC = Init::get();
 	return g_CALC;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Калькулятор частоты в Герцах
+// The frequency calculator.
 /**
-		Функция возвращает калькулятор, который может вычислять
-	частоту в Герцах.
+		This function returns frequency (in hertz) calculator reference.
 
-	Поддерживает следующие суфиксные функции:
-		- @b GHz переводит гигагерцы (1e+9) в герцы
-		- @b MHz переводит мегагерцы (1e+6) в герцы
-		- @b KHz, @b kHz переводит килогерцы (1e+3) в герцы
-		- @b Hz пустышка для ввода единицы измерения
+		The following operators are supported: "+", "-", "*", "/" and brackets.
 
-@return Калькулятор
+	The following suffix functions are supported:
+		- @b GHz - Conversion from gigahertz (1.0e+9) to hertz.
+		- @b MHz - Conversion from megahertz (1.0e+6) to hertz.
+		- @b KHz, @b kHz - Conversion from kilohertz (1.0e+3) to hertz.
+		- @b Hz - Actually, no conversion.
+
+@return The frequency calculator reference.
 */
 const Calculator<double>& freq()
 {
-	// Aux
-	struct Aux {
-		static Calculator<double> init()
+	// Init
+	struct Init {
+		static Calculator<double> get()
 		{
 			Calculator<double> calculator;
 
@@ -256,90 +266,90 @@ const Calculator<double>& freq()
 		}
 	};
 
-	static Calculator<double> g_CALC = Aux::init();
+	static Calculator<double> g_CALC = Init::get();
 	return g_CALC;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Калькулятор размера в битах и байтах.
+// The bits calculator.
 /**
-		Функция возвращает калькулятор, который может вычислять
-	размеры как в битах, так и в байтах.
+		This function returns size (in bits or in bytes) calculator reference.
 
-	Поддерживает следующие суфиксные функции:
-		- @b B, @b b пустышка для ввода единицы измерения
-		- @b KB, @b Kb переводит килобиты (1024) в биты
-		- @b MB, @b Mb переводит мегабиты (1024*1024) в биты
-		- @b GB, @b Gb переводит гигабиты (1024*1024*1024) в биты
+		The following operators are supported: "+", "-", "*", "/" and brackets.
 
+	The following suffix functions are supported:
+		- @b GB, @b Gb - Conversion from gigabits (1024*1024*1024) to bits.
+		- @b MB, @b Mb - Conversion from megabits (1024*1024) to bits.
+		- @b KB, @b Kb - Conversion from kilobits (1024) to bits.
+		- @b B, @b b - Actually, no conversion.
 
-@return Калькулятор
+@return The bits calculator reference.
 */
 const Calculator<double>& bits()
 {
-	// Aux
-	struct Aux {
-		static Calculator<double> init()
+	// Init
+	struct Init {
+		static Calculator<double> get()
 		{
 			Calculator<double> calculator;
 
-			calculator.suffix().insert(L"B", Multiplier<double, 1L>());
-			calculator.suffix().insert(L"b", Multiplier<double, 1L>());
-			calculator.suffix().insert(L"KB", Multiplier<double, 1024L>());
-			calculator.suffix().insert(L"Kb", Multiplier<double, 1024L>());
-			calculator.suffix().insert(L"MB", Multiplier<double, 1024L*1024>());
-			calculator.suffix().insert(L"Mb", Multiplier<double, 1024L*1024>());
 			calculator.suffix().insert(L"GB", Multiplier<double, 1024L*1024*1024>());
 			calculator.suffix().insert(L"Gb", Multiplier<double, 1024L*1024*1024>());
+			calculator.suffix().insert(L"MB", Multiplier<double, 1024L*1024>());
+			calculator.suffix().insert(L"Mb", Multiplier<double, 1024L*1024>());
+			calculator.suffix().insert(L"KB", Multiplier<double, 1024L>());
+			calculator.suffix().insert(L"Kb", Multiplier<double, 1024L>());
+			calculator.suffix().insert(L"B", Multiplier<double, 1L>());
+			calculator.suffix().insert(L"b", Multiplier<double, 1L>());
 
 			return calculator;
 		}
 	};
 
-	static Calculator<double> g_CALC = Aux::init();
+	static Calculator<double> g_CALC = Init::get();
 	return g_CALC;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Калькулятор расстояния в метрах.
+// The distance calculator.
 /**
-		Функция возвращает калькулятор, который может вычислять
-	расстояния в метрах.
+		This function returns distance (in meters) calculator reference.
 
-	Поддерживает следующие суфиксные функции:
-		- @b nm, переводит нанометры (0.000000001) в метры
-		- @b um, переводит микрометры (0.000001) в метры
-		- @b mm, переводит милиметры (0.001) в метры
-		- @b cm, переводит сантиметры (0.01) в метры
-		- @b m, пустышка для ввода единицы измерения
-		- @b km, @b Km переводит километры (1000) в метры
+		The following operators are supported: "+", "-", "*", "/" and brackets.
 
+	The following suffix functions are supported:
+		- @b km, @b Km - Conversion from kilometers (1.0e+3) to meters.
+		- @b m - Actually, no conversion.
+		- @b cm - Conversion from centimeters (1.0e-2) to meters.
+		- @b mm - Conversion from millimeters (1.0e-3) to meters.
+		- @b um - Conversion from micrometers (1.0e-6) to meters.
+		- @b nm - Conversion from nanometers (1.0e-9) to meters.
 
-@return Калькулятор
+@return The distance calculator reference.
 */
 const Calculator<double>& dist()
 {
-	// Aux
-	struct Aux {
-		static Calculator<double> init()
+	// Init
+	struct Init {
+		static Calculator<double> get()
 		{
 			Calculator<double> calculator;
 
-			calculator.suffix().insert(L"nm", Divider<double, 1000L*1000*1000>());
-			calculator.suffix().insert(L"um", Divider<double, 1000L*1000>());
-			calculator.suffix().insert(L"mm", Divider<double, 1000L>());
-			calculator.suffix().insert(L"cm", Divider<double, 100L>());
-			calculator.suffix().insert(L"m",  Multiplier<double, 1L>());
 			calculator.suffix().insert(L"Km", Multiplier<double, 1000L>());
 			calculator.suffix().insert(L"km", Multiplier<double, 1000L>());
+			calculator.suffix().insert(L"m",  Multiplier<double, 1L>());
+			calculator.suffix().insert(L"cm", Divider<double, 100L>());
+			calculator.suffix().insert(L"mm", Divider<double, 1000L>());
+			calculator.suffix().insert(L"um", Divider<double, 1000L*1000>());
+			calculator.suffix().insert(L"nm", Divider<double, 1000L*1000*1000>());
 
 			return calculator;
 		}
 	};
 
-	static Calculator<double> g_CALC = Aux::init();
+	static Calculator<double> g_CALC = Init::get();
 	return g_CALC;
 }
 
@@ -349,13 +359,14 @@ namespace details
 {
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Проверить корректность имени функции
+/// @brief Check the function name.
 /**
-		Проверяет корректность имени пользовательской функции.
-	Имя должно состоять из одного слова и начинаться с символа.
+		This function checks the custom function name. The function
+	name can't be empty, can't start from digit and can't contain
+	any white spaces.
 
-@param[in] name Имя пользовательской фукнции
-@return @b true если имя корректное, иначе @b false
+@param[in] name The function name.
+@return @b true if the function name is correct, otherwise @b false.
 */
 	bool check_func_name(const std::wstring &name)
 	{
@@ -389,90 +400,59 @@ namespace details
 		{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение
+/// @brief The main constructor.
 /**
-@param[in] msg Сообщение об ошибке
+@param[in] msg The error message.
 */
 Failure::Failure(const std::string &msg)
 	: inherited(msg)
 {}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение
-/**
-@param[in] msg Сообщение об ошибке
-*/
-Failure::Failure(const char *msg)
-	: inherited(msg)
-{}
-
-
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] msg Сообщение об ошибке
+@param[in] msg The error message.
 */
 SyntaxError::SyntaxError(const std::string &msg)
 	: inherited(msg)
 {}
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
-/**
-@param[in] msg Сообщение об ошибке
-*/
-SyntaxError::SyntaxError(const char *msg)
-	: inherited(msg)
-{}
-
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] func_name Имя функции
+@param[in] func_name The function name.
 */
 UnknownFunctionCall::UnknownFunctionCall(const std::wstring &func_name)
-	: inherited("unknown function call"), m_func_name(func_name)
+	: inherited("unknown function call"), m_name(func_name)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Имя несуществующей функции
+/// @brief Get the function name.
 /**
-		Метод возвращает имя функции, встретившейся в выражении,
-	но не существующей в таблице пользовательских функций калькулятора.
-
-@return Имя несуществующей функции
+@return The function name.
 */
-const std::wstring& UnknownFunctionCall::funcName() const
+const std::wstring& UnknownFunctionCall::name() const
 {
-	return m_func_name;
+	return m_name;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] msg Сообщение об ошибке
+@param[in] msg The error message.
 */
 CalculationError::CalculationError(const std::string &msg)
 	: inherited(msg)
 {}
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
-/**
-@param[in] msg Сообщение об ошибке
-*/
-CalculationError::CalculationError(const char *msg)
-	: inherited(msg)
-{}
-
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Конструктор с заданием сообщения
+/// @brief The default constructor.
 /**
 */
 DivisionByZero::DivisionByZero()
@@ -481,46 +461,34 @@ DivisionByZero::DivisionByZero()
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Конструктор с заданием сообщения
+/// @brief The main constructor.
 /**
-@param[in] func_name Имя функции
+@param[in] func_name The function name.
 */
 InvalidFunctionName::InvalidFunctionName(const std::wstring &func_name)
-	: inherited("invalid function name"), m_func_name(func_name)
+	: inherited("invalid function name"), m_name(func_name)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Конструктор с заданием сообщения
+/// @brief The extended constructor.
 /**
 @param[in] msg The error message.
 @param[in] func_name The function name.
 */
 InvalidFunctionName::InvalidFunctionName(const std::string &msg, const std::wstring &func_name)
-	: inherited(msg), m_func_name(func_name)
-{}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Конструктор с заданием сообщения
-/**
-@param[in] msg The error message.
-@param[in] func_name The function name.
-*/
-InvalidFunctionName::InvalidFunctionName(const char *msg, const std::wstring &func_name)
-	: inherited(msg), m_func_name(func_name)
+	: inherited(msg), m_name(func_name)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Имя функции
+/// @brief Get the function name.
 /**
-		Метод возвращает имя некорректной функции.
-
-@return Имя некорректной функции
+@return The function name.
 */
-const std::wstring& InvalidFunctionName::funcName() const
+const std::wstring& InvalidFunctionName::name() const
 {
-	return m_func_name;
+	return m_name;
 }
 
 		} // err namespace
@@ -538,35 +506,42 @@ const std::wstring& InvalidFunctionName::funcName() const
 
 @warning Do not use this namespace.
 */
+		/// @cond details
 		namespace details
 		{
-			/// @cond details
 
-// explicit <wchar_t> instantiation
+//////////////////////////////////////////////////////////////////////////
+// explicit <wchar_t> constant instantiation
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::FLOAT_CHARS[] = L".0123456789";
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::INT_CHARS[]   = L"0123456789";
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::OCT_INDICATOR  = L'0';
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::HEX_INDICATOR1 = L'X';
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::HEX_INDICATOR2 = L'x';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::BRACE_OPEN  = L'(';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::BRACE_CLOSE = L')';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::LEFT_BRACKET  = L'(';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::RIGHT_BRACKET = L')';
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::OP_ADD = L'+';
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::OP_SUB = L'-';
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::OP_MUL = L'*';
 template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::OP_DIV = L'/';
 
+//////////////////////////////////////////////////////////////////////////
+// is floating-point digit?
 template<>
 bool CharConst<wchar_t>::is_float_digit(Char cx)
 {
 	return wcschr(FLOAT_CHARS, cx) != 0;
 }
 
+//////////////////////////////////////////////////////////////////////////
+// is integer digit?
 template<>
 bool CharConst<wchar_t>::is_int_digit(Char cx)
 {
 	return wcschr(INT_CHARS, cx) != 0;
 }
 
+//////////////////////////////////////////////////////////////////////////
+// widen char
 template<>
 wchar_t CharConst<wchar_t>::widen(Char cx, const std::ctype<Char>&)
 {
@@ -574,25 +549,32 @@ wchar_t CharConst<wchar_t>::widen(Char cx, const std::ctype<Char>&)
 }
 
 
-// explicit <char> instantiation
+//////////////////////////////////////////////////////////////////////////
+// explicit <char> contants instantiation
 template<> const CharConst<char>::Char CharConst<char>::FLOAT_CHARS[] = ".0123456789";
 template<> const CharConst<char>::Char CharConst<char>::INT_CHARS[]   = "0123456789";
 template<> const CharConst<char>::Char CharConst<char>::OCT_INDICATOR  = '0';
 template<> const CharConst<char>::Char CharConst<char>::HEX_INDICATOR1 = 'X';
 template<> const CharConst<char>::Char CharConst<char>::HEX_INDICATOR2 = 'x';
-template<> const CharConst<char>::Char CharConst<char>::BRACE_OPEN  = '(';
-template<> const CharConst<char>::Char CharConst<char>::BRACE_CLOSE = ')';
+template<> const CharConst<char>::Char CharConst<char>::LEFT_BRACKET  = '(';
+template<> const CharConst<char>::Char CharConst<char>::RIGHT_BRACKET = ')';
 template<> const CharConst<char>::Char CharConst<char>::OP_ADD = '+';
 template<> const CharConst<char>::Char CharConst<char>::OP_SUB = '-';
 template<> const CharConst<char>::Char CharConst<char>::OP_MUL = '*';
 template<> const CharConst<char>::Char CharConst<char>::OP_DIV = '/';
 
+
+//////////////////////////////////////////////////////////////////////////
+// is floating-point digit?
 template<>
 bool CharConst<char>::is_float_digit(Char cx)
 {
 	return strchr(FLOAT_CHARS, cx) != 0;
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+// is integer digit?
 template<>
 bool CharConst<char>::is_int_digit(Char cx)
 {
@@ -600,75 +582,76 @@ bool CharConst<char>::is_int_digit(Char cx)
 }
 
 
+//////////////////////////////////////////////////////////////////////////
+// widen char
 template<>
 wchar_t CharConst<char>::widen(Char cx, const std::ctype<Char> &fac)
 {
 	return fac.widen(cx);
 }
 
-
-			/// @endcond
 		} // details namespace
+		/// @endcond
 	} // calc namespace
 
 } // omni namespace
 
 
+
 //////////////////////////////////////////////////////////////////////////
 /** @page omni_calc Evaluation tools
 
-		Калькулятор используется для вычисления строковых выражений.
-	Используется, например, при чтении параметров из файла конфигурации
-	или полей ввода. Калькулятор поддерживает основные арифметические
-	операции и может расширяться произвольными функциями.
+		The calculator is used for expression evaluation from strings.
+	It is used, for example, during configuration parameters parsing.
+	The calculator supports the main arithmetic operations and brackets
+	and may be enhanced by custom user prefix and/or suffix functions.
 
-		Калькулятор поддерживает следующие основные арифметические
-	операции (в порядке убывания приоритета):
-			- скобки, унарный плюс, унарный минус, вызов функции
-			- умножение, деление
-			- сложение, вычитание
+		The calculator supports the following operations
+	(from high priority to low priority):
+			- numbers, unary plus and minus, brackets, prefix function call.
+			- multiplication and division.
+			- binary addition and subtraction.
+			- suffix function call.
 
-			По умолчанию доступны два калькулятора: с вещественными и целыми
-	числами, соответственно omni::calc::evalf() и omni::calc::evali().
-	Эти функции эквивалентны функциям стандартной библиотеки
-	@a atof и @a atoi соответственно, но умеют выполнять простые
-	арифметические операции (не содержат функций расширения).
+		First of all, the functions omni::calc::atof() and omni::calc::atoi()
+	are enhanced equivalent of standard @a atof() and @a atoi() functions.
 
 
-@section omni_calc_func Функции расширения
-		Калькулятор поддерживает расширение произвольными функциями.
-	Пользовательская функция должна иметь следующий прототип:
+@section omni_calc_func The user functions
 
-		@code T user_func(T x) @endcode
-
-		В выражении могут быть использваны два типа функций: префиксные
-	и суффиксные. Суффиксные функции в основном используются для
-	задания единиц измерения и соответствующего масштабирования.
-	Например, выражение
+		The calculator supports the custom user prefix and suffix functions.
+	The user function should have the following prototype:
 
 @code
-"3.0 dB"
+	T user_func(T x)
 @endcode
 
-		эквивалентно выражению
+		The suffix functions are used to setup the units of the parameter.
+	For example, the following expression
 
 @code
-"dB2line(3.0)"
+	"-3.0 dB"
 @endcode
 
-		Аргумент префиксной функции всегда должен располагаться в скобках!
-	Например:
+		is equivalent to the following code:
 
 @code
-"abs(-3.0)"
+	omni::util::dB2line(-3.0);
 @endcode
 
-		Для управления набором пользовательских функций используются
-	следующие методы omni::calc::UserFuncTable::insert()
-	и omni::calc::UserFuncTable::remove().
+		The prefix function argument should be in brackets!
+
+@code
+	"abs(-3.0 - 5.0)"
+@endcode
+
+		To manipulate of set of prefix and suffix functions use the following
+	methods: omni::calc::FuncTable::insert() and omni::calc::FuncTable::remove().
 
 
-@section omni_calc_using Использование калькулятора
+@section omni_calc_using Using calculator.
+
+	TODO: translate to English
 
 		Как уже было сказано выше, калькулятор можно использовать для
 	преобразования пользовательского ввода (строки из конфигурационного
@@ -683,17 +666,17 @@ wchar_t CharConst<char>::widen(Char cx, const std::ctype<Char> &fac)
 	carrier_freq = "2.4 MHz"
 @endcode
 
-		или
+		or
 
 @code
 	simulation_time = "2*60 min"
-	carrier_freq = "2400 KHz"
+	carrier_freq = "2400 kHz"
 @endcode
 
-		или
+		or
 
 @code
-	simulation_time = "2 hour"
+	simulation_time = "2 hours"
 	carrier_freq = "2400000 Hz"
 @endcode
 
@@ -710,13 +693,13 @@ wchar_t CharConst<char>::widen(Char cx, const std::ctype<Char> &fac)
 		и добавляем соответствующие функции масштабирования
 
 @code
-	calc_sec.suffix().insert("hour", omni::calc::Multiplier<double, 60*60>());
-	calc_sec.suffix().insert("min",  omni::calc::Multiplier<double, 60>());
-	calc_sec.suffix().insert("sec",  omni::calc::Multiplier<double, 1>());
+	calc_sec.suffix().insert(L"hour", omni::calc::Multiplier<double, 60*60>());
+	calc_sec.suffix().insert(L"min",  omni::calc::Multiplier<double, 60>());
+	calc_sec.suffix().insert(L"sec",  omni::calc::Multiplier<double, 1>());
 
-	calc_Hz.suffix().insert("MHz", omni::calc::Multiplier<double, 1000000>());
-	calc_Hz.suffix().insert("KHz", omni::calc::Multiplier<double, 1000>());
-	calc_Hz.suffix().insert("Hz",  omni::calc::Multiplier<double, 1>());
+	calc_Hz.suffix().insert(L"MHz", omni::calc::Multiplier<double, 1000000>());
+	calc_Hz.suffix().insert(L"KHz", omni::calc::Multiplier<double, 1000>());
+	calc_Hz.suffix().insert(L"Hz",  omni::calc::Multiplier<double, 1>());
 @endcode
 
 	готово, можно использовать эти калькуляторы
@@ -741,11 +724,11 @@ wchar_t CharConst<char>::widen(Char cx, const std::ctype<Char> &fac)
 	при вычислении выражения могут генерироваться исключения, которые
 	неплохо было бы перехватывать.
 
-@section omni_calc_def Доступные калькуляторы
+@section omni_calc_def Available calculators
 
 	By default the following calculators are available:
 		- sci() - the scientific calculator.
-		- ratio() - the custom ratio.
+		- ratio() - the custom ratio (dB).
 		- power() - the power in watts.
 		- time() - the time in seconds.
 		- freq() - the frequency in Hertz.

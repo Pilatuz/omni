@@ -30,10 +30,10 @@ template class omni::calc::Calculator<float>;
 template class omni::calc::Calculator<long>;
 template class omni::calc::Calculator<int>;
 
-template double omni::calc::evalf(const std::wstring&);
-template double omni::calc::evalf(const std::string&);
-template long omni::calc::evali(const std::wstring&);
-template long omni::calc::evali(const std::string&);
+template double omni::calc::atof(const std::wstring&);
+template double omni::calc::atof(const std::string&);
+template long omni::calc::atoi(const std::wstring&);
+template long omni::calc::atoi(const std::string&);
 
 
 namespace {
