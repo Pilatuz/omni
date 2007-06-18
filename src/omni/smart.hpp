@@ -367,6 +367,55 @@ template<typename T> inline
 
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief Проверить два указателя на less.
+/**
+		Оператор проверяет два умных укзателя на less.
+
+@param[in] x Первый умный указатель.
+@param[in] y Второй умный указатель.
+@return @b true Если указатели не равны, иначе @b false.
+*/
+template<typename T> inline
+	bool operator<(const SharedPtr<T> &x, const SharedPtr<T> &y)
+{
+	return x.get() < y.get();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Проверить два указателя на less.
+/**
+		Оператор проверяет умный и простой укзатели на less.
+
+@param[in] x Умный указатель.
+@param[in] y Простой указатель.
+@return @b true Если указатели не равны, иначе @b false.
+*/
+template<typename T> inline
+	bool operator<(const SharedPtr<T> &x, const T *y)
+{
+	return x.get() < y;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Проверить два указателя на less.
+/**
+		Оператор проверяет простой и умный укзатели на less.
+
+@param[in] x Простой указатель.
+@param[in] y Умный указатель.
+@return @b true Если указатели не равны, иначе @b false.
+*/
+template<typename T> inline
+	bool operator<(const T *x, const SharedPtr<T> &y)
+{
+	return x < y.get();
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief Swap two smart pointers.
 template<typename T> inline
 	void swap(SharedPtr<T> &x, SharedPtr<T> &y)
