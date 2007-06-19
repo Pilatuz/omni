@@ -4936,62 +4936,85 @@ struct NConstTraits
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Итератор для списка параметров или секций
+/// @brief The iterator template class.
 /**
+		This class is used as const and non-cont iterator class for a list
+	of configuration elements and sections.
 */
 template<typename Base, typename Tr>
-class Iterator//: public std::iterator<std::random_access_iterator_tag, Val>
+class Iterator
 {
 	typedef Iterator<Base, Tr> ThisType;
-	typedef Base BaseType;   ///< @brief Базовый итератор
+	typedef Base BaseType;
 
 public: // typedefs
-	typedef std::random_access_iterator_tag iterator_category; ///< @brief Категория итератора
-	typedef ptrdiff_t difference_type; ///< @brief Расстояние между двумя итераторами
-	typedef ptrdiff_t distance_type;   ///< @brief Расстояние между двумя итераторами
-	typedef size_t size_type;          ///< @brief Смещение итератора
+	typedef typename std::iterator_traits<BaseType>::iterator_category iterator_category; ///< @brief The iterator category.
+	typedef typename std::iterator_traits<BaseType>::difference_type difference_type; ///< @brief The difference type.
 
-	typedef typename Tr::value_type value_type; ///< @brief Итерируемый элемент
-	typedef typename Tr::reference reference;  ///< @brief Ссылка на элемент
-	typedef typename Tr::pointer pointer;    ///< @brief Указатель на элемент
+	typedef typename Tr::value_type value_type; ///< @brief The value type.
+	typedef typename Tr::reference reference;   ///< @brief The reference type.
+	typedef typename Tr::pointer pointer;       ///< @brief The pointer type.
 
-
-public: // constructors
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Default constructor.
+/// @name Constructors
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The default constructor.
 	Iterator()
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Конструктор с заданием значения
-	explicit Iterator(const BaseType &x)
-		: m_base(x)
+/// @brief The main constructor.
+/**
+@param base_it The base iterator.
+*/
+	explicit Iterator(const BaseType &base_it)
+		: m_base(base_it)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вспомогательный конструктор копирования
+/// @brief The auxiliary copy constructor.
+/**
+@param other The other iterator.
+*/
 	template<typename Base2, typename Tr2>
-		Iterator(const Iterator<Base2, Tr2> &other)
-			: m_base(other.base())
-		{}
+	Iterator(const Iterator<Base2, Tr2> &other)
+		: m_base(other.base())
+	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вспомогательный оператор присваивания
+/// @brief The auxiliary assignment operator.
+/**
+@param other The other iterator.
+@return The self reference.
+*/
 	template<typename Base2, typename Tr2>
-		ThisType& operator=(const Iterator<Base2, Tr2> &other)
+	ThisType& operator=(const Iterator<Base2, Tr2> &other)
 	{
 		m_base = other.base();
 		return *this;
 	}
 
-public: // access
+/// @}
+//////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Доступ по индексу
+/// @name Access
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Access by index.
+/**
+@param i The index.
+@return The element at specified index.
+*/
 	reference operator[](difference_type i) const
 	{
 		return *m_base[i];
@@ -4999,7 +5022,10 @@ public: // access
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Разъименование итератора
+/// @brief Dereference.
+/**
+@return The object reference.
+*/
 	reference operator*() const
 	{
 		return *(*m_base);
@@ -5007,7 +5033,10 @@ public: // access
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Разъименование итератора
+/// @brief Dereference.
+/**
+@return The object pointer.
+*/
 	pointer operator->() const
 	{
 		return *m_base;
@@ -5015,16 +5044,28 @@ public: // access
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Базовый итератор
+/// @brief Get the base iterator.
+/**
+@return The base iterator.
+*/
 	const BaseType& base() const
 	{
 		return m_base;
 	}
 
-public: /// @name Инкремент и декремент
+/// @}
+//////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Префиксный инкремент
+/// @name Increment and decrement
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Prefix increment.
+/**
+@return The self reference.
+*/
 	ThisType& operator++()
 	{
 		++m_base;
@@ -5033,7 +5074,10 @@ public: /// @name Инкремент и декремент
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Префиксный декремент
+/// @brief Prefix decrement.
+/**
+@return The self reference.
+*/
 	ThisType& operator--()
 	{
 		--m_base;
@@ -5042,7 +5086,10 @@ public: /// @name Инкремент и декремент
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Постфиксный инкремент
+/// @brief Postfix increment.
+/**
+@return The incremented iterator.
+*/
 	const ThisType operator++(int)
 	{
 		return ThisType(m_base++);
@@ -5050,7 +5097,10 @@ public: /// @name Инкремент и декремент
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Постфиксный декремент
+/// @brief Postfix decrement.
+/**
+@return The decremented iterator.
+*/
 	const ThisType operator--(int)
 	{
 		return ThisType(m_base--);
@@ -5058,7 +5108,11 @@ public: /// @name Инкремент и декремент
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Смещение итератора вверх
+/// @brief Increment.
+/**
+@param d The increment distance.
+@return The self reference.
+*/
 	ThisType& operator+=(difference_type d)
 	{
 		m_base += d;
@@ -5067,112 +5121,160 @@ public: /// @name Инкремент и декремент
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Смещение итератора вниз
+/// @brief Decrement.
+/**
+@param d The decrement distance.
+@return The self reference.
+*/
 	ThisType& operator-=(difference_type d)
 	{
 		m_base -= d;
 		return *this;
 	}
 
+/// @}
+//////////////////////////////////////////////////////////////////////////
+
 private:
-	BaseType m_base; ///< @brief Базовый итератор
+	BaseType m_base; ///< @brief The base iterator.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Проверка на равенство
+/// @brief Are two iterators equal?
 /** @relates Iterator
+@param x The first iterator.
+@param y The second iterator.
+@return @b true If two iterators are equal, otherwise @b false.
 */
 template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-	bool operator==(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
+bool operator==(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
 {
 	return x.base() == y.base();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Проверка на неравенство
+/// @brief Are two iterators non-equal?
 /** @relates Iterator
+@param x The first iterator.
+@param y The second iterator.
+@return @b true If two iterators are non-equal, otherwise @b false.
 */
 template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-	bool operator!=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
+bool operator!=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
 {
 	return x.base() != y.base();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Проверка на меньше
+/// @brief Is first iterator less than second?
 /** @relates Iterator
+@param x The first iterator.
+@param y The second iterator.
+@return @b true If first iterator is less than second iterator, otherwise @b false.
 */
 template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-	bool operator<(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
+bool operator<(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
 {
 	return x.base() < y.base();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Проверка на больше
+/// @brief Is first iterator greater than second?
 /** @relates Iterator
+@param x The first iterator.
+@param y The second iterator.
+@return @b true If first iterator is greater than second iterator, otherwise @b false.
 */
 template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-	bool operator>(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
+bool operator>(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
 {
 	return x.base() > y.base();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Проверка на меньше или равно
+/// @brief Is first iterator less than or equal to second?
 /** @relates Iterator
+@param x The first iterator.
+@param y The second iterator.
+@return @b true If first iterator is less than or equal to second iterator, otherwise @b false.
 */
 template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-	bool operator<=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
+bool operator<=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
 {
 	return x.base() <= y.base();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Проверка на больше или равно
+/// @brief Is first iterator greater than or equal to second?
 /** @relates Iterator
+@param x The first iterator.
+@param y The second iterator.
+@return @b true If first iterator is greater than or equal to second iterator, otherwise @b false.
 */
 template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-	bool operator>=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
+bool operator>=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
 {
 	return x.base() >= y.base();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Смещение итератора вверх
+/// @brief Increment.
 /** @relates Iterator
+@param x The iterator.
+@param d The increment distance.
+@return The incremented iterator.
 */
 template<typename Base, typename Tr> inline
-	const Iterator<Base, Tr> operator+(const Iterator<Base, Tr> &x, ptrdiff_t d)
+const Iterator<Base, Tr> operator+(const Iterator<Base, Tr> &x, typename Iterator<Base, Tr>::difference_type d)
 {
 	return Iterator<Base, Tr>(x.base() + d);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Смещение итератора вниз
+/// @brief Increment.
 /** @relates Iterator
+@param d The increment distance.
+@param x The iterator.
+@return The incremented iterator.
 */
 template<typename Base, typename Tr> inline
-	const Iterator<Base, Tr> operator-(const Iterator<Base, Tr> &x, ptrdiff_t d)
+const Iterator<Base, Tr> operator+(typename Iterator<Base, Tr>::difference_type d, const Iterator<Base, Tr> &x)
+{
+	return Iterator<Base, Tr>(d + x.base());
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Decrement.
+/** @relates Iterator
+@param x The iterator.
+@param d The decrement distance.
+@return The decremented iterator.
+*/
+template<typename Base, typename Tr> inline
+const Iterator<Base, Tr> operator-(const Iterator<Base, Tr> &x, typename Iterator<Base, Tr>::difference_type d)
 {
 	return Iterator<Base, Tr>(x.base() - d);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Разность двух итераторов
+/// @brief Get distance between two iterators.
 /** @relates Iterator
+@param x The first iterator.
+@param y The second iterator.
+@return The distance between two iterators.
 */
-template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-	ptrdiff_t operator-(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
+template<typename Base, typename Tr> inline
+typename Iterator<Base, Tr>::difference_type operator-(const Iterator<Base, Tr> &x, const Iterator<Base, Tr> &y)
 {
 	return x.base() - y.base();
 }
