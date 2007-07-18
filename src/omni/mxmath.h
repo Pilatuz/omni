@@ -1014,8 +1014,8 @@ private:
 		}
 
 		// back trace
-		for (int j = a.N_cols()-1; 0 <= j; --j)
-			for (int i = j-1; 0 <= i; --i)
+		for (ptrdiff_t j = a.N_cols()-1; 0 <= j; --j)
+			for (ptrdiff_t i = j-1; 0 <= i; --i)
 		{
 			value_type dd = -a(i, j);
 			row_fadd(a, i, j, dd, a.N_cols()-i-1);
