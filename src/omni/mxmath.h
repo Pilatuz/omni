@@ -1559,10 +1559,10 @@ public: // abs
 	template<typename T> inline static
 		scalar<T> abs(const scalar<T> &x)
 			{ return scalar<T>(abs(x.val())); }
-	inline static double abs(double x) { return fabs(x); }
-	inline static float abs(float x) { return fabsf(x); }
-	inline static long abs(long x) { return labs(x); }
-	inline static int abs(int x) { return abs(x); }
+	inline static double abs(double x) { return ::fabs(x); }
+	inline static float abs(float x) { return ::fabsf(x); }
+	inline static long abs(long x) { return ::labs(x); }
+	inline static int abs(int x) { return ::abs(x); }
 
 public: // sqrt
 	template<typename T> inline static
@@ -1571,8 +1571,8 @@ public: // sqrt
 	template<typename T> inline static
 		scalar<T> sqrt(const scalar<T> &x)
 			{ return scalar<T>(sqrt(x.val())); }
-	inline static double sqrt(double x) { return sqrt(x); }
-	inline static float sqrt(float x) { return sqrtf(x); }
+	inline static double sqrt(double x) { return ::sqrt(x); }
+	inline static float sqrt(float x) { return ::sqrtf(x); }
 
 public: // conj value
 	template<typename T> inline static
