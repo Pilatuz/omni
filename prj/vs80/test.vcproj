@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(SolutionDir)/../../src"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_SECURE_SCL=0"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -215,11 +215,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\omni\matmath.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\omni\matmath.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\omni\matrix.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\matrix.h"
+				RelativePath="..\..\src\omni\matrix.hpp"
 				>
 			</File>
 			<File
@@ -228,10 +236,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\omni\misc.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\omni\mxmath.h"
 				>
 			</File>
 			<File
@@ -286,6 +290,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\omni\FHT.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\omni\FHT.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\omni\filter.cpp"
 					>
 				</File>
@@ -330,6 +342,28 @@
 			</File>
 			<File
 				RelativePath="..\..\src\test\conf.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\src\test\matrix.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
