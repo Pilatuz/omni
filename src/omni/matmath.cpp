@@ -11,11 +11,11 @@
 //		http://omni.sourceforge.net
 //////////////////////////////////////////////////////////////////////////
 /** @file
-	@brief The basic matrix tools.
+	@brief The matrix arithmetic.
 
 @author Sergey Polichnoy
 */
-#include <omni/matrix.hpp>
+#include <omni/matmath.hpp>
 
 namespace omni
 {

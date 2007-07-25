@@ -265,7 +265,7 @@ void Trellis::init(const poly_list &poly,
 		for (size_type k = 0; k < No; ++k)
 			obits[k] = util::parity(reg & poly[k]);
 
-		m_fwd(state, ibits) = Fwd(reg>>Ni,
+		m_fwd.at(state, ibits) = Fwd(reg>>Ni,
 			bi2de(obits.begin(), No));
 	}
 
@@ -332,7 +332,7 @@ void Trellis::init(const poly_list &ipoly,
 		for (size_type k = 0; k < No; ++k)
 			obits[k] ^= util::parity(reg & opoly2[k]);
 
-		m_fwd(state, n) = Fwd(reg>>1,
+		m_fwd.at(state, n) = Fwd(reg>>1,
 			bi2de(obits.begin(), No));
 	}
 
@@ -360,7 +360,7 @@ void Trellis::post_init()
 		for (bits_type ibits = 0; ibits < Ni_len; ++ibits)
 	{
 		const state_type n = fwd(state, ibits).state;
-		m_bwd(counter[n], n) = Bwd(state, ibits);
+		m_bwd.at(counter[n], n) = Bwd(state, ibits);
 		counter[n] += 1;
 
 		assert(counter[n] <= Ni_len
@@ -463,7 +463,7 @@ Trellis::Trellis(const Trellis &x, const Rep &p)
 			next_state = x.fwd(next_state, ibits_).state;
 		}
 
-		m_fwd(state, ibits) = Fwd(next_state, obits);
+		m_fwd.at(state, ibits) = Fwd(next_state, obits);
 	}
 
 	post_init();
@@ -548,7 +548,7 @@ Trellis::Trellis(const Trellis &x, const Cut &p)
 				obits = ((obits>>1)&l_mask) | (obits&r_mask);
 			}
 
-		m_fwd(state, ibits) = Fwd(x.fwd(state, ibits).state, obits);
+		m_fwd.at(state, ibits) = Fwd(x.fwd(state, ibits).state, obits);
 	}
 
 	post_init();
@@ -634,7 +634,7 @@ Trellis::Trellis(const Trellis &x, const Sys &p)
 			? (xobits << p.Nsys) | sbits
 			: (sbits << xNo) | xobits;
 
-		m_fwd(state, ibits) = Fwd(x.fwd(state, xibits).state, obits);
+		m_fwd.at(state, ibits) = Fwd(x.fwd(state, xibits).state, obits);
 	}
 
 	post_init();
@@ -1151,9 +1151,9 @@ Trellis::Bwd::Bwd()
 */
 const Trellis::Fwd& Trellis::fwd(state_type state, bits_type ibits) const
 {
-	assert(state < m_fwd.N_rows() && "invalid state");
-	assert(ibits < m_fwd.N_cols() && "invalid input bits");
-	return m_fwd(state, ibits);
+	assert(state < m_fwd.Nrows() && "invalid state");
+	assert(ibits < m_fwd.Ncols() && "invalid input bits");
+	return m_fwd.at(state, ibits);
 }
 
 
@@ -1169,9 +1169,9 @@ const Trellis::Fwd& Trellis::fwd(state_type state, bits_type ibits) const
 */
 const Trellis::Bwd& Trellis::bwd(state_type state, size_type n) const
 {
-	assert(state < m_bwd.N_cols() && "invalid state");
-	assert(n < m_bwd.N_rows() && "invalid transition number");
-	return m_bwd(n, state);
+	assert(state < m_bwd.Ncols() && "invalid state");
+	assert(n < m_bwd.Nrows() && "invalid transition number");
+	return m_bwd.at(n, state);
 }
 
 
@@ -1327,7 +1327,7 @@ ConvCodec::BranchMetrics::BranchMetrics(size_type length, size_type Nbits)
 */
 double ConvCodec::BranchMetrics::operator()(size_type k, size_type bits) const
 {
-	return m_metrics(bits, k);
+	return m_metrics.at(bits, k);
 }
 
 
@@ -1343,7 +1343,7 @@ double ConvCodec::BranchMetrics::operator()(size_type k, size_type bits) const
 */
 double& ConvCodec::BranchMetrics::operator()(size_type k, size_type bits)
 {
-	return m_metrics(bits, k);
+	return m_metrics.at(bits, k);
 }
 
 
@@ -1356,7 +1356,7 @@ double& ConvCodec::BranchMetrics::operator()(size_type k, size_type bits)
 */
 ConvCodec::size_type ConvCodec::BranchMetrics::length() const
 {
-	return m_metrics.N_cols();
+	return m_metrics.Ncols();
 }
 
 
@@ -1430,12 +1430,12 @@ void ConvCodec::viterbi_iteration(const BranchMetrics &bm,
 			if (metric0 < metric1)
 			{
 				metrics_[state] = metric1;
-				path(state, k) = prev1;
+				path.at(state, k) = prev1;
 			}
 			else
 			{
 				metrics_[state] = metric0;
-				path(state, k) = prev0;
+				path.at(state, k) = prev0;
 			}
 		}
 
@@ -1484,7 +1484,7 @@ void ConvCodec::viterbi_iteration(const BranchMetrics &bm,
 
 			// store max metric
 			metrics_[state] = max_metric;
-			path(state, k) = Trellis::Bwd(max_state, max_ibits);
+			path.at(state, k) = Trellis::Bwd(max_state, max_ibits);
 		}
 
 		// apply new metrics
@@ -1502,10 +1502,10 @@ void ConvCodec::trace_back(const XPathMem &path, state_type state, bit_vector &o
 	assert(!m_X_trellis.empty() && "invalid fast trellis");
 
 	bit_vector::reverse_iterator out_it = out.rbegin();
-	for (ptrdiff_t k = path.N_cols()-1; 0 <= k; --k)
+	for (ptrdiff_t k = path.Ncols()-1; 0 <= k; --k)
 	{
 		*out_it = bit_vector::value_type(state >> SHIFT);
-		state = path(state, k);
+		state = path.at(state, k);
 		++out_it;
 	}
 }
@@ -1520,9 +1520,9 @@ void ConvCodec::trace_back(const PathMem &path, state_type state, bit_vector &ou
 	assert(m_X_trellis.empty() && "use fast trellis");
 
 	bit_vector::iterator out_it = out.begin() + out.size() - Ni;
-	for (ptrdiff_t k = path.N_cols()-1; 0 <= k; --k)
+	for (ptrdiff_t k = path.Ncols()-1; 0 <= k; --k)
 	{
-		const Trellis::Bwd &item = path(state, k);
+		const Trellis::Bwd &item = path.at(state, k);
 		const state_type prev = item.state;
 		const bits_type ibits = item.ibits;
 
@@ -1538,8 +1538,8 @@ void ConvCodec::trace_back(const PathMem &path, state_type state, bit_vector &ou
 // find start state
 ConvCodec::state_type ConvCodec::find_start_state(const XPathMem &path, state_type state)
 {
-	for (ptrdiff_t k = path.N_cols()-1; 0 <= k; --k)
-		state = path(state, k);
+	for (ptrdiff_t k = path.Ncols()-1; 0 <= k; --k)
+		state = path.at(state, k);
 
 	return state;
 }
@@ -1549,8 +1549,8 @@ ConvCodec::state_type ConvCodec::find_start_state(const XPathMem &path, state_ty
 // find start state
 ConvCodec::state_type ConvCodec::find_start_state(const PathMem &path, state_type state)
 {
-	for (ptrdiff_t k = path.N_cols()-1; 0 <= k; --k)
-		state = path(state, k).state;
+	for (ptrdiff_t k = path.Ncols()-1; 0 <= k; --k)
+		state = path.at(state, k).state;
 
 	return state;
 }

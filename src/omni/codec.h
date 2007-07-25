@@ -19,7 +19,7 @@
 #ifndef __OMNI_CODEC_H_
 #define __OMNI_CODEC_H_
 
-#include <omni/matrix.h>
+#include <omni/matrix.hpp>
 #include <omni/util.hpp>
 
 #include <assert.h>
@@ -214,8 +214,8 @@ private: // initialization
 
 private: // properties
 
-	mx::matrix<Fwd> m_fwd;  // forward matrix
-	mx::matrix<Bwd> m_bwd;  // backward matrix
+	mx::Matrix<Fwd> m_fwd;  // forward matrix
+	mx::Matrix<Bwd> m_bwd;  // backward matrix
 
 	size_type m_N_states; // number of states
 	size_type m_N_ibits;  // number of uncoded bits (input)
@@ -340,7 +340,7 @@ public:
 		size_type length() const;
 
 	private:
-		mx::matrix<double> m_metrics;
+		mx::Matrix<double> m_metrics;
 	};
 
 public: // decoding
@@ -418,8 +418,8 @@ private:
 	typedef std::vector<int,    pool::Allocator<int> >       bit_vector;
 
 	// TODO: matrix row/column major adaptation
-	typedef mx::matrix<state_type>  XPathMem;
-	typedef mx::matrix<Trellis::Bwd> PathMem;
+	typedef mx::Matrix<state_type>  XPathMem;
+	typedef mx::Matrix<Trellis::Bwd> PathMem;
 
 	// decode tail
 	template<typename PM, typename Out>
