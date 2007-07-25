@@ -71,7 +71,6 @@ template<typename T, typename CF>
 			{
 				m_xbuf[m_wpos] = x;
 
-				size_type wpos = m_wpos;
 				if (0 == m_wpos)
 					m_wpos = N-1;
 				else

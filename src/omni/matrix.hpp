@@ -258,14 +258,14 @@ public:
 
 //////////////////////////////////////////////////////////////////////////
 	template<typename OP, typename T1>
-	explicit Vector(const details::UnVExpr<OP,T1> &expr)
+	/*explicit */Vector(const details::UnVExpr<OP,T1> &expr)
 	{
 		expr(*this);
 	}
 
 //////////////////////////////////////////////////////////////////////////
 	template<typename OP, typename T1, typename T2>
-	explicit Vector(const details::BiVExpr<OP,T1,T2> &expr)
+	/*explicit */Vector(const details::BiVExpr<OP,T1,T2> &expr)
 	{
 		expr(*this);
 	}
@@ -400,14 +400,14 @@ public:
 
 //////////////////////////////////////////////////////////////////////////
 	template<typename OP, typename T1>
-	explicit Matrix(const details::UnMExpr<OP,T1> &expr)
+	/*explicit */Matrix(const details::UnMExpr<OP,T1> &expr)
 	{
 		expr(*this);
 	}
 
 //////////////////////////////////////////////////////////////////////////
 	template<typename OP, typename T1, typename T2>
-	explicit Matrix(const details::BiMExpr<OP,T1,T2> &expr)
+	/*explicit */Matrix(const details::BiMExpr<OP,T1,T2> &expr)
 	{
 		expr(*this);
 	}
