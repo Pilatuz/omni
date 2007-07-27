@@ -4161,6 +4161,8 @@ protected: /// @name Разбор потока ввода
 					break;
 				}
 			}
+			else if (ChConst::is_delim(cx))
+				is.ignore();
 		}
 
 		if (!section_closed) // meta data section must be closed
