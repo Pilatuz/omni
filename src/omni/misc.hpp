@@ -22,8 +22,11 @@
 
 #include <omni/defs.hpp>
 
+#include <vector>
+
 namespace omni
 {
+	// Timer
 	namespace misc
 	{
 
@@ -78,7 +81,122 @@ private:
 	        tick_type m_interval;
 };
 
-	} // misc namespace
+	} // Timer
+
+
+	// Events
+	namespace misc
+	{
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The Events template class.
+template<typename HANDLER, typename AL = std::allocator<HANDLER*> >
+class Events {
+	typedef std::vector<HANDLER*, AL> ListType;
+
+public:
+	typedef Events<HANDLER, AL> this_type;
+	typedef HANDLER handler_type;
+
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Insert new events handler.
+	void insert(handler_type &handler)
+	{
+		m_handlers.push_back(&handler);
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Remove existing events handler.
+	bool remove(handler_type &handler)
+	{
+		typename ListType::reverse_iterator i = m_handlers.rbegin();
+		typename ListType::reverse_iterator ie = m_handlers.rend();
+
+		for (; i != ie; ++i)
+			if (*i == &handler)
+		{
+			m_handlers.erase(i.base()-1);
+			return true;
+		}
+
+		return false;
+	}
+
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Insert new events handler.
+	this_type& operator+=(handler_type &handler)
+	{
+		insert(handler);
+		return *this;
+	}
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Remove existing events handler.
+	this_type& operator-=(handler_type &handler)
+	{
+		remove(handler);
+		return *this;
+	}
+
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Emit event (no arguments).
+	void emit(void (HANDLER::*f)()) const
+	{
+		typename ListType::const_iterator i = m_handlers.begin();
+		typename ListType::const_iterator ie = m_handlers.end();
+
+		for (; i != ie; ++i)
+			((*i)->*f)();
+	}
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Emit event (one argument).
+	template<typename A1>
+		void emit(void (HANDLER::*f)(A1), A1 a1) const
+	{
+		typename ListType::const_iterator i = m_handlers.begin();
+		typename ListType::const_iterator ie = m_handlers.end();
+
+		for (; i != ie; ++i)
+			((*i)->*f)(a1);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Emit event (two arguments).
+	template<typename A1, typename A2>
+		void emit(void (HANDLER::*f)(A1, A2), A1 a1, A2 a2) const
+	{
+		typename ListType::const_iterator i = m_handlers.begin();
+		typename ListType::const_iterator ie = m_handlers.end();
+
+		for (; i != ie; ++i)
+			((*i)->*f)(a1, a2);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Emit event (three arguments).
+	template<typename A1, typename A2, typename A3>
+		void emit(void (HANDLER::*f)(A1, A2, A3), A1 a1, A2 a2, A3 a3) const
+	{
+		typename ListType::const_iterator i = m_handlers.begin();
+		typename ListType::const_iterator ie = m_handlers.end();
+
+		for (; i != ie; ++i)
+			((*i)->*f)(a1, a2, a3);
+	}
+
+private:
+	ListType m_handlers;
+};
+
+	} // Events
 } // omni namespace
 
 #endif // __OMNI_MISC_HPP_
