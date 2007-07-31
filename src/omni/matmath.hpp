@@ -1280,6 +1280,10 @@ template<typename X, typename Y>
 			template<typename Tr>
 				class Eye;
 			class Diag;
+			class VCat;
+			class HCat;
+			class SubMat;
+			class RepMat;
 
 			class Negate;
 			class Trans;
@@ -1361,6 +1365,615 @@ inline details::UnMExpr<details::Eye<details::ValueTraits>,size_t> eye(const siz
 	{ return eye(size, details::ValueTraits()); }
 
 	} // Eye
+
+
+	// Diag
+	namespace mx
+	{
+		namespace details
+		{
+
+//////////////////////////////////////////////////////////////////////////
+// Diag class
+class Diag {
+public: // matrix = diag(vector)
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const std::vector<TX,AX> &x)
+	{
+		const size_t N = x.size();
+
+		z.assign(N, N, TZ());
+		for (size_t i = 0; i < N; ++i)
+			z.at(i, i) = x[i];
+
+		return z;
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnVExpr<X_OP,X_T1> &x)
+	{
+		return eval(z, Vector<TZ,AZ>(x));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiVExpr<X_OP,X_T1,X_T2> &x)
+	{
+		return eval(z, Vector<TZ,AZ>(x));
+	}
+
+public: // vector = diag(matrix)
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX>
+	static Vector<TZ,AZ>& eval(Vector<TZ,AZ> &z, const Matrix<TX,AX> &x)
+	{
+		// assert(is_square(x) && "matrix must be square");
+		const size_t N = (x.Nrows() < x.Ncols()) ? x.Nrows() : x.Ncols();
+
+		z.resize(N);
+		for (size_t i = 0; i < N; ++i)
+			z[i] = x.at(i, i);
+
+		return z;
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1>
+	static Vector<TZ,AZ>& eval(Vector<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x)
+	{
+		return eval(z, Matrix<TZ,AZ>(x));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2>
+	static Vector<TZ,AZ>& eval(Vector<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x)
+	{
+		return eval(z, Matrix<TZ,AZ>(x));
+	}
+};
+		} // details
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX> inline
+details::UnMExpr<details::Diag,std::vector<TX,AX> > diag(const std::vector<TX,AX> &x)
+	{ return details::make_Mexpr< details::Diag >(x); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1> inline
+details::UnMExpr<details::Diag,details::UnVExpr<X_OP,X_T1> > diag(const details::UnVExpr<X_OP,X_T1> &x)
+	{ return details::make_Mexpr< details::Diag >(x); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2> inline
+details::UnMExpr<details::Diag,details::BiVExpr<X_OP,X_T1,X_T2> > diag(const details::BiVExpr<X_OP,X_T1,X_T2> &x)
+	{ return details::make_Mexpr< details::Diag >(x); }
+
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX> inline
+details::UnVExpr<details::Diag,Matrix<TX,AX> > diag(const Matrix<TX,AX> &x)
+	{ return details::make_Vexpr< details::Diag >(x); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1> inline
+details::UnVExpr<details::Diag,details::UnMExpr<X_OP,X_T1> > diag(const details::UnMExpr<X_OP,X_T1> &x)
+	{ return details::make_Vexpr< details::Diag >(x); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2> inline
+details::UnVExpr<details::Diag,details::BiMExpr<X_OP,X_T1,X_T2> > diag(const details::BiMExpr<X_OP,X_T1,X_T2> &x)
+	{ return details::make_Vexpr< details::Diag >(x); }
+
+	} // Diag
+
+
+	// VCat
+	namespace mx
+	{
+		namespace details
+		{
+
+//////////////////////////////////////////////////////////////////////////
+// VCat class
+class VCat {
+public:
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX, typename TY, typename AY>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const Matrix<TY,AY> &y)
+	{
+		assert(x.Ncols() == y.Ncols() && "number of columns should be the same");
+
+		if (ref_equal(z, x))
+		{
+			if (ref_equal(z, y))
+			{
+				const Matrix<TZ,AZ> t(z);
+				return do_vcat(z, t, t);
+			}
+			else
+				return do_vcat(z, Matrix<TX,AX>(x), y);
+		}
+		else if (ref_equal(z, y))
+			return do_vcat(z, x, Matrix<TY,AY>(y));
+		else
+			return do_vcat(z, x, y);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX, typename Y_OP, typename Y_T1>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const UnMExpr<Y_OP,Y_T1> &y)
+	{
+		return eval(z, x, Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX, typename Y_OP, typename Y_T1, typename Y_T2>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{
+		return eval(z, x, Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename TY, typename AY>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x, const Matrix<TY,AY> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), y);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename Y_OP, typename Y_T1>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x, const UnMExpr<Y_OP,Y_T1> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename Y_OP, typename Y_T1, typename Y_T2>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x, const BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2, typename TY, typename AY>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x, const Matrix<TY,AY> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), y);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2, typename Y_OP, typename Y_T1>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x, const UnMExpr<Y_OP,Y_T1> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2, typename Y_OP, typename Y_T1, typename Y_T2>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x, const BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), Matrix<TZ,AZ>(y));
+	}
+
+private:
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX, typename TY, typename AY>
+	static Matrix<TZ,AZ>& do_vcat(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const Matrix<TY,AY> &y)
+	{
+		z.resize(x.Nrows()+y.Nrows(), x.Ncols());
+
+		for (size_t j = 0; j < z.Ncols(); ++j)
+		{
+			for (size_t i = 0; i < x.Nrows(); ++i)
+				z.at(i,j) = x.at(i,j);
+
+			for (size_t i = 0; i < y.Nrows(); ++i)
+				z.at(i+x.Nrows(),j) = y.at(i,j);
+		}
+
+		return z;
+	}
+};
+
+		} // details
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX, typename TY, typename AY> inline
+details::BiMExpr<details::VCat, Matrix<TX,AX>, Matrix<TY,AY> > vcat(const Matrix<TX,AX> &x, const Matrix<TY,AY> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX, typename Y_OP, typename Y_T1> inline
+details::BiMExpr<details::VCat, Matrix<TX,AX>, details::UnMExpr<Y_OP,Y_T1> > vcat(const Matrix<TX,AX> &x, const details::UnMExpr<Y_OP,Y_T1> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX, typename Y_OP, typename Y_T1, typename Y_T2> inline
+details::BiMExpr<details::VCat, Matrix<TX,AX>, details::BiMExpr<Y_OP,Y_T1,Y_T2> > vcat(const Matrix<TX,AX> &x, const details::BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename TY, typename AY> inline
+details::BiMExpr<details::VCat, details::UnMExpr<X_OP,X_T1>, Matrix<TY,AY> > vcat(const details::UnMExpr<X_OP,X_T1> &x, const Matrix<TY,AY> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename Y_OP, typename Y_T1> inline
+details::BiMExpr<details::VCat, details::UnMExpr<X_OP,X_T1>, details::UnMExpr<Y_OP,Y_T1> > vcat(const details::UnMExpr<X_OP,X_T1> &x, const details::UnMExpr<Y_OP,Y_T1> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename Y_OP, typename Y_T1, typename Y_T2> inline
+details::BiMExpr<details::VCat, details::UnMExpr<X_OP,X_T1>, details::BiMExpr<Y_OP,Y_T1,Y_T2> > vcat(const details::UnMExpr<X_OP,X_T1> &x, const details::BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2, typename TY, typename AY> inline
+details::BiMExpr<details::VCat, details::BiMExpr<X_OP,X_T1,X_T2>, Matrix<TY,AY> > vcat(const details::BiMExpr<X_OP,X_T1,X_T2> &x, const Matrix<TY,AY> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2, typename Y_OP, typename Y_T1> inline
+details::BiMExpr<details::VCat, details::BiMExpr<X_OP,X_T1,X_T2>, details::UnMExpr<Y_OP,Y_T1> > vcat(const details::BiMExpr<X_OP,X_T1,X_T2> &x, const details::UnMExpr<Y_OP,Y_T1> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2, typename Y_OP, typename Y_T1, typename Y_T2> inline
+details::BiMExpr<details::VCat, details::BiMExpr<X_OP,X_T1,X_T2>, details::BiMExpr<Y_OP,Y_T1,Y_T2> > vcat(const details::BiMExpr<X_OP,X_T1,X_T2> &x, const details::BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{ return details::make_Mexpr<details::VCat>(x, y); }
+
+	} // VCat
+
+
+	// HCat
+	namespace mx
+	{
+		namespace details
+		{
+
+//////////////////////////////////////////////////////////////////////////
+// HCat class
+class HCat {
+public:
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX, typename TY, typename AY>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const Matrix<TY,AY> &y)
+	{
+		assert(x.Nrows() == y.Nrows() && "number of rows should be the same");
+
+		if (ref_equal(z, x))
+		{
+			if (ref_equal(z, y))
+			{
+				const Matrix<TZ,AZ> t(z);
+				return do_hcat(z, t, t);
+			}
+			else
+				return do_hcat(z, Matrix<TX,AX>(x), y);
+		}
+		else if (ref_equal(z, y))
+			return do_hcat(z, x, Matrix<TY,AY>(y));
+		else
+			return do_hcat(z, x, y);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX, typename Y_OP, typename Y_T1>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const UnMExpr<Y_OP,Y_T1> &y)
+	{
+		return eval(z, x, Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX, typename Y_OP, typename Y_T1, typename Y_T2>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{
+		return eval(z, x, Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename TY, typename AY>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x, const Matrix<TY,AY> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), y);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename Y_OP, typename Y_T1>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x, const UnMExpr<Y_OP,Y_T1> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename Y_OP, typename Y_T1, typename Y_T2>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x, const BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2, typename TY, typename AY>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x, const Matrix<TY,AY> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), y);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2, typename Y_OP, typename Y_T1>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x, const UnMExpr<Y_OP,Y_T1> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), Matrix<TZ,AZ>(y));
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2, typename Y_OP, typename Y_T1, typename Y_T2>
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x, const BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), Matrix<TZ,AZ>(y));
+	}
+
+private:
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX, typename TY, typename AY>
+	static Matrix<TZ,AZ>& do_hcat(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const Matrix<TY,AY> &y)
+	{
+		z.resize(x.Nrows(), x.Ncols()+y.Ncols());
+
+		for (size_t i = 0; i < z.Nrows(); ++i)
+		{
+			for (size_t j = 0; j < x.Ncols(); ++j)
+				z.at(i,j) = x.at(i,j);
+
+			for (size_t j = 0; j < y.Ncols(); ++j)
+				z.at(i,j+x.Ncols()) = y.at(i,j);
+		}
+
+		return z;
+	}
+};
+
+		} // details
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX, typename TY, typename AY> inline
+details::BiMExpr<details::HCat, Matrix<TX,AX>, Matrix<TY,AY> > hcat(const Matrix<TX,AX> &x, const Matrix<TY,AY> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX, typename Y_OP, typename Y_T1> inline
+details::BiMExpr<details::HCat, Matrix<TX,AX>, details::UnMExpr<Y_OP,Y_T1> > hcat(const Matrix<TX,AX> &x, const details::UnMExpr<Y_OP,Y_T1> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX, typename Y_OP, typename Y_T1, typename Y_T2> inline
+details::BiMExpr<details::HCat, Matrix<TX,AX>, details::BiMExpr<Y_OP,Y_T1,Y_T2> > hcat(const Matrix<TX,AX> &x, const details::BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename TY, typename AY> inline
+details::BiMExpr<details::HCat, details::UnMExpr<X_OP,X_T1>, Matrix<TY,AY> > hcat(const details::UnMExpr<X_OP,X_T1> &x, const Matrix<TY,AY> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename Y_OP, typename Y_T1> inline
+details::BiMExpr<details::HCat, details::UnMExpr<X_OP,X_T1>, details::UnMExpr<Y_OP,Y_T1> > hcat(const details::UnMExpr<X_OP,X_T1> &x, const details::UnMExpr<Y_OP,Y_T1> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename Y_OP, typename Y_T1, typename Y_T2> inline
+details::BiMExpr<details::HCat, details::UnMExpr<X_OP,X_T1>, details::BiMExpr<Y_OP,Y_T1,Y_T2> > hcat(const details::UnMExpr<X_OP,X_T1> &x, const details::BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2, typename TY, typename AY> inline
+details::BiMExpr<details::HCat, details::BiMExpr<X_OP,X_T1,X_T2>, Matrix<TY,AY> > hcat(const details::BiMExpr<X_OP,X_T1,X_T2> &x, const Matrix<TY,AY> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2, typename Y_OP, typename Y_T1> inline
+details::BiMExpr<details::HCat, details::BiMExpr<X_OP,X_T1,X_T2>, details::UnMExpr<Y_OP,Y_T1> > hcat(const details::BiMExpr<X_OP,X_T1,X_T2> &x, const details::UnMExpr<Y_OP,Y_T1> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2, typename Y_OP, typename Y_T1, typename Y_T2> inline
+details::BiMExpr<details::HCat, details::BiMExpr<X_OP,X_T1,X_T2>, details::BiMExpr<Y_OP,Y_T1,Y_T2> > hcat(const details::BiMExpr<X_OP,X_T1,X_T2> &x, const details::BiMExpr<Y_OP,Y_T1,Y_T2> &y)
+	{ return details::make_Mexpr<details::HCat>(x, y); }
+
+	} // HCat
+
+
+	// SubMat
+	namespace mx
+	{
+		namespace details
+		{
+
+//////////////////////////////////////////////////////////////////////////
+// SubMat class
+class SubMat {
+public:
+
+	// coordinates
+	class Coord {
+	public:
+		Coord(size_t r, size_t c, size_t Nr, size_t Nc)
+			: row(r), col(c), Nrows(Nr), Ncols(Nc)
+		{}
+
+	public:
+		size_t row;
+		size_t col;
+		size_t Nrows;
+		size_t Ncols;
+	};
+
+public:
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX> inline
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const Coord &y)
+	{
+		assert(y.row < x.Nrows() && "invalid start row index");
+		assert(y.row+y.Nrows < x.Nrows() && "invalid number of rows");
+		assert(y.col < x.Ncols() && "invalid start column index");
+		assert(y.col+y.Ncols < x.Ncols() && "invalid number of columns");
+
+		if (ref_equal(z, x))
+			return do_submat(z, Matrix<TX,AX>(x));
+		else
+			return do_submat(z, x);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1> inline
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x, const Coord &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), y);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2> inline
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x, const Coord &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), y);
+	}
+
+private:
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX>
+	static Matrix<TZ,AZ>& do_submat(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const Coord &y)
+	{
+		z.resize(y.Nrows, y.Ncols);
+
+		for (size_t i = 0; i < z.Nrows(); ++i)
+			for (size_t j = 0; j < z.Ncols(); ++j)
+				z.at(i, j) = x.at(i+y.row, j+y.col);
+
+		return z;
+	}
+
+};
+
+		} // details
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX> inline
+details::BiMExpr<details::SubMat, Matrix<TX,AX>, details::SubMat::Coord> submat(const Matrix<TX,AX> &x, size_t row, size_t col, size_t Nrows, size_t Ncols)
+	{ return details::make_Mexpr<details::SubMat>(x, details::SubMat::Coord(row, col, Nrows, Ncols)); };
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1> inline
+details::BiMExpr<details::SubMat, details::UnMExpr<X_OP,X_T1>, details::SubMat::Coord> submat(const details::UnMExpr<X_OP,X_T1> &x, size_t row, size_t col, size_t Nrows, size_t Ncols)
+	{ return details::make_Mexpr<details::SubMat>(x, details::SubMat::Coord(row, col, Nrows, Ncols)); };
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2> inline
+details::BiMExpr<details::SubMat, details::BiMExpr<X_OP,X_T1,X_T2>, details::SubMat::Coord> submat(const details::BiMExpr<X_OP,X_T1,X_T2> &x, size_t row, size_t col, size_t Nrows, size_t Ncols)
+	{ return details::make_Mexpr<details::SubMat>(x, details::SubMat::Coord(row, col, Nrows, Ncols)); };
+
+	} // SubMat
+
+
+	// RepMat
+	namespace mx
+	{
+		namespace details
+		{
+
+//////////////////////////////////////////////////////////////////////////
+// RepMat class
+class RepMat {
+public:
+
+	// coordinates
+	class Coord {
+	public:
+		Coord(size_t Xr, size_t Xc)
+			: Xrows(Xr), Xcols(Xc)
+		{}
+
+	public:
+		size_t Xrows;
+		size_t Xcols;
+	};
+
+public:
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX> inline
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const Coord &y)
+	{
+		if (ref_equal(z, x))
+			return do_repmat(z, Matrix<TX,AX>(x));
+		else
+			return do_repmat(z, x);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1> inline
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const UnMExpr<X_OP,X_T1> &x, const Coord &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), y);
+	}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename X_OP, typename X_T1, typename X_T2> inline
+	static Matrix<TZ,AZ>& eval(Matrix<TZ,AZ> &z, const BiMExpr<X_OP,X_T1,X_T2> &x, const Coord &y)
+	{
+		return eval(z, Matrix<TZ,AZ>(x), y);
+	}
+
+private:
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename TZ, typename AZ, typename TX, typename AX>
+	static Matrix<TZ,AZ>& do_repmat(Matrix<TZ,AZ> &z, const Matrix<TX,AX> &x, const Coord &y)
+	{
+		z.resize(x.Nrows()*y.Xrows, x.Ncols()*y.Xcols);
+
+		for (size_t i = 0; i < x.Nrows(); ++i)
+			for (size_t j = 0; j < x.Ncols(); ++j)
+		{
+			const TX &val = x.at(i, j);
+
+			for (size_t xi = 0; xi < y.Xrows; ++xi)
+				for (size_t xj = 0; xj < y.Ncols; ++xj)
+					z.at(xi*x.Nrows() + i, xj*x.Ncols() + j) = val;
+		}
+
+		return z;
+	}
+
+};
+
+		} // details
+
+//////////////////////////////////////////////////////////////////////////
+template<typename TX, typename AX> inline
+details::BiMExpr<details::RepMat, Matrix<TX,AX>, details::RepMat::Coord> repmat(const Matrix<TX,AX> &x, size_t row, size_t col, size_t Nrows, size_t Ncols)
+	{ return details::make_Mexpr<details::RepMat>(x, details::RepMat::Coord(row, col, Nrows, Ncols)); };
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1> inline
+details::BiMExpr<details::RepMat, details::UnMExpr<X_OP,X_T1>, details::RepMat::Coord> repmat(const details::UnMExpr<X_OP,X_T1> &x, size_t row, size_t col, size_t Nrows, size_t Ncols)
+	{ return details::make_Mexpr<details::RepMat>(x, details::RepMat::Coord(row, col, Nrows, Ncols)); };
+
+//////////////////////////////////////////////////////////////////////////
+template<typename X_OP, typename X_T1, typename X_T2> inline
+details::BiMExpr<details::RepMat, details::BiMExpr<X_OP,X_T1,X_T2>, details::RepMat::Coord> repmat(const details::BiMExpr<X_OP,X_T1,X_T2> &x, size_t row, size_t col, size_t Nrows, size_t Ncols)
+	{ return details::make_Mexpr<details::RepMat>(x, details::RepMat::Coord(row, col, Nrows, Ncols)); };
+
+	} // RepMat
 
 
 	// Negate
