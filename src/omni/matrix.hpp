@@ -231,6 +231,12 @@ public:
 
 //////////////////////////////////////////////////////////////////////////
 	template<typename T2, typename A2>
+	Vector(const std::vector<T2,A2> &other)
+		: inherited(other.begin(), other.end())
+	{}
+
+//////////////////////////////////////////////////////////////////////////
+	template<typename T2, typename A2>
 	Vector(const Vector<T2,A2> &other)
 		: inherited(other.begin(), other.end())
 	{}
