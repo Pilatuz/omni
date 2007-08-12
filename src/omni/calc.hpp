@@ -1263,6 +1263,9 @@ template<typename T, typename Ch, typename Tr>
 			else // prefix function call
 			{
 				std::wstring func_name = get_func_name(is);
+				if (!calculator.prefix().exists(func_name))
+					throw err::UnknownFunctionCall(func_name);
+
 				if (!func_name.empty())
 				{
 					// find open bracket
