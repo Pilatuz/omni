@@ -97,8 +97,8 @@ const Calculator<double>& sci()
 			calculator.prefix().insert(L"ceil", UserFunc<double>(ceil));
 			calculator.prefix().insert(L"abs", UserFunc<double>(fabs));
 
-			calculator.suffix().insert(L"degr", UserFunc<double>(util::deg2rad));
-			calculator.suffix().insert(L"deg", UserFunc<double>(util::deg2rad));
+			calculator.suffix().insert(L"degr", UserFunc<double>(omni::util::deg2rad));
+			calculator.suffix().insert(L"deg", UserFunc<double>(omni::util::deg2rad));
 
 			return calculator;
 		}
@@ -131,7 +131,7 @@ const Calculator<double>& ratio()
 		{
 			Calculator<double> calculator;
 
-			calculator.suffix().insert(L"dB", UserFunc<double>(util::dB2line));
+			calculator.suffix().insert(L"dB", UserFunc<double>(omni::util::dB2line));
 
 			return calculator;
 		}
@@ -175,8 +175,8 @@ const Calculator<double>& power()
 			calculator.suffix().insert(L"W",  Multiplier<double, 1L>());
 			calculator.suffix().insert(L"mW", Divider<double, 1000L>());
 			calculator.suffix().insert(L"uW", Divider<double, 1000000L>());
-			calculator.suffix().insert(L"dBm", UserFunc<double>(util::dBm2watt));
-			calculator.suffix().insert(L"dBW", UserFunc<double>(util::dB2line));
+			calculator.suffix().insert(L"dBm", UserFunc<double>(omni::util::dBm2watt));
+			calculator.suffix().insert(L"dBW", UserFunc<double>(omni::util::dB2line));
 
 			return calculator;
 		}
