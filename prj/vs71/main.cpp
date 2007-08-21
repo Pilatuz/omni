@@ -38,6 +38,10 @@ int main()
 
 		omni::rnd::randomize();
 		omni::test::UnitTest::testAll(std::cout);
+		//if (!test_matrix(std::cout))
+		//	std::cout << "test failed\n";
+		//else
+		//	std::cout << "OK\n";
 
 #if !OMNI_DEBUG
 		omni::test::SpeedTest::testAll(std::cout);
