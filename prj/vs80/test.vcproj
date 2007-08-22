@@ -231,6 +231,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\omni\rand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\omni\rand.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\omni\smart.cpp"
 				>
 			</File>
