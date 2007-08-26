@@ -72,7 +72,7 @@ public:
 @param last End of the sequence.
 */
 	template<typename In>
-		ModulationMap(In first, In last)
+	ModulationMap(In first, In last)
 	{
 		init(first, last);
 	}
@@ -168,6 +168,14 @@ public:
 	static ModulationMap QAM(size_type map_size);
 
 
+//////////////////////////////////////////////////////////////////////////
+/// @name Auxiliary
+public:
+
+	/// @brief Swap the two modulation maps.
+	void swap(ModulationMap &other);
+
+
 private:
 
 //////////////////////////////////////////////////////////////////////////
@@ -182,7 +190,7 @@ private:
 @param last End of the sequence.
 */
 	template<typename In>
-		void init(In first, In last)
+	void init(In first, In last)
 	{
 		const size_type N = std::distance(first, last);
 		assert(2<=N && "modulation map size should be >= 2");

@@ -106,6 +106,19 @@ ModulationMap ModulationMap::QAM(size_type map_size)
 
 //////////////////////////////////////////////////////////////////////////
 /**
+		This method swaps the modulation maps.
+
+@param other The other modulation map.
+*/
+void ModulationMap::swap(ModulationMap &other)
+{
+	std::swap(m_bps, other.m_bps);
+	m_map.swap(other.m_map);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/**
 		This method performs modulation map normalization.
 	So each modulation symbol has unit average power.
 */
