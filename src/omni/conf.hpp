@@ -1222,7 +1222,10 @@ template<typename Str>
 class ElementListT: private omni::NonCopyable {
 	typedef ElementListT<Str> ThisType;
 	typedef SectionT<Str>* OwnerType;
-	typedef std::vector<ElementT<Str>*> Container;
+
+	typedef typename String::allocator_type Allocator;
+	typedef std::vector<ElementT<Str>*, typename Allocator::
+		template rebind<ElementT<Str>*>::other > Container;
 
 	typedef details::Iterator<typename Container::const_iterator,
 		details::ConstTraits< ElementT<Str> > > implementation_defined_1;
@@ -1243,7 +1246,7 @@ public:
 	typedef typename value_type::String String;   ///< @brief String type.
 	typedef typename value_type::Char Char;       ///< @brief Char type.
 
-	typedef typename Container::size_type size_type; ///< @brief Size type.
+	typedef typename Container::size_type size_type; ///< @brief The size type.
 
 /// @}
 //////////////////////////////////////////////////////////////////////////
@@ -1792,7 +1795,7 @@ public:
 */
 	reference push_back(const_reference prototype)
 	{
-		return push(new value_type(prototype));
+		return do_push(create(prototype));
 	}
 
 
@@ -1807,7 +1810,7 @@ public:
 */
 	reference push_back(const String &name)
 	{
-		return push(new value_type(name));
+		return do_push(create(name));
 	}
 
 
@@ -1822,7 +1825,7 @@ public:
 */
 	reference push_back(const Char *name)
 	{
-		return push(new value_type(name));
+		return do_push(create(name));
 	}
 
 
@@ -1836,7 +1839,7 @@ public:
 */
 	reference push_back()
 	{
-		return push(new value_type());
+		return do_push(create());
 	}
 
 
@@ -1876,7 +1879,8 @@ public:
 
 		m_items.erase(pos.base());
 		m_owner->do_remove(elem);
-		delete elem;
+
+		destroy(elem);
 	}
 
 
@@ -1937,7 +1941,8 @@ public:
 		{
 			value_type *elem = (*i);
 			m_owner->do_remove(elem);
-			delete elem;
+
+			destroy(elem);
 		}
 		m_items.clear();
 	}
@@ -2108,28 +2113,98 @@ private:
 private:
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief Create the new element.
+/**
+@param arg The constructor argument.
+@return The created element.
+*/
+	template<typename T>
+	value_type* create(const T &arg)
+	{
+		value_type *elem = m_alloc.allocate(1);
+
+		try
+		{
+			new (elem) value_type(arg); // (!) constructor call
+		}
+		catch (...)
+		{
+			m_alloc.deallocate(elem, 1);
+			throw;
+		}
+
+		return elem;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Create the new element.
+/**
+		The element's default constructor is used.
+
+@return The created element.
+*/
+	value_type* create()
+	{
+		value_type *elem = m_alloc.allocate(1);
+
+		try
+		{
+			new (elem) value_type(); // (!) constructor call
+		}
+		catch (...)
+		{
+			m_alloc.deallocate(elem, 1);
+			throw;
+		}
+
+		return elem;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Destroy the element.
+/**
+		This method calls the destructor and releases the allocated memory.
+
+@param elem The element.
+*/
+	void destroy(value_type *elem)
+	{
+		elem->~value_type(); // (!) destructor call
+		m_alloc.deallocate(elem, 1);
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief Добавить элемент в список
 /**
 	Метод добавляет уже созданный элемент @a p в начало или конец списка.
 
 @param[in] p Добавляемый элемент
 */
-	reference push(value_type *p)
+	reference do_push(value_type *p)
 	{
-		std::auto_ptr<value_type> xp(p);
-
-		m_items.push_back(xp.get());
 		try
 		{
-			m_owner->do_insert(xp.get());
+			m_items.push_back(p);
+			try
+			{
+				m_owner->do_insert(p);
+			}
+			catch (...)
+			{
+				m_items.pop_back();
+				throw;
+			}
 		}
 		catch (...)
 		{
-			m_items.pop_back();
+			destroy(p);
 			throw;
 		}
 
-		return *(xp.release());
+		return *p;
 	}
 
 
@@ -2163,8 +2238,11 @@ private:
 
 
 private:
-	OwnerType m_owner;  ///< @brief Владелец списка
-	Container m_items;  ///< @brief Список элементов
+	typename Allocator::template
+		rebind<value_type>::other m_alloc;  ///< @brief The allocator.
+
+	OwnerType m_owner;  ///< @brief The list's owner.
+	Container m_items;  ///< @brief The elements list.
 };
 
 	} // ElementListT<> template classes
@@ -2219,7 +2297,10 @@ template<typename Str>
 class SectionListT: private omni::NonCopyable {
 	typedef SectionListT<Str> ThisType;
 	typedef SectionT<Str>* OwnerType;
-	typedef std::vector<SectionT<Str>*> Container;
+
+	typedef typename String::allocator_type Allocator;
+	typedef std::vector<SectionT<Str>*, typename Allocator::
+		template rebind<SectionT<Str>*>::other > Container;
 
 	typedef details::Iterator<typename Container::const_iterator,
 		details::ConstTraits< SectionT<Str> > > implementation_defined_1;
@@ -2789,7 +2870,7 @@ public:
 */
 	reference push_back(const_reference prototype)
 	{
-		return push(new value_type(prototype));
+		return do_push(create(prototype));
 	}
 
 //////////////////////////////////////////////////////////////////////////
@@ -2803,7 +2884,7 @@ public:
 */
 	reference push_back(const String &name)
 	{
-		return push(new value_type(name));
+		return do_push(create(name));
 	}
 
 //////////////////////////////////////////////////////////////////////////
@@ -2817,7 +2898,7 @@ public:
 */
 	reference push_back(const Char *name)
 	{
-		return push(new value_type(name));
+		return do_push(create(name));
 	}
 
 //////////////////////////////////////////////////////////////////////////
@@ -2830,7 +2911,7 @@ public:
 */
 	reference push_back()
 	{
-		return push(new value_type());
+		return do_push(create());
 	}
 
 
@@ -2870,7 +2951,8 @@ public:
 
 		m_items.erase(pos.base());
 		m_owner->do_remove(elem);
-		delete elem;
+
+		destroy(elem);
 	}
 
 //////////////////////////////////////////////////////////////////////////
@@ -2928,7 +3010,8 @@ public:
 		{
 			value_type *elem = (*i);
 			m_owner->do_remove(elem);
-			delete elem;
+
+			destroy(elem);
 		}
 		m_items.clear();
 	}
@@ -3099,28 +3182,98 @@ private:
 private:
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief Create the new element.
+/**
+@param arg The constructor argument.
+@return The created element.
+*/
+	template<typename T>
+	value_type* create(const T &arg)
+	{
+		value_type *elem = m_alloc.allocate(1);
+
+		try
+		{
+			new (elem) value_type(arg); // (!) constructor call
+		}
+		catch (...)
+		{
+			m_alloc.deallocate(elem, 1);
+			throw;
+		}
+
+		return elem;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Create the new element.
+/**
+		The element's default constructor is used.
+
+@return The created element.
+*/
+	value_type* create()
+	{
+		value_type *elem = m_alloc.allocate(1);
+
+		try
+		{
+			new (elem) value_type(); // (!) constructor call
+		}
+		catch (...)
+		{
+			m_alloc.deallocate(elem, 1);
+			throw;
+		}
+
+		return elem;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Destroy the element.
+/**
+		This method calls the destructor and releases the allocated memory.
+
+@param elem The element.
+*/
+	void destroy(value_type *elem)
+	{
+		elem->~value_type(); // (!) destructor call
+		m_alloc.deallocate(elem, 1);
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief Добавить элемент в список
 /**
 	Метод добавляет уже созданный элемент @a p в начало или конец списка.
 
 @param[in] p Добавляемый элемент
 */
-	reference push(value_type *p)
+	reference do_push(value_type *p)
 	{
-		std::auto_ptr<value_type> xp(p);
-
-		m_items.push_back(xp.get());
 		try
 		{
-			m_owner->do_insert(xp.get());
+			m_items.push_back(p);
+			try
+			{
+				m_owner->do_insert(p);
+			}
+			catch (...)
+			{
+				m_items.pop_back();
+				throw;
+			}
 		}
 		catch (...)
 		{
-			m_items.pop_back();
+			destroy(p);
 			throw;
 		}
 
-		return *(xp.release());
+		return *p;
 	}
 
 
@@ -3154,6 +3307,9 @@ private:
 
 
 private:
+	typename Allocator::template
+		rebind<value_type>::other m_alloc;  ///< @brief The allocator.
+
 	OwnerType m_owner;  ///< @brief Владелец списка
 	Container m_items;  ///< @brief Список элементов
 };
