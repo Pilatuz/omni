@@ -133,9 +133,9 @@ public:
 @throw omni::calc::err::CalculationError If expression has any errors.
 */
 	template<typename Ch, typename Tr, typename Ax>
-		ValueType operator()(const std::basic_string<Ch, Tr, Ax> &expression) const
+		ValueType operator()(const std::basic_string<Ch,Tr,Ax> &expression) const
 	{
-		std::basic_istringstream<Ch, Tr> is(expression);
+		std::basic_istringstream<Ch,Tr,Ax> is(expression);
 		const ValueType ret = details::eval(is, *this);
 
 		if (!(is >> std::ws).eof())

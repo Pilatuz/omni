@@ -3731,8 +3731,9 @@ public:
 	typedef Str String;
 	typedef typename String::traits_type Traits;
 	typedef typename Traits::char_type Char;
+	typedef typename String::allocator_type Allocator;
 	typedef std::basic_istream<Char, Traits> IStream;
-	typedef std::basic_ostringstream<Char, Traits> OSStream;
+	typedef std::basic_ostringstream<Char, Traits, Allocator> OSStream;
 
 	typedef SectionT<String> Section;
 	typedef ElementT<String> Element;
@@ -4430,9 +4431,10 @@ protected:
 	typedef Str String;
 	typedef typename String::traits_type Traits;
 	typedef typename Traits::char_type Char;
+	typedef typename String::allocator_type Allocator;
 	typedef std::basic_ostream<Char, Traits> OStream;
-	typedef std::basic_istringstream<Char, Traits> ISStream;
-	typedef std::basic_ostringstream<Char, Traits> OSStream;
+	typedef std::basic_istringstream<Char, Traits, Allocator> ISStream;
+	typedef std::basic_ostringstream<Char, Traits, Allocator> OSStream;
 
 	typedef ElementT<String> Element;
 	typedef SectionT<String> Section;
