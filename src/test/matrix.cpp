@@ -127,7 +127,7 @@ bool test_matrix(std::ostream &os)
 		print(os, Matrix<double>(norm(Matrix<T>(herm(U)*U - A))));
 	}
 
-	if (0)
+	if (0) // check just compilation errors
 	{
 
 	{ // Scalar
@@ -430,6 +430,17 @@ bool test_matrix(std::ostream &os)
 	}
 
 	} // if (0)
+
+	if (1) // iterators check
+	{
+		Matrix<int> m(3,4);
+
+		std::reverse(m.begin(), m.end());
+		for (size_t i = 0; i < m.Nrows(); ++i)
+			std::reverse(m.row_begin(i), m.row_end(i));
+		for (size_t j = 0; j < m.Ncols(); ++j)
+			std::reverse(m.col_begin(j), m.col_end(j));
+	}
 
 	return true;
 }
