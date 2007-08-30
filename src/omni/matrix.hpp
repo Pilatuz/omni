@@ -506,6 +506,37 @@ public: // size, resize and assign
 
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief Set the new matrix size.
+/**
+		This method saves the previous matrix content.
+
+@param N_rows The number of rows.
+@param N_cols The number of columns.
+*/
+	void safe_resize(size_type N_rows, size_type N_cols)
+	{
+		if (Nrows()!=N_rows || Ncols()!=N_cols)
+		{
+			this_type t(N_rows, N_cols);
+
+			// minimum size
+			if (Nrows() < N_rows)
+				N_rows = Nrows();
+			if (Ncols() < N_cols)
+				N_cols = Ncols();
+
+			// copy old content
+			for (size_t i = 0; i < N_rows; ++i)
+				std::copy(row_begin(i),
+					row_begin(i)+N_cols,
+						t.row_begin(i));
+
+			swap(t);
+		}
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief Assign the new matrix size and content.
 /**
 @param N_rows The number of rows.
@@ -718,7 +749,7 @@ public: // row iterators
 	#if OMNI_MATRIX_ROW_MAJOR
 		return row_const_iterator(m_buf.begin() + row*m_N_cols);
 	#else
-		return row_const_iterator(m_buf.begin() + row, m_N_rows);
+		return row_const_iterator(&m_buf[0] + row, m_N_rows);
 	#endif
 	}
 
@@ -736,7 +767,7 @@ public: // row iterators
 	#if OMNI_MATRIX_ROW_MAJOR
 		return row_iterator(m_buf.begin() + row*m_N_cols);
 	#else
-		return row_iterator(m_buf.begin() + row, m_N_rows);
+		return row_iterator(&m_buf[0] + row, m_N_rows);
 	#endif
 	}
 
@@ -754,7 +785,7 @@ public: // row iterators
 	#if OMNI_MATRIX_ROW_MAJOR
 		return row_const_iterator(m_buf.begin() + (row+1)*m_N_cols);
 	#else
-		return row_const_iterator(m_buf.end() + row, m_N_rows);
+		return row_const_iterator(&m_buf[0] + m_buf.size() + row, m_N_rows);
 	#endif
 	}
 
@@ -772,7 +803,7 @@ public: // row iterators
 	#if OMNI_MATRIX_ROW_MAJOR
 		return row_iterator(m_buf.begin() + (row+1)*m_N_cols);
 	#else
-		return row_iterator(m_buf.end() + row, m_N_rows);
+		return row_iterator(&m_buf[0] + m_buf.size() + row, m_N_rows);
 	#endif
 	}
 
@@ -796,7 +827,7 @@ public: // column iterators
 		assert(col < m_N_cols && "column index out of range");
 
 	#if OMNI_MATRIX_ROW_MAJOR
-		return col_const_iterator(m_buf.begin() + col, m_N_cols);
+		return col_const_iterator(&m_buf[0] + col, m_N_cols);
 	#else
 		return col_const_iterator(m_buf.begin() + col*m_N_rows);
 	#endif
@@ -814,7 +845,7 @@ public: // column iterators
 		assert(col < m_N_cols && "column index out of range");
 
 	#if OMNI_MATRIX_ROW_MAJOR
-		return col_iterator(m_buf.begin() + col, m_N_cols);
+		return col_iterator(&m_buf[0] + col, m_N_cols);
 	#else
 		return col_iterator(m_buf.begin() + col*m_N_rows);
 	#endif
@@ -832,7 +863,7 @@ public: // column iterators
 		assert(col < m_N_cols && "column index out of range");
 
 	#if OMNI_MATRIX_ROW_MAJOR
-		return col_const_iterator(m_buf.end() + col, m_N_cols);
+		return col_const_iterator(&m_buf[0] + m_buf.size() + col, m_N_cols);
 	#else
 		return col_const_iterator(m_buf.begin() + (col+1)*m_N_rows);
 	#endif
@@ -850,7 +881,7 @@ public: // column iterators
 		assert(col < m_N_cols && "column index out of range");
 
 	#if OMNI_MATRIX_ROW_MAJOR
-		return col_iterator(m_buf.end() + col, m_N_cols);
+		return col_iterator(&m_buf[0] + m_buf.size() + col, m_N_cols);
 	#else
 		return col_iterator(m_buf.begin() + (col+1)*m_N_rows);
 	#endif
@@ -1434,12 +1465,15 @@ public: // typedefs
 	typedef typename std::iterator_traits<base_type>::reference reference;    ///< @brief The reference type.
 	typedef typename std::iterator_traits<base_type>::pointer pointer;        ///< @brief The pointer type.
 
+	typedef pointer base_type_; ///< @brief The real base type.
+
 public: // constructors
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief The default constructor.
 	IteratorN()
-		: m_step(0)
+		: m_base(0),
+		  m_step(0)
 	{}
 
 
@@ -1448,8 +1482,20 @@ public: // constructors
 /**
 @param it_base The base iterator.
 @param is_step The iterator step.
+@param offset The initial iterator offset.
 */
-	IteratorN(const base_type &it_base, difference_type it_step)
+	//IteratorN(const base_type &it_base, difference_type it_step, difference_type offset)
+	//	: m_base(&*it_base + offset), m_step(it_step)
+	//{}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The main constructor.
+/**
+@param it_base The base iterator.
+@param is_step The iterator step.
+*/
+	IteratorN(const base_type_ &it_base, difference_type it_step)
 		: m_base(it_base), m_step(it_step)
 	{}
 
@@ -1520,7 +1566,7 @@ public: // access
 /**
 @return The base iterator.
 */
-	const base_type& base() const
+	const base_type_& base() const
 	{
 		return m_base;
 	}
@@ -1614,9 +1660,10 @@ public: // Increment and decrement
 	}
 
 private:
-	base_type        m_base; ///< @brief The base iterator.
+	base_type_      m_base; ///< @brief The base iterator.
 	difference_type m_step; ///< @brief The iterator step.
 };
+
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Are two iterators equal?
