@@ -145,10 +145,10 @@ template<typename T>
 // disable some MSVC++ warnings
 #if defined(_MSC_VER)
 #	pragma warning(push)
-#	if (1400 == _MSC_VER)
+#	if (1400 <= _MSC_VER)
 #		pragma warning(disable: 4293) // warning C4293: '>>' : shift count negative or too big, undefined behavior
 #		pragma warning(disable: 4333) // warning C4333: '>>' : right shift by too large amount, data loss
-#	endif // 1400 == _MSC_VER
+#	endif // (1400 <= _MSC_VER)
 #	pragma warning(disable: 4127) // warning C4127: conditional expression is constant
 #endif // (MSC_VER)
 

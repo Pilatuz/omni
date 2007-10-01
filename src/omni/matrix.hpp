@@ -527,9 +527,16 @@ public: // size, resize and assign
 
 			// copy old content
 			for (size_t i = 0; i < N_rows; ++i)
+			#if defined(_MSC_VER) && (1400 <= _MSC_VER)
+				// avoid VS8.0, VS9.0 checked iterators
+				stdext::unchecked_copy(row_begin(i),
+					row_begin(i)+N_cols,
+						t.row_begin(i));
+			#else
 				std::copy(row_begin(i),
 					row_begin(i)+N_cols,
 						t.row_begin(i));
+			#endif // (1400 <= _MSC_VER)
 
 			swap(t);
 		}

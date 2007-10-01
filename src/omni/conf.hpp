@@ -5451,12 +5451,12 @@ typename Iterator<Base, Tr>::difference_type operator-(const Iterator<Base, Tr> 
 template<typename In> inline
 	bool equal(In first1, In last1, In first2)
 {
-#if defined(_MSC_VER) && (1400 == _MSC_VER)
-	// avoid VS8.0 checked iterators
+#if defined(_MSC_VER) && (1400 <= _MSC_VER)
+	// avoid VS8.0, VS9.0 checked iterators
 	return stdext::unchecked_equal(first1, last1, first2);
 #else
 	return std::equal(first1, last1, first2);
-#endif // (1400 == _MSC_VER)
+#endif // (1400 <= _MSC_VER)
 }
 
 		} // details namespace
