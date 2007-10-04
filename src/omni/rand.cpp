@@ -444,7 +444,7 @@ Random::value_type Random::operator()()
 	y ^= (y << 15) & 0xEFC60000UL;
 	y ^= (y >> 18);
 
-	return y;
+	return y & 0xFFFFFFFFUL;
 }
 
 
