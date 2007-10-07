@@ -13,7 +13,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-#include <omni/plot.h>
+#include <omni/plot.hpp>
 #include <omni/util.hpp>
 
 #include <algorithm>
@@ -32,34 +32,58 @@ namespace omni
 	namespace plot
 	{
 
-// Size default constructor
+//////////////////////////////////////////////////////////////////////////
+/// @brief The default constructor.
+/**
+		This constructor initializes the X and the Y sizes by zero.
+*/
 Size::Size()
 	: m_Xsize(0.0),
 	  m_Ysize(0.0)
 {}
 
 
-// Size main constructor
+//////////////////////////////////////////////////////////////////////////
+/// @brief The main constructor.
+/**
+@param x_size The X size.
+@param y_size The Y size.
+*/
 Size::Size(double x_size, double y_size)
 	: m_Xsize(x_size), m_Ysize(y_size)
 {}
 
 
-// get X size
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the X size.
+/**
+@return The X size.
+*/
 double Size::Xsize() const
 {
 	return m_Xsize;
 }
 
 
-// get Y size
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the Y size.
+/**
+@return The Y size.
+*/
 double Size::Ysize() const
 {
 	return m_Ysize;
 }
 
 
-// increase size
+//////////////////////////////////////////////////////////////////////////
+/// @brief Increase.
+/**
+		This operator increases the current size.
+
+@param sz The increasing size.
+@return The self reference.
+*/
 Size& Size::operator+=(const Size &sz)
 {
 	m_Xsize += sz.Xsize();
@@ -69,7 +93,14 @@ Size& Size::operator+=(const Size &sz)
 }
 
 
-// decrease size
+//////////////////////////////////////////////////////////////////////////
+/// @brief Decrease.
+/**
+		This operator decreases the current size.
+
+@param sz The decreasing size.
+@return The self reference.
+*/
 Size& Size::operator-=(const Size &sz)
 {
 	m_Xsize -= sz.Xsize();
@@ -79,7 +110,14 @@ Size& Size::operator-=(const Size &sz)
 }
 
 
-// add
+//////////////////////////////////////////////////////////////////////////
+/// @brief Addition.
+/**
+@param a The first size.
+@param b The second size.
+@return The sum of two sizes.
+@relates Size
+*/
 Size operator+(const Size &a, const Size &b)
 {
 	return Size(a.Xsize() + b.Xsize(),
@@ -87,11 +125,31 @@ Size operator+(const Size &a, const Size &b)
 }
 
 
-// sub
+//////////////////////////////////////////////////////////////////////////
+/// @brief Subtraction.
+/**
+@param a The first size.
+@param b The second size.
+@return The difference between two sizes.
+@relates Size
+*/
 Size operator-(const Size &a, const Size &b)
 {
 	return Size(a.Xsize() - b.Xsize(),
 		a.Ysize() - b.Ysize());
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Negation.
+/**
+@param sz The size.
+@param The negated size.
+@relates Size
+*/
+Size operator-(const Size &sz)
+{
+	return Size(-sz.Xsize(), -sz.Ysize());
 }
 
 	} // Size
@@ -101,32 +159,56 @@ Size operator-(const Size &a, const Size &b)
 	namespace plot
 	{
 
-// Point default constructor
+//////////////////////////////////////////////////////////////////////////
+/// @brief The default constructor.
+/**
+		This constructor initializes the point coordinates by zero.
+*/
 Point::Point()
 	: m_X(0.0),
 	  m_Y(0.0)
 {}
 
 
-// Point main constructor
+//////////////////////////////////////////////////////////////////////////
+/// @brief The main constructor.
+/**
+@param x The X coordinate.
+@param y The Y coordinate.
+*/
 Point::Point(double x, double y)
 	: m_X(x), m_Y(y)
 {}
 
 
-// get point's X
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the X coordinate.
+/**
+@return The X coordinate.
+*/
 double Point::X() const
 {
 	return m_X;
 }
 
-// get point's Y
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the Y coordinate.
+/**
+@return The Y coordinate.
+*/
 double Point::Y() const
 {
 	return m_Y;
 }
 
-// offset point
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Offset the point.
+/**
+@param dx The X offset size.
+@param dy The Y offset size.
+*/
 void Point::offset(double dx, double dy)
 {
 	m_X += dx;
@@ -134,7 +216,11 @@ void Point::offset(double dx, double dy)
 }
 
 
-// offset point
+//////////////////////////////////////////////////////////////////////////
+/// @brief Offset the point.
+/**
+@param sz The offset size.
+*/
 void Point::offset(const Size &sz)
 {
 	m_X += sz.Xsize();
@@ -142,7 +228,12 @@ void Point::offset(const Size &sz)
 }
 
 
-// offset point
+//////////////////////////////////////////////////////////////////////////
+/// @brief Increase.
+/**
+@param sz The increasing size.
+@return The self reference.
+*/
 Point& Point::operator+=(const Size &sz)
 {
 	m_X += sz.Xsize();
@@ -152,7 +243,12 @@ Point& Point::operator+=(const Size &sz)
 }
 
 
-// offset point
+//////////////////////////////////////////////////////////////////////////
+/// @brief Decrease.
+/**
+@param sz The decreasing size.
+@return The self reference.
+*/
 Point& Point::operator-=(const Size &sz)
 {
 	m_X -= sz.Xsize();
@@ -162,7 +258,13 @@ Point& Point::operator-=(const Size &sz)
 }
 
 
-// add
+//////////////////////////////////////////////////////////////////////////
+/// @brief Increase.
+/**
+@param pt The point.
+@param sz The increasing size.
+@return The new point.
+*/
 Point operator+(const Point &pt, const Size &sz)
 {
 	return Point(
@@ -172,7 +274,13 @@ Point operator+(const Point &pt, const Size &sz)
 }
 
 
-// sub
+//////////////////////////////////////////////////////////////////////////
+/// @brief Decrease.
+/**
+@param pt The point.
+@param sz The decreasing size.
+@return The new point.
+*/
 Point operator-(const Point &pt, const Size &sz)
 {
 	return Point(
@@ -182,7 +290,13 @@ Point operator-(const Point &pt, const Size &sz)
 }
 
 
-// distance
+//////////////////////////////////////////////////////////////////////////
+/// @brief Distance.
+/**
+@param A The first point.
+@param B The second point.
+@return The distance.
+*/
 Size operator-(const Point &A, const Point &B)
 {
 	return Size(
@@ -198,14 +312,23 @@ Size operator-(const Point &A, const Point &B)
 	namespace plot
 	{
 
-// Rect default constructor
+//////////////////////////////////////////////////////////////////////////
+/// @brief The default constructor.
+/**
+		Constructs the empty rectangle.
+*/
 Rect::Rect()
 	: m_Xmin(0.0), m_Xmax(0.0),
 	  m_Ymin(0.0), m_Ymax(0.0)
 {}
 
 
-// Rect main constructor
+//////////////////////////////////////////////////////////////////////////
+/// @brief The main constructor (point and size).
+/**
+@param pt The reference point.
+@param sz The rectangle size.
+*/
 Rect::Rect(const Point &pt, const Size &sz)
 	: m_Xmin(pt.X()),
 	  m_Xmax(pt.X() + sz.Xsize()),
@@ -214,7 +337,12 @@ Rect::Rect(const Point &pt, const Size &sz)
 {}
 
 
-// Rect main constructor
+//////////////////////////////////////////////////////////////////////////
+/// @brief The main constructor (two points).
+/**
+@param pt_min The first reference point.
+@param pt_max The second reference point.
+*/
 Rect::Rect(const Point &pt_min, const Point &pt_max)
 	: m_Xmin(pt_min.X()),
 	  m_Xmax(pt_max.X()),
@@ -223,49 +351,77 @@ Rect::Rect(const Point &pt_min, const Point &pt_max)
 {}
 
 
-// get Rect's X minimum
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the minimum X coordinate.
+/**
+@return The minimum X coordinate.
+*/
 double Rect::Xmin() const
 {
 	return m_Xmin;
 }
 
 
-// get Rect's X maximum
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the maximum X coordinate.
+/**
+@return The maximum X coordinate.
+*/
 double Rect::Xmax() const
 {
 	return m_Xmax;
 }
 
 
-// get Rec't width
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the X size.
+/**
+@return The X size (i.e. the rectangle's width).
+*/
 double Rect::Xsize() const
 {
 	return m_Xmax - m_Xmin;
 }
 
 
-// get Rect's Y minimum
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the minimum Y coordinate.
+/**
+@return The minimum Y coordinate.
+*/
 double Rect::Ymin() const
 {
 	return m_Ymin;
 }
 
 
-// get Rect's Y maximum
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the maximum Y coordinate.
+/**
+@return The maximum Y coordinate.
+*/
 double Rect::Ymax() const
 {
 	return m_Ymax;
 }
 
 
-// get Rect's height
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the Y size.
+/**
+@return The Y size (i.e. the rectangle's height).
+*/
 double Rect::Ysize() const
 {
 	return m_Ymax - m_Ymin;
 }
 
 
-// get center point
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the center point.
+/**
+@return The center point.
+*/
 Point Rect::center() const
 {
 	return Point(
@@ -275,26 +431,37 @@ Point Rect::center() const
 }
 
 
-// normalize rect
+//////////////////////////////////////////////////////////////////////////
+/// @brief Normalize rectangle.
+/**
+		This method normalizes the rectangle:
+	the Xsize() and Ysize() methods will return positive values.
+*/
 void Rect::normalize()
 {
 	if (m_Xmax < m_Xmin)
 	{
-		double t = m_Xmin;
+		double t = m_Xmin; // (!) std::swap
 		m_Xmin = m_Xmax;
 		m_Xmax = t;
 	}
 
 	if (m_Ymax < m_Ymin)
 	{
-		double t = m_Ymin;
+		double t = m_Ymin; // (!) std::swap
 		m_Ymin = m_Ymax;
 		m_Ymax = t;
 	}
 }
 
 
-// is rect empty?
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is rectangle empty?
+/**
+		The rectangle is empty if the Xsize() and Ysize() returns zero.
+
+@return @b true if rectangle is empty, @b false otherwise.
+*/
 bool Rect::empty() const
 {
 	return (m_Xmax <= m_Xmin)
@@ -302,16 +469,43 @@ bool Rect::empty() const
 }
 
 
-// point in rect?
-bool Rect::contain(const Point &pt) const
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is rectangle null?
+/**
+		The rectangle is null if all of Xmin(), Xmax(),
+	Ymin() and Ymax() returns zero.
+
+@return @b true if rectangle is null, @b false otherwise.
+*/
+bool Rect::is_null() const
+{
+	return (m_Xmin == 0.0)
+		&& (m_Xmax == 0.0)
+		&& (m_Ymin == 0.0)
+		&& (m_Ymax == 0.0);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is the point inside?
+/**
+@param pt The point of interest.
+@return @b true if the point is inside, @b false otherwise.
+*/
+bool Rect::contains(const Point &pt) const
 {
 	return m_Xmin <= pt.X() && pt.X() <= m_Xmax
 		&& m_Ymin <= pt.Y() && pt.Y() <= m_Ymax;
 }
 
 
-// rect in rect?
-bool Rect::contain(const Rect &rc) const
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is the rectangle inside?
+/**
+@param rc The rectangle of interest.
+@return @b true if the rectangle is inside, @b false otherwise.
+*/
+bool Rect::contains(const Rect &rc) const
 {
 	return m_Xmin <= rc.Xmin() && rc.Xmax() <= m_Xmax
 		&& m_Ymin <= rc.Ymin() && rc.Ymax() <= m_Ymax;
@@ -923,7 +1117,7 @@ void Plotter::update()
 		{
 			Rect rc = (*i)->full();
 
-			if (!rc.empty())
+			if (!rc.is_null())
 			{
 				if (!initialized)
 				{
@@ -1073,10 +1267,10 @@ public:
 			wnd_class.lpfnWndProc = wnd_proc;
 			wnd_class.hInstance = ::GetModuleHandle(NULL);
 			wnd_class.hCursor = ::LoadCursor(NULL, IDC_ARROW);
-			wnd_class.lpszClassName = _T("Plotter@Window");
+			wnd_class.lpszClassName = _T("omni::plot::Window");
 
 			ATOM atom = ::RegisterClassEx(&wnd_class);
-			if (NULL == atom) throw std::exception("Can't register Plotter's window class");
+			if (NULL == atom) throw std::runtime_error("Can't register Plotter's window class");
 		}
 	}
 
@@ -1102,7 +1296,7 @@ public:
 			CW_USEDEFAULT, CW_USEDEFAULT,
 			parent, NULL, wnd_class.hInstance, wnd);
 		if (NULL == hWnd)
-			throw std::exception("Can't create Plotter's window");
+			throw std::runtime_error("Can't create Plotter's window");
 
 		return hWnd;
 	}
@@ -1125,8 +1319,6 @@ public:
 	static LRESULT CALLBACK wnd_proc(HWND hWnd,
 		UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		static int N_wnd = 0; // TODO: remove this
-
 		switch (uMsg)
 		{
 			case WM_CREATE:
@@ -1136,7 +1328,6 @@ public:
 
 				set_Window(hWnd, wnd);
 				wnd->on_create(hWnd);
-				++N_wnd;
 			} break;
 
 			case WM_DESTROY:
@@ -1145,16 +1336,15 @@ public:
 				wnd->on_destroy();
 
 				set_Window(hWnd, 0);
-
-				if (--N_wnd == 0)
-					::PostQuitMessage(0);
 			} break;
 		}
 
-		Window *wnd = get_Window(hWnd);
-		LRESULT result = 0;
-		if (wnd && wnd->on_message(uMsg, wParam, lParam, result))
-			return result;
+		if (Window *wnd = get_Window(hWnd))
+		{
+			LRESULT result = 0;
+			if (wnd->on_message(uMsg, wParam, lParam, result))
+				return result;
+		}
 
 		return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 	}
@@ -1167,7 +1357,7 @@ private:
 
 //////////////////////////////////////////////////////////////////////////
 // static members
-WNDCLASSEX Window::Class::wnd_class = { 0 };
+WNDCLASSEX Window::Class::wnd_class = {0};
 int Window::Class::N_windows = 0;
 
 
