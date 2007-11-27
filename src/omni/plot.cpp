@@ -1020,6 +1020,22 @@ void Plotter::set_background(const GL::Color &color)
 
 
 //////////////////////////////////////////////////////////////////////////
+// get fixed aspect ratio flag
+bool Plotter::fixedAspectRatio() const
+{
+	return m_fixed_aspect_ratio;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// set fixed aspect ratio flag
+void Plotter::set_fixedAspectRatio(bool fixed_AR)
+{
+	m_fixed_aspect_ratio = fixed_AR;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 // set the new world rect
 void Plotter::show(const Rect &wr)
 {

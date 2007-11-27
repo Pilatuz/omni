@@ -206,6 +206,10 @@ public:
 	const GL::Color& background() const;
 	void set_background(const GL::Color &color);
 
+public:
+	bool fixedAspectRatio() const;
+	void set_fixedAspectRatio(bool fixed_AR);
+
 protected:
 	void show(const Rect &wr);
 	void set_viewport(int x,
