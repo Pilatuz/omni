@@ -67,7 +67,7 @@ namespace omni
 		namespace details
 		{
 			template<typename T, typename Ch, typename Tr>
-				T eval(std::basic_istream<Ch, Tr>&, const Calculator<T>&);
+				T eval(std::basic_istream<Ch,Tr>&, const Calculator<T>&);
 			bool check_func_name(const std::wstring &name);
 		}
 		/// @endcond
@@ -114,7 +114,7 @@ public:
 @throw omni::calc::err::CalculationError If expression has any errors.
 */
 	template<typename Ch, typename Tr>
-		ValueType operator()(std::basic_istream<Ch, Tr> &expression) const
+		ValueType operator()(std::basic_istream<Ch,Tr> &expression) const
 	{
 		return details::eval(expression, *this);
 	}
@@ -254,7 +254,7 @@ private:
 @see @ref omni_calc
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double atof(const std::basic_string<Ch, Tr, Ax> &expression)
+double atof(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	Calculator<double> x;
 	return x(expression);
@@ -278,7 +278,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see @ref omni_calc
 */
 template<typename Ch> inline
-	double atof(const Ch *expression)
+double atof(const Ch *expression)
 {
 	Calculator<double> x;
 	return x(expression);
@@ -302,7 +302,7 @@ template<typename Ch> inline
 @see @ref omni_calc
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	long atoi(const std::basic_string<Ch, Tr, Ax> &expression)
+long atoi(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	Calculator<long> x;
 	return x(expression);
@@ -326,7 +326,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see @ref omni_calc
 */
 template<typename Ch> inline
-	long atoi(const Ch *expression)
+long atoi(const Ch *expression)
 {
 	Calculator<long> x;
 	return x(expression);
@@ -348,7 +348,7 @@ const Calculator<double>& sci();
 @see sci()
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double sci(const std::basic_string<Ch, Tr, Ax> &expression)
+double sci(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	return sci()(expression);
 }
@@ -364,7 +364,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see sci()
 */
 template<typename Ch> inline
-	double sci(const Ch *expression)
+double sci(const Ch *expression)
 {
 	return sci()(expression);
 }
@@ -385,7 +385,7 @@ const Calculator<double>& ratio();
 @see ratio()
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double ratio(const std::basic_string<Ch, Tr, Ax> &expression)
+double ratio(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	return ratio()(expression);
 }
@@ -401,7 +401,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see ratio()
 */
 template<typename Ch> inline
-	double ratio(const Ch *expression)
+double ratio(const Ch *expression)
 {
 	return ratio()(expression);
 }
@@ -422,7 +422,7 @@ const Calculator<double>& power();
 @see power()
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double power(const std::basic_string<Ch, Tr, Ax> &expression)
+double power(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	return power()(expression);
 }
@@ -438,7 +438,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see power()
 */
 template<typename Ch> inline
-	double power(const Ch *expression)
+double power(const Ch *expression)
 {
 	return power()(expression);
 }
@@ -459,7 +459,7 @@ const Calculator<double>& time();
 @see time()
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double time(const std::basic_string<Ch, Tr, Ax> &expression)
+double time(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	return time()(expression);
 }
@@ -475,7 +475,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see time()
 */
 template<typename Ch> inline
-	double time(const Ch *expression)
+double time(const Ch *expression)
 {
 	return time()(expression);
 }
@@ -496,7 +496,7 @@ const Calculator<double>& freq();
 @see freq()
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double freq(const std::basic_string<Ch, Tr, Ax> &expression)
+double freq(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	return freq()(expression);
 }
@@ -512,7 +512,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see freq()
 */
 template<typename Ch> inline
-	double freq(const Ch *expression)
+double freq(const Ch *expression)
 {
 	return freq()(expression);
 }
@@ -533,7 +533,7 @@ const Calculator<double>& bits();
 @see bits()
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double bits(const std::basic_string<Ch, Tr, Ax> &expression)
+double bits(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	return bits()(expression);
 }
@@ -549,7 +549,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see bits()
 */
 template<typename Ch> inline
-	double bits(const Ch *expression)
+double bits(const Ch *expression)
 {
 	return bits()(expression);
 }
@@ -570,7 +570,7 @@ const Calculator<double>& dist();
 @see dist()
 */
 template<typename Ch, typename Tr, typename Ax> inline
-	double dist(const std::basic_string<Ch, Tr, Ax> &expression)
+double dist(const std::basic_string<Ch,Tr,Ax> &expression)
 {
 	return dist()(expression);
 }
@@ -586,7 +586,7 @@ template<typename Ch, typename Tr, typename Ax> inline
 @see dist()
 */
 template<typename Ch> inline
-	double dist(const Ch *expression)
+double dist(const Ch *expression)
 {
 	return dist()(expression);
 }
@@ -1079,10 +1079,10 @@ public:
 @return The function name or empty string.
 */
 template<typename Ch, typename Tr>
-	std::wstring get_func_name(std::basic_istream<Ch, Tr> &is)
+std::wstring get_func_name(std::basic_istream<Ch,Tr> &is)
 {
-	typedef std::basic_istream<Ch, Tr> istream_type;
-	typedef std::basic_string<Ch, Tr> string_type;
+	typedef std::basic_istream<Ch,Tr> istream_type;
+	typedef std::basic_string<Ch,Tr> string_type;
 	typedef istream_type::traits_type traits_type;
 	typedef CharConst<Ch> calc_traits;
 	typedef std::ctype<Ch> facet_type;
@@ -1144,7 +1144,7 @@ template<typename Ch, typename Tr>
 @return @b true If the number is parsed, otherwise @b false.
 */
 template<typename T, typename Ch, typename Tr>
-	bool get_num(std::basic_istream<Ch, Tr> &is, T &x, bool is_integer)
+bool get_num(std::basic_istream<Ch,Tr> &is, T &x, bool is_integer)
 {
 	typedef std::basic_istream<Ch, Tr> istream_type;
 	typedef std::basic_string<Ch, Tr> string_type;
@@ -1228,7 +1228,7 @@ template<typename T, typename Ch, typename Tr>
 @throw omni::calc::err::UnknownFunctionCall If function name is not found.
 */
 template<typename T, typename Ch, typename Tr>
-	T level_4(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
+T level_4(std::basic_istream<Ch,Tr> &is, const Calculator<T> &calculator)
 {
 	T x = T();
 
@@ -1315,7 +1315,7 @@ template<typename T, typename Ch, typename Tr>
 @throw omni::calc::err::DivisionByZero In case of integer division by zero.
 */
 template<typename T, typename Ch, typename Tr>
-	T level_3(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
+T level_3(std::basic_istream<Ch,Tr> &is, const Calculator<T> &calculator)
 {
 	T x = level_4(is, calculator);
 
@@ -1356,7 +1356,7 @@ template<typename T, typename Ch, typename Tr>
 @return The evaluation result.
 */
 template<typename T, typename Ch, typename Tr>
-	T level_2(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
+T level_2(std::basic_istream<Ch,Tr> &is, const Calculator<T> &calculator)
 {
 	T x = level_3(is, calculator);
 
@@ -1392,7 +1392,7 @@ template<typename T, typename Ch, typename Tr>
 @return The evaluation result.
 */
 template<typename T, typename Ch, typename Tr>
-	T level_1(std::basic_istream<Ch, Tr> &is, const Calculator<T> &calculator)
+T level_1(std::basic_istream<Ch,Tr> &is, const Calculator<T> &calculator)
 {
 	T x = level_2(is, calculator);
 
@@ -1421,7 +1421,7 @@ template<typename T, typename Ch, typename Tr>
 @throw omni::calc::err::CalculationError If expression has any errors.
 */
 template<typename T, typename Ch, typename Tr>
-	T eval(std::basic_istream<Ch, Tr> &expression, const Calculator<T> &calculator)
+T eval(std::basic_istream<Ch,Tr> &expression, const Calculator<T> &calculator)
 {
 	return level_1(expression, calculator);
 }

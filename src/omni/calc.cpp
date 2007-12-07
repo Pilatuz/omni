@@ -157,6 +157,7 @@ const Calculator<double>& ratio()
 		- @b uW - Conversion from microwatts (1.0e-6) to watts.
 		- @b dBm - Conversion from dBm to watts.
 		- @b dBW - Conversion from dBW to watts.
+		- @b dB - Conversion from dBW to watts.
 
 @return The power calculator reference.
 @see omni::util::dBm2watt()
@@ -177,6 +178,7 @@ const Calculator<double>& power()
 			calculator.suffix().insert(L"uW", Divider<double, 1000000L>());
 			calculator.suffix().insert(L"dBm", UserFunc<double>(omni::util::dBm2watt));
 			calculator.suffix().insert(L"dBW", UserFunc<double>(omni::util::dB2line));
+			calculator.suffix().insert(L"dB", UserFunc<double>(omni::util::dB2line));
 
 			return calculator;
 		}
