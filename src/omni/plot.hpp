@@ -740,6 +740,61 @@ private:
 
 	} // LineGraph
 
+
+	// HistGraph
+	namespace plot
+	{
+
+//////////////////////////////////////////////////////////////////////////
+// Hist Graph
+class HistGraph: public Object {
+	typedef Object inherited;
+
+public:
+	HistGraph();
+	virtual ~HistGraph();
+
+public:
+	const GL::Pen& line() const;
+	void set_line(const GL::Pen &pen);
+
+	const GL::Color& color() const;
+	void set_color(const GL::Color &c);
+
+public:
+	void assign(size_t N_points, const double *Ys, const double *Xs);
+	void assign(size_t N_points, const double *Ys,
+		double X_start = 0.0, double X_step = 1.0);
+
+	void set_zeroLevel(double zero);
+	void set_barWidth(double width);
+
+	void push_back(const Point &pt);
+	void push_back(double x, double y);
+	void clear();
+
+public:
+	virtual void draw(const Plotter &plotter, const omni::GL::Font&) const;
+	virtual bool hit_test(const Point &pt, double eps) const;
+	virtual Rect full() const;
+
+private:
+	void update();
+
+private:
+	typedef GL::Array<GLdouble, 2> PointType;
+	typedef std::vector<PointType> PointList;
+	PointList m_points;
+	double m_zero_level;
+	double m_bar_width;
+
+	GL::Color m_color;
+	GL::Pen m_pen;
+	Rect m_full;
+};
+
+	} // HistGraph
+
 } // omni namespace
 
 #endif // __OMNI_PLOT_H_

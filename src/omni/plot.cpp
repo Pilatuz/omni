@@ -3860,4 +3860,207 @@ void LineGraph::update()
 
 	} // LineGraph
 
+
+	// HistGraph
+	namespace plot
+	{
+
+//////////////////////////////////////////////////////////////////////////
+// HistGraph default construction
+HistGraph::HistGraph()
+	: m_zero_level(0.0), m_bar_width(0.0),
+	  m_pen(GL::Color(0.5f, 0.5f, 0.5f, 0.8f), 2.0f),
+		m_color(GL::Color::WHITE)
+{}
+
+
+//////////////////////////////////////////////////////////////////////////
+// HistGraph destruction
+HistGraph::~HistGraph()
+{}
+
+
+//////////////////////////////////////////////////////////////////////////
+// get pen
+const GL::Pen& HistGraph::line() const
+{
+	return m_pen;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// set new pen
+void HistGraph::set_line(const GL::Pen &pen)
+{
+	m_pen = pen;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// get current color
+const GL::Color& HistGraph::color() const
+{
+	return m_color;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// set new color
+void HistGraph::set_color(const GL::Color &c)
+{
+	m_color = c;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// assign new points
+void HistGraph::assign(size_t N_points, const double *Ys, const double *Xs)
+{
+	m_points.resize(N_points);
+	for (size_t i = 0; i < N_points; ++i)
+	{
+		PointType &pt = m_points[i];
+		pt[0] = Xs[i];
+		pt[1] = Ys[i];
+	}
+
+	update();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// assign new points
+void HistGraph::assign(size_t N_points, const double *Ys, double X_start, double X_step)
+{
+	m_points.resize(N_points);
+	for (size_t i = 0; i < N_points; ++i)
+	{
+		PointType &pt = m_points[i];
+		pt[0] = X_start + i*X_step;
+		pt[1] = Ys[i];
+	}
+
+	update();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// set zero level
+void HistGraph::set_zeroLevel(double zero)
+{
+	m_zero_level = zero;
+	update();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// set bar width
+void HistGraph::set_barWidth(double width)
+{
+	m_bar_width = width;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// add one point
+void HistGraph::push_back(const Point &pt)
+{
+	// update full area
+	if (m_points.empty())
+	{
+		m_full = Rect(pt, Size());
+		m_full |= Point(pt.X(), m_zero_level);
+	}
+	else
+		m_full |= pt;
+
+	PointType new_pt;
+	new_pt[0] = pt.X();
+	new_pt[1] = pt.Y();
+
+	m_points.push_back(new_pt);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// add one point
+void HistGraph::push_back(double x, double y)
+{
+	push_back(Point(x, y));
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// clear all points
+void HistGraph::clear()
+{
+	m_points.clear();
+	m_full = Rect();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// draw the LineGraph
+void HistGraph::draw(const Plotter &plotter, const omni::GL::Font&) const
+{
+	const size_t Npoints = m_points.size();
+
+	{ // draw line
+		// m_pen.select();
+		//::glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		GL::Canvas::color(m_color);
+
+		const double L = m_zero_level;
+		const double W = m_bar_width;
+		for (size_t i = 0; i < Npoints; ++i)
+		{
+			const double x = m_points[i][0];
+			const double y = m_points[i][1];
+
+			GL::Canvas::rect(x-W/2, L, x+W/2, y);
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// hit testing
+bool HistGraph::hit_test(const Point &pt, double eps) const
+{
+	// TODO: hit testing for LineGraph
+	return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// get full Rect
+Rect HistGraph::full() const
+{
+	return m_full;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// update full Rect
+void HistGraph::update()
+{
+	if (!m_points.empty())
+	{
+		const PointType &pt = m_points.front();
+		m_full = Rect(Point(pt[0], pt[1]), Size());
+
+		for (size_t i = 1; i < m_points.size(); ++i)
+		{
+			const PointType &pt = m_points[i];
+			m_full |= Point(pt[0], pt[1]);
+		}
+
+		m_full |= Point(m_full.Xmin(), m_zero_level);
+	}
+	else
+		m_full = Rect();
+}
+
+	} // HistGraph
+
 } // omni namespace
