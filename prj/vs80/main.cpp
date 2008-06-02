@@ -4,6 +4,7 @@
 #include <iostream>
 
 // test functions
+bool test_SIMD(std::ostream &os);
 bool test_calc(std::ostream &os);
 bool test_conf(std::ostream &os);
 bool test_pool(std::ostream &os);
@@ -33,8 +34,14 @@ int main()
 #endif
 	std::cout << "\n";
 
-
 	try {
+
+		if (!test_SIMD(std::cout))
+			std::cout << "test FAILED\n";
+		else
+			std::cout << "test SUCCESS\n";
+
+		return 0;
 
 		omni::rnd::randomize();
 		omni::test::UnitTest::testAll(std::cout);
