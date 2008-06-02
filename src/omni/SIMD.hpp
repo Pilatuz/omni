@@ -29,22 +29,49 @@ namespace omni
 
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief The SIMD capability.
+	class Capability {
+	public:
+		static const bool MMX;  ///< @brief Is MMX supported?
+		static const bool _3DNow; ///< @brief Is 3DNow! supported?
+		static const bool SSE;  ///< @brief Is SSE supported?
+		static const bool SSE2; ///< @brief Is SSE2 supported?
+
+	private:
+		static bool is_MMX();
+		static bool is_SSE();
+		static bool is_SSE2();
+		static bool is_3DNow();
+	};
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief Vector add.
 template<typename T>
-void tadd(size_t N, T *Z, const T *X, const T *Y)
+void add_T(size_t N, T *Z, const T *X, const T *Y)
 {
 	for (size_t i = 0; i < N; ++i)
 		Z[i] = X[i] + Y[i];
 }
+
+// general
 template<typename T> inline
 void add(size_t N, T *Z, const T *X, const T *Y)
 {
-	tadd(N,Z,X,Y);
+	add_T(N,Z,X,Y);
 }
+
+// automatic
 void add(size_t N, Complex *Z, const Complex *X, const Complex *Y);
 void add(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
 void add(size_t N, double *Z, const double *X, const double *Y);
 void add(size_t N, float *Z, const float *X, const float *Y);
+
+// SSE specific
+void add_SSE(size_t N, Complex *Z, const Complex *X, const Complex *Y);
+void add_SSE(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
+void add_SSE(size_t N, double *Z, const double *X, const double *Y);
+void add_SSE(size_t N, float *Z, const float *X, const float *Y);
 
 
 //////////////////////////////////////////////////////////////////////////

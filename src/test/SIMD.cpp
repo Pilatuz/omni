@@ -55,6 +55,13 @@ bool test_SIMD(std::ostream &os)
 	using namespace omni::SIMD;
 	bool ret = true;
 
+	os << "\tCapability: ";
+	if (Capability::MMX) os << "MMX ";
+	if (Capability::_3DNow) os << "3DNow! ";
+	if (Capability::SSE) os << "SSE ";
+	if (Capability::SSE2) os << "SSE2 ";
+	os << "\n\n";
+
 	const size_t N = 1024;
 
 	__declspec(align(16)) Complex Xcd[N], Ycd[N], Z1cd[N], Z2cd[N];
@@ -82,8 +89,8 @@ bool test_SIMD(std::ostream &os)
 
 		for (size_t d = 0; d < 24; ++d)
 		{
-			tadd(N-d, Z1cd, Xcd, Ycd);
-			 add(N-d, Z2cd, Xcd, Ycd);
+			add_T(N-d, Z1cd, Xcd, Ycd);
+			add(N-d, Z2cd, Xcd, Ycd);
 			if (!equal(N-d, Z1cd, Z2cd, DBL_EPSILON))
 			{
 				ok = false;
@@ -101,8 +108,8 @@ bool test_SIMD(std::ostream &os)
 
 		for (size_t d = 0; d < 24; ++d)
 		{
-			tadd(N-d, Z1cf, Xcf, Ycf);
-			 add(N-d, Z2cf, Xcf, Ycf);
+			add_T(N-d, Z1cf, Xcf, Ycf);
+			add(N-d, Z2cf, Xcf, Ycf);
 			if (!equal(N-d, Z1cf, Z2cf, FLT_EPSILON))
 			{
 				ok = false;
@@ -120,8 +127,8 @@ bool test_SIMD(std::ostream &os)
 
 		for (size_t d = 0; d < 24; ++d)
 		{
-			tadd(N-d, Z1d, Xd, Yd);
-			 add(N-d, Z2d, Xd, Yd);
+			add_T(N-d, Z1d, Xd, Yd);
+			add(N-d, Z2d, Xd, Yd);
 			if (!equal(N-d, Z1d, Z2d, DBL_EPSILON))
 			{
 				ok = false;
@@ -139,8 +146,8 @@ bool test_SIMD(std::ostream &os)
 
 		for (size_t d = 0; d < 24; ++d)
 		{
-			tadd(N-d, Z1f, Xf, Yf);
-			 add(N-d, Z2f, Xf, Yf);
+			add_T(N-d, Z1f, Xf, Yf);
+			add(N-d, Z2f, Xf, Yf);
 			if (!equal(N-d, Z1f, Z2f, FLT_EPSILON))
 			{
 				ok = false;
