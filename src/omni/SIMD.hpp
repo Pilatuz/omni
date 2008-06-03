@@ -58,7 +58,7 @@ void add_T(size_t N, T *Z, const T *X, const T *Y)
 template<typename T> inline
 void add(size_t N, T *Z, const T *X, const T *Y)
 {
-	add_T(N,Z,X,Y);
+	add_T(N, Z, X, Y);
 }
 
 // automatic
@@ -67,7 +67,7 @@ void add(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
 void add(size_t N, double *Z, const double *X, const double *Y);
 void add(size_t N, float *Z, const float *X, const float *Y);
 
-// SSE specific
+// SSE
 void add_SSE(size_t N, Complex *Z, const Complex *X, const Complex *Y);
 void add_SSE(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
 void add_SSE(size_t N, double *Z, const double *X, const double *Y);
@@ -77,43 +77,63 @@ void add_SSE(size_t N, float *Z, const float *X, const float *Y);
 //////////////////////////////////////////////////////////////////////////
 /// @brief Vector sub.
 template<typename T>
-void sub(T *Z, const T *X, const T *Y, size_t N)
+void sub_T(size_t N, T *Z, const T *X, const T *Y)
 {
 	for (size_t i = 0; i < N; ++i)
 		Z[i] = X[i] - Y[i];
 }
+
+// general
+template<typename T>
+void sub(size_t N, T *Z, const T *X, const T *Y)
+{
+	sub_T(N, Z, X, Y);
+}
+
+// automatic
 void sub(size_t N, Complex *Z, const Complex *X, const Complex *Y);
 void sub(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
 void sub(size_t N, double *Z, const double *X, const double *Y);
 void sub(size_t N, float *Z, const float *X, const float *Y);
 
+// SSE
+void sub_SSE(size_t N, Complex *Z, const Complex *X, const Complex *Y);
+void sub_SSE(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
+void sub_SSE(size_t N, double *Z, const double *X, const double *Y);
+void sub_SSE(size_t N, float *Z, const float *X, const float *Y);
+
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Vector mul.
-template<typename T>
-void mul(T *Z, const T *X, const T *Y, size_t N)
+template<typename T1, typename T2>
+void mul_T(size_t N, T1 *Z, const T1 *X, const T2 *Y)
 {
 	for (size_t i = 0; i < N; ++i)
 		Z[i] = X[i] * Y[i];
 }
+
+// general
+template<typename T1, typename T2>
+void mul(size_t N, T1 *Z, const T1 *X, const T2 *Y)
+{
+	mul_T(N, Z, X, Y);
+}
+
+// automatic
 void mul(size_t N, Complex *Z, const Complex *X, const Complex *Y);
+void mul(size_t N, Complex *Z, const Complex *X, const double *Y);
 void mul(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
+void mul(size_t N, ComplexF *Z, const ComplexF *X, const float *Y);
 void mul(size_t N, double *Z, const double *X, const double *Y);
 void mul(size_t N, float *Z, const float *X, const float *Y);
 
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Vector div.
-template<typename T>
-void div(T *Z, const T *X, const T *Y, size_t N)
-{
-	for (size_t i = 0; i < N; ++i)
-		Z[i] = X[i] / Y[i];
-}
-void div(size_t N, Complex *Z, const Complex *X, const Complex *Y);
-void div(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
-void div(size_t N, double *Z, const double *X, const double *Y);
-void div(size_t N, float *Z, const float *X, const float *Y);
+// SSE
+void mul_SSE(size_t N, Complex *Z, const Complex *X, const Complex *Y);
+void mul_SSE(size_t N, Complex *Z, const Complex *X, const double *Y);
+void mul_SSE(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
+void mul_SSE(size_t N, ComplexF *Z, const ComplexF *X, const float *Y);
+void mul_SSE(size_t N, double *Z, const double *X, const double *Y);
+void mul_SSE(size_t N, float *Z, const float *X, const float *Y);
 
 	} // SIMD namespace
 } // omni namespace

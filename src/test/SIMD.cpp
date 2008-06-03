@@ -84,7 +84,7 @@ bool test_SIMD(std::ostream &os)
 	}
 
 	{ // Complex testing
-		os << "\tComplex:  ";
+		os << "\t(+)Complex:    ";
 		bool ok = true;
 
 		for (size_t d = 0; d < 24; ++d)
@@ -103,7 +103,7 @@ bool test_SIMD(std::ostream &os)
 	}
 
 	{ // ComplexF testing
-		os << "\tComplexF: ";
+		os << "\t(+)ComplexF:   ";
 		bool ok = true;
 
 		for (size_t d = 0; d < 24; ++d)
@@ -122,7 +122,7 @@ bool test_SIMD(std::ostream &os)
 	}
 
 	{ // double testing
-		os << "\tdouble:   ";
+		os << "\t(+)double:     ";
 		bool ok = true;
 
 		for (size_t d = 0; d < 24; ++d)
@@ -141,7 +141,7 @@ bool test_SIMD(std::ostream &os)
 	}
 
 	{ // float testing
-		os << "\tfloat:    ";
+		os << "\t(+)float:      ";
 		bool ok = true;
 
 		for (size_t d = 0; d < 24; ++d)
@@ -158,6 +158,198 @@ bool test_SIMD(std::ostream &os)
 		os << (ok ? "OK" : "FAILED") << "\n";
 		ret &= ok;
 	}
+
+
+	{ // Complex testing
+		os << "\t(-)Complex:    ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			sub_T(N-d, Z1cd, Xcd, Ycd);
+			sub(N-d, Z2cd, Xcd, Ycd);
+			if (!equal(N-d, Z1cd, Z2cd, DBL_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // ComplexF testing
+		os << "\t(-)ComplexF:   ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			sub_T(N-d, Z1cf, Xcf, Ycf);
+			sub(N-d, Z2cf, Xcf, Ycf);
+			if (!equal(N-d, Z1cf, Z2cf, FLT_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // double testing
+		os << "\t(-)double:     ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			sub_T(N-d, Z1d, Xd, Yd);
+			sub(N-d, Z2d, Xd, Yd);
+			if (!equal(N-d, Z1d, Z2d, DBL_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // float testing
+		os << "\t(-)float:      ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			sub_T(N-d, Z1f, Xf, Yf);
+			sub(N-d, Z2f, Xf, Yf);
+			if (!equal(N-d, Z1f, Z2f, FLT_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // Complex testing
+		os << "\t(*)Complex:    ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			mul_T(N-d, Z1cd, Xcd, Ycd);
+			mul(N-d, Z2cd, Xcd, Ycd);
+			if (!equal(N-d, Z1cd, Z2cd, DBL_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // Complex' testing
+		os << "\t(*)Complex':   ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			mul_T(N-d, Z1cd, Xcd, Yd);
+			mul(N-d, Z2cd, Xcd, Yd);
+			if (!equal(N-d, Z1cd, Z2cd, DBL_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // ComplexF testing
+		os << "\t(*)ComplexF:   ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			mul_T(N-d, Z1cf, Xcf, Ycf);
+			mul(N-d, Z2cf, Xcf, Ycf);
+			if (!equal(N-d, Z1cf, Z2cf, FLT_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // ComplexF' testing
+		os << "\t(*)ComplexF':  ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			mul_T(N-d, Z1cf, Xcf, Yf);
+			mul(N-d, Z2cf, Xcf, Yf);
+			if (!equal(N-d, Z1cf, Z2cf, FLT_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // double testing
+		os << "\t(*)double:     ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			mul_T(N-d, Z1d, Xd, Yd);
+			mul(N-d, Z2d, Xd, Yd);
+			if (!equal(N-d, Z1d, Z2d, DBL_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // float testing
+		os << "\t(*)float:      ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			mul_T(N-d, Z1f, Xf, Yf);
+			mul(N-d, Z2f, Xf, Yf);
+			if (!equal(N-d, Z1f, Z2f, FLT_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
 
 	os << "\n";
 	return ret;
