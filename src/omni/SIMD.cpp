@@ -591,10 +591,9 @@ void mul_SSE(size_t N, Complex *Z, const Complex *X, const Complex *Y)
 	{
 		__m128d x = _mm_load_pd((const double*)X);
 		__m128d y = _mm_load_pd((const double*)Y);
-		__m128d z = _mm_mul_pd(x, y);
-
-		// TODO: complex multiplication!!!
-
+		__m128d t1 = _mm_mul_pd(x, _mm_unpacklo_pd(y, y));
+		__m128d t2 = _mm_mul_pd(x, _mm_unpackhi_pd(y, y));
+		__m128d z = _mm_addsub_pd(t1, _mm_shuffle_pd(t2, t2, 1));
 		_mm_store_pd((double*)Z, z);
 
 		++X; ++Y; ++Z;
@@ -633,10 +632,10 @@ void mul_SSE(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y)
 	{
 		__m128 x = _mm_load_ps((const float*)X);
 		__m128 y = _mm_load_ps((const float*)Y);
-		__m128 z = _mm_mul_ps(x, y);
+		__m128 t1 = _mm_mul_ps(_mm_moveldup_ps(x), y);
+		__m128 t2 = _mm_mul_ps(_mm_movehdup_ps(x), y);
+		__m128 z = _mm_addsub_ps(t1, _mm_shuffle_ps(t2, t2, 0xB1));
 		_mm_store_ps((float*)Z, z);
-
-		// TODO: complex multiplication!!!
 
 		X+=2; Y+=2; Z+=2;
 	}
