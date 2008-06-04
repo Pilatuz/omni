@@ -351,6 +351,120 @@ bool test_SIMD(std::ostream &os)
 	}
 
 
+	{ // Complex testing
+		os << "\t(.)Complex:    ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			Z1cd[0] = dot_T(N-d, Xcd, Ycd);
+			Z2cd[0] = dot(N-d, Xcd, Ycd);
+			if (!equal(1, Z1cd, Z2cd, DBL_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // Complex' testing
+		os << "\t(.)Complex':   ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			Z1cd[0] = dot_T(N-d, Xcd, Yd);
+			Z2cd[0] = dot(N-d, Xcd, Yd);
+			if (!equal(1, Z1cd, Z2cd, DBL_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // ComplexF testing
+		os << "\t(.)ComplexF:   ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			Z1cf[0] = dot_T(N-d, Xcf, Ycf);
+			Z2cf[0] = dot(N-d, Xcf, Ycf);
+			if (!equal(1, Z1cf, Z2cf, FLT_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // ComplexF' testing
+		os << "\t(.)ComplexF':  ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			Z1cf[0] = dot_T(N-d, Xcf, Yf);
+			Z2cf[0] = dot(N-d, Xcf, Yf);
+			if (!equal(1, Z1cf, Z2cf, FLT_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // double testing
+		os << "\t(.)double:     ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			Z1d[0] = dot_T(N-d, Xd, Yd);
+			Z2d[0] = dot(N-d, Xd, Yd);
+			if (!equal(1, Z1d, Z2d, DBL_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
+	{ // float testing
+		os << "\t(.)float:      ";
+		bool ok = true;
+
+		for (size_t d = 0; d < 24; ++d)
+		{
+			Z1f[0] = dot_T(N-d, Xf, Yf);
+			Z2f[0] = dot(N-d, Xf, Yf);
+			if (!equal(1, Z1f, Z2f, FLT_EPSILON))
+			{
+				ok = false;
+				break;
+			}
+		}
+
+		os << (ok ? "OK" : "FAILED") << "\n";
+		ret &= ok;
+	}
+
 	os << "\n";
 	return ret;
 }

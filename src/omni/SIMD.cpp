@@ -730,4 +730,266 @@ void mul_SSE(size_t N, float *Z, const float *X, const float *Y)
 
 	} // mul
 
+
+	// dot
+	namespace SIMD
+	{
+		namespace details
+		{
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Vector dot helper.
+template<typename T1, typename T2>
+class Dot {
+private: // selector
+
+	/// @brief Function pointer.
+	typedef T1 (*FuncPtr)(size_t, const T1*, const T2*);
+
+	/// @brief Select the function.
+	static FuncPtr select()
+	{
+		if ((is_SSE_type<T1>() && Capability::SSE)
+			|| (is_SSE2_type<T1>() && Capability::SSE2))
+		{
+			return &dot_SSE;
+		}
+
+		return &dot_T<T1,T2>;
+	}
+
+public:
+
+	/// @brief The engine.
+	static FuncPtr run;
+};
+
+// initialization
+template<typename T1, typename T2>
+typename Dot<T1,T2>::FuncPtr Dot<T1,T2>::run = Dot<T1,T2>::select();
+
+		} // details namespace
+
+
+// Complex
+Complex dot(size_t N, const Complex *X, const Complex *Y)
+{
+	return details::Dot<Complex,Complex>::run(N, X, Y);
+}
+
+// Complex*double
+Complex dot(size_t N, const Complex *X, const double *Y)
+{
+	return details::Dot<Complex,double>::run(N, X, Y);
+}
+
+// ComplexF
+ComplexF dot(size_t N, const ComplexF *X, const ComplexF *Y)
+{
+	return details::Dot<ComplexF,ComplexF>::run(N, X, Y);
+}
+
+// ComplexF*float
+ComplexF dot(size_t N, const ComplexF *X, const float *Y)
+{
+	return details::Dot<ComplexF,float>::run(N, X, Y);
+}
+
+// double
+double dot(size_t N, const double *X, const double *Y)
+{
+	return details::Dot<double,double>::run(N, X, Y);
+}
+
+// float
+float dot(size_t N, const float *X, const float *Y)
+{
+	return details::Dot<float,float>::run(N, X, Y);
+}
+
+
+// Complex (SSE2)
+Complex dot_SSE(size_t N, const Complex *X, const Complex *Y)
+{
+	assert(!(size_t(X)%16) && "vector X must be 16-byte aligned");
+	assert(!(size_t(Y)%16) && "vector Y must be 16-byte aligned");
+
+	__m128d z = _mm_setzero_pd();
+	for (size_t i = 0; i < N; ++i)
+	{
+		__m128d x = _mm_load_pd((const double*)X);
+		__m128d y = _mm_load_pd((const double*)Y);
+		__m128d t1 = _mm_mul_pd(x, _mm_unpacklo_pd(y, y));
+		__m128d t2 = _mm_mul_pd(x, _mm_unpackhi_pd(y, y));
+		__m128d t3 = _mm_addsub_pd(t1, _mm_shuffle_pd(t2, t2, 1));
+		z = _mm_add_pd(z, t3);
+
+		++X; ++Y;
+	}
+
+	__declspec(align(16)) Complex Z[1];
+	_mm_store_pd((double*)Z, z);
+
+	return Z[0];
+}
+
+
+// Complex*double (SSE2)
+Complex dot_SSE(size_t N, const Complex *X, const double *Y)
+{
+	assert(!(size_t(X)%16) && "vector X must be 16-byte aligned");
+	assert(!(size_t(Y)%16) && "vector Y must be 16-byte aligned");
+
+	__m128d z = _mm_setzero_pd();
+	for (size_t i = 0; i < N; ++i)
+	{
+		__m128d x = _mm_load_pd((const double*)X);
+		__m128d y = _mm_loaddup_pd(Y);
+		__m128d t = _mm_mul_pd(x, y);
+		z = _mm_add_pd(z, t);
+
+		++X; ++Y;
+	}
+
+	__declspec(align(16)) Complex Z[1];
+	_mm_store_pd((double*)Z, z);
+
+	return Z[0];
+}
+
+
+// ComplexF (SSE)
+ComplexF dot_SSE(size_t N, const ComplexF *X, const ComplexF *Y)
+{
+	assert(!(size_t(X)%16) && "vector X must be 16-byte aligned");
+	assert(!(size_t(Y)%16) && "vector Y must be 16-byte aligned");
+
+	// couples
+	__m128 z = _mm_setzero_ps();
+	for (size_t i = 0; i < N/2; ++i)
+	{
+		__m128 x = _mm_load_ps((const float*)X);
+		__m128 y = _mm_load_ps((const float*)Y);
+		__m128 t1 = _mm_mul_ps(_mm_moveldup_ps(x), y);
+		__m128 t2 = _mm_mul_ps(_mm_movehdup_ps(x), y);
+		__m128 t3 = _mm_addsub_ps(t1, _mm_shuffle_ps(t2, t2, 0xB1));
+		z = _mm_add_ps(z, t3);
+
+		X+=2; Y+=2;
+	}
+
+	__declspec(align(16)) ComplexF Z[2];
+	_mm_store_ps((float*)Z, z);
+	Z[0] += Z[1];
+
+	if (N%2)
+	{
+		Z[0] += X[0] * Y[0];
+		// ++X; ++Y;
+	}
+
+	return Z[0];
+}
+
+
+// ComplexF*float (SSE)
+ComplexF dot_SSE(size_t N, const ComplexF *X, const float *Y)
+{
+	assert(!(size_t(X)%16) && "vector X must be 16-byte aligned");
+	assert(!(size_t(Y)%16) && "vector Y must be 16-byte aligned");
+
+	// couples
+	__m128 z = _mm_setzero_ps();
+	for (size_t i = 0; i < N/2; ++i)
+	{
+		__m128 x = _mm_load_ps((const float*)X);
+		__m128 y1 = _mm_load1_ps(Y + 0);
+		__m128 y2 = _mm_load1_ps(Y + 1);
+		__m128 y = _mm_movelh_ps(y1,y2);
+		__m128 t = _mm_mul_ps(x, y);
+		z = _mm_add_ps(z, t);
+
+		X+=2; Y+=2;
+	}
+
+	__declspec(align(16)) ComplexF Z[2];
+	_mm_store_ps((float*)Z, z);
+	Z[0] += Z[1];
+
+	if (N%2)
+	{
+		Z[0] += X[0] * Y[0];
+		// ++X; ++Y; ++Z;
+	}
+
+	return Z[0];
+}
+
+
+// double (SSE2)
+double dot_SSE(size_t N, const double *X, const double *Y)
+{
+	assert(!(size_t(X)%16) && "vector X must be 16-byte aligned");
+	assert(!(size_t(Y)%16) && "vector Y must be 16-byte aligned");
+
+	// couples
+	__m128d z = _mm_setzero_pd();
+	for (size_t i = 0; i < N/2; ++i)
+	{
+		__m128d x = _mm_load_pd(X);
+		__m128d y = _mm_load_pd(Y);
+		__m128d t = _mm_mul_pd(x, y);
+		z = _mm_add_pd(z, t);
+
+		X+=2; Y+=2;
+	}
+
+	__declspec(align(16)) double Z[2];
+	_mm_store_pd(Z, z);
+	Z[0] += Z[1];
+
+	if (N%2)
+	{
+		Z[0] += X[0] * Y[0];
+		// ++X; ++Y; ++Z;
+	}
+
+	return Z[0];
+}
+
+
+// float (SSE)
+float dot_SSE(size_t N, const float *X, const float *Y)
+{
+	assert(!(size_t(X)%16) && "vector X must be 16-byte aligned");
+	assert(!(size_t(Y)%16) && "vector Y must be 16-byte aligned");
+
+	// quartets
+	__m128 z = _mm_setzero_ps();
+	for (size_t i = 0; i < N/4; ++i)
+	{
+		__m128 x = _mm_load_ps(X);
+		__m128 y = _mm_load_ps(Y);
+		__m128 t = _mm_mul_ps(x, y);
+		z = _mm_add_ps(z, t);
+
+		X+=4; Y+=4;
+	}
+
+	__declspec(align(16)) float Z[4];
+	_mm_store_ps(Z, z);
+	Z[0] += Z[1] + Z[2] + Z[3];
+
+	switch (N%4)
+	{
+		case 3: Z[0] += X[0] * Y[0]; ++X; ++Y; // (!) no break
+		case 2: Z[0] += X[0] * Y[0]; ++X; ++Y; // (!) no break
+		case 1: Z[0] += X[0] * Y[0]; ++X; ++Y; // (!) no break
+	}
+
+	return Z[0];
+}
+
+	} // dot
+
 } // omni namespace

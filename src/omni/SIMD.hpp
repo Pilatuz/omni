@@ -84,7 +84,7 @@ void sub_T(size_t N, T *Z, const T *X, const T *Y)
 }
 
 // general
-template<typename T>
+template<typename T> inline
 void sub(size_t N, T *Z, const T *X, const T *Y)
 {
 	sub_T(N, Z, X, Y);
@@ -113,7 +113,7 @@ void mul_T(size_t N, T1 *Z, const T1 *X, const T2 *Y)
 }
 
 // general
-template<typename T1, typename T2>
+template<typename T1, typename T2> inline
 void mul(size_t N, T1 *Z, const T1 *X, const T2 *Y)
 {
 	mul_T(N, Z, X, Y);
@@ -134,6 +134,43 @@ void mul_SSE(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y);
 void mul_SSE(size_t N, ComplexF *Z, const ComplexF *X, const float *Y);
 void mul_SSE(size_t N, double *Z, const double *X, const double *Y);
 void mul_SSE(size_t N, float *Z, const float *X, const float *Y);
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Vector dot.
+template<typename T1, typename T2>
+T1 dot_T(size_t N, const T1 *X, const T2 *Y)
+{
+	T1 z = T1();
+
+	for (size_t i = 0; i < N; ++i)
+		z += X[i] * Y[i];
+
+	return z;
+}
+
+// general
+template<typename T1, typename T2> inline
+T1 dot(size_t N, const T1 *X, const T2 *Y)
+{
+	return dot_T(N, Z, X, Y);
+}
+
+// automatic
+Complex dot(size_t N, const Complex *X, const Complex *Y);
+Complex dot(size_t N, const Complex *X, const double *Y);
+ComplexF dot(size_t N, const ComplexF *X, const ComplexF *Y);
+ComplexF dot(size_t N, const ComplexF *X, const float *Y);
+double dot(size_t N, const double *X, const double *Y);
+float dot(size_t N, const float *X, const float *Y);
+
+// SSE
+Complex dot_SSE(size_t N, const Complex *X, const Complex *Y);
+Complex dot_SSE(size_t N, const Complex *X, const double *Y);
+ComplexF dot_SSE(size_t N, const ComplexF *X, const ComplexF *Y);
+ComplexF dot_SSE(size_t N, const ComplexF *X, const float *Y);
+double dot_SSE(size_t N, const double *X, const double *Y);
+float dot_SSE(size_t N, const float *X, const float *Y);
 
 	} // SIMD namespace
 } // omni namespace
