@@ -60,6 +60,10 @@ bool test_SIMD(std::ostream &os)
 	if (Capability::_3DNow) os << "3DNow! ";
 	if (Capability::SSE) os << "SSE ";
 	if (Capability::SSE2) os << "SSE2 ";
+	if (Capability::SSE3) os << "SSE3 ";
+	if (Capability::SSSE3) os << "SSSE3 ";
+	if (Capability::SSE4_1) os << "SSE4.1 ";
+	if (Capability::SSE4_2) os << "SSE4.2 ";
 	os << "\n\n";
 
 	const size_t N = 1024;
