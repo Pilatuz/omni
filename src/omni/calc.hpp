@@ -519,6 +519,43 @@ double freq(const Ch *expression)
 
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief The voltage calculator.
+const Calculator<double>& volt();
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The voltage calculator: evaluate expression from the string.
+/**
+@param[in] expression The input string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see volt()
+*/
+template<typename Ch, typename Tr, typename Ax> inline
+double volt(const std::basic_string<Ch,Tr,Ax> &expression)
+{
+	return volt()(expression);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The voltage calculator: evaluate expression from the C-string.
+/**
+@param[in] expression The input C-string.
+@return The evaluation result.
+@throw omni::calc::err::SyntaxError If expression is invalid.
+@throw omni::calc::err::CalculationError If expression has any errors.
+@see volt()
+*/
+template<typename Ch> inline
+double volt(const Ch *expression)
+{
+	return volt()(expression);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief The bits calculator.
 const Calculator<double>& bits();
 

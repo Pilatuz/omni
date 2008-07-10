@@ -274,6 +274,50 @@ const Calculator<double>& freq()
 
 
 //////////////////////////////////////////////////////////////////////////
+// The voltage calculator.
+/**
+		This function returns voltage (in Volt) calculator reference.
+
+		The following operators are supported: "+", "-", "*", "/" and brackets.
+
+	The following suffix functions are supported:
+		- @b GV - Conversion from gigavolt (1.0e+9) to volt.
+		- @b MV - Conversion from megavolt (1.0e+6) to volt.
+		- @b KV, @b kV - Conversion from kilovolt (1.0e+3) to volt.
+		- @b V - Actually, no conversion.
+		- @b mV - Conversion from millivolt (1.0e-3) to volt.
+		- @b uV - Conversion from microvolt (1.0e-6) to volt.
+		- @b nV - Conversion from nanovolt (1.0e-9) to volt.
+
+@return The voltage calculator reference.
+*/
+const Calculator<double>& volt()
+{
+	// Init
+	struct Init {
+		static Calculator<double> get()
+		{
+			Calculator<double> calculator;
+
+			calculator.suffix().insert(L"GV", Multiplier<double, 1000000000L>());
+			calculator.suffix().insert(L"MV", Multiplier<double, 1000000L>());
+			calculator.suffix().insert(L"KV", Multiplier<double, 1000L>());
+			calculator.suffix().insert(L"kV", Multiplier<double, 1000L>());
+			calculator.suffix().insert(L"V",  Multiplier<double, 1L>());
+			calculator.suffix().insert(L"mV", Divider<double, 1000L>());
+			calculator.suffix().insert(L"uV", Divider<double, 1000000L>());
+			calculator.suffix().insert(L"nV", Divider<double, 1000000000L>());
+
+			return calculator;
+		}
+	};
+
+	static Calculator<double> g_CALC = Init::get();
+	return g_CALC;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 // The bits calculator.
 /**
 		This function returns size (in bits or in bytes) calculator reference.
