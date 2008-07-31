@@ -893,9 +893,9 @@ void mul_SSE2(size_t N, Complex *Z, const Complex *X, const Complex *Y)
 		__m128d y = _mm_load_pd((const double*)Y);
 		__m128d t1 = _mm_mul_pd(x, _mm_unpacklo_pd(y, y));
 		__m128d t2 = _mm_mul_pd(x, _mm_unpackhi_pd(y, y));
-		t2 = _mm_shuffle_pd(t2, t2, 1);
-		__m128d z1 = _mm_add_pd(t1, t2);
-		__m128d z2 = _mm_sub_pd(t1, t2);
+		__m128d t3 = _mm_shuffle_pd(t2, t2, 1);
+		__m128d z1 = _mm_add_pd(t1, t3);
+		__m128d z2 = _mm_sub_pd(t1, t3);
 		__m128d z = _mm_move_sd(z1, z2);
 		_mm_store_pd((double*)Z, z);
 
@@ -982,9 +982,16 @@ void mul_SSE(size_t N, ComplexF *Z, const ComplexF *X, const ComplexF *Y)
 	{
 		__m128 x = _mm_load_ps((const float*)X);
 		__m128 y = _mm_load_ps((const float*)Y);
-		__m128 t1 = _mm_mul_ps(_mm_moveldup_ps(x), y);
-		__m128 t2 = _mm_mul_ps(_mm_movehdup_ps(x), y);
-		__m128 z = _mm_addsub_ps(t1, _mm_shuffle_ps(t2, t2, 0xB1));
+
+		__m128 t1 = _mm_mul_ps(_mm_shuffle_ps(x,x,0xA0), y);
+		__m128 t2 = _mm_mul_ps(_mm_shuffle_ps(x,x,0xF5), y);
+		__m128 t3 = _mm_shuffle_ps(t2, t2, 0xB1);
+
+		__m128 z1 = _mm_add_ps(t1, t3);
+		__m128 z2 = _mm_sub_ps(t1, t3);
+		__m128 z = _mm_shuffle_ps(z1,z2,0x8D);
+
+		z = _mm_shuffle_ps(z,z,0x72);
 		_mm_store_ps((float*)Z, z);
 
 		X+=2; Y+=2; Z+=2;
@@ -1297,8 +1304,11 @@ Complex dot_SSE2(size_t N, const Complex *X, const Complex *Y)
 		__m128d y = _mm_load_pd((const double*)Y);
 		__m128d t1 = _mm_mul_pd(x, _mm_unpacklo_pd(y, y));
 		__m128d t2 = _mm_mul_pd(x, _mm_unpackhi_pd(y, y));
-		__m128d t3 = _mm_addsub_pd(t1, _mm_shuffle_pd(t2, t2, 1));
-		z = _mm_add_pd(z, t3);
+		__m128d t3 = _mm_shuffle_pd(t2, t2, 1);
+		__m128d z1 = _mm_add_pd(t1, t3);
+		__m128d z2 = _mm_sub_pd(t1, t3);
+		__m128d z3 = _mm_move_sd(z1, z2);
+		z = _mm_add_pd(z, z3);
 
 		++X; ++Y;
 	}
@@ -1344,7 +1354,7 @@ Complex dot_SSE2(size_t N, const Complex *X, const double *Y)
 	for (size_t i = 0; i < N; ++i)
 	{
 		__m128d x = _mm_load_pd((const double*)X);
-		__m128d y = _mm_loaddup_pd(Y);
+		__m128d y = _mm_load_sd(Y); y = _mm_unpacklo_pd(y, y);
 		__m128d t = _mm_mul_pd(x, y);
 		z = _mm_add_pd(z, t);
 
@@ -1404,9 +1414,16 @@ ComplexF dot_SSE(size_t N, const ComplexF *X, const ComplexF *Y)
 	{
 		__m128 x = _mm_load_ps((const float*)X);
 		__m128 y = _mm_load_ps((const float*)Y);
-		__m128 t1 = _mm_mul_ps(_mm_moveldup_ps(x), y);
-		__m128 t2 = _mm_mul_ps(_mm_movehdup_ps(x), y);
-		__m128 t = _mm_addsub_ps(t1, _mm_shuffle_ps(t2, t2, 0xB1));
+
+		__m128 t1 = _mm_mul_ps(_mm_shuffle_ps(x,x,0xA0), y);
+		__m128 t2 = _mm_mul_ps(_mm_shuffle_ps(x,x,0xF5), y);
+		__m128 t3 = _mm_shuffle_ps(t2, t2, 0xB1);
+
+		__m128 z1 = _mm_add_ps(t1, t3);
+		__m128 z2 = _mm_sub_ps(t1, t3);
+		__m128 t = _mm_shuffle_ps(z1,z2,0x8D);
+
+		t = _mm_shuffle_ps(t,t,0x72);
 		z = _mm_add_ps(z, t);
 
 		X+=2; Y+=2;
