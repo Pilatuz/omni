@@ -30,6 +30,33 @@ namespace omni
 	{
 
 //////////////////////////////////////////////////////////////////////////
+// create rendering context: draw to bitmap
+Context::Context(HDC hDC)
+	: m_hWnd(0), m_hDC(hDC), m_hRC(0)
+{
+	PIXELFORMATDESCRIPTOR pfd = { 0 };
+
+	pfd.nSize      = sizeof(pfd);
+	pfd.nVersion   = 1;
+	pfd.dwFlags    = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_BITMAP;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.cColorBits = 24;
+	pfd.iLayerType = PFD_MAIN_PLANE;
+
+	int pfd_id = ::ChoosePixelFormat(m_hDC, &pfd);
+	if (0 == pfd_id)
+		throw std::exception("can't choose GL pixel format!");
+
+	if (!::SetPixelFormat(m_hDC, pfd_id, &pfd))
+		throw std::exception("can't set GL pixel format!");
+
+	m_hRC = ::wglCreateContext(m_hDC);
+	if (0 == m_hRC)
+		throw std::exception("can't create GL context!");
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 // create rendering context
 Context::Context(HWND hWnd)
 	: m_hWnd(hWnd), m_hDC(0), m_hRC(0)
@@ -75,6 +102,7 @@ Context::~Context()
 		assert(ret!=FALSE && "Can't delete GL context");
 	}
 
+	if (m_hWnd)
 	{ // release DC
 		int ret = ::ReleaseDC(m_hWnd, m_hDC);
 		assert(ret!=FALSE && "Can't release DC context");

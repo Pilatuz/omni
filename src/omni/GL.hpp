@@ -32,6 +32,7 @@ namespace omni
 // GL Rendering Context
 class Context: private NonCopyable {
 public:
+	explicit Context(HDC hDC);
 	explicit Context(HWND hWnd);
 	~Context();
 

@@ -210,7 +210,7 @@ public:
 	bool fixedAspectRatio() const;
 	void set_fixedAspectRatio(bool fixed_AR);
 
-protected:
+public:
 	void show(const Rect &wr);
 	void set_viewport(int x,
 		int y, int w, int h);
