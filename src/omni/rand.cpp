@@ -70,9 +70,9 @@ Exponential& g_exp()
 #if OMNI_MT
 //////////////////////////////////////////////////////////////////////////
 // @brief The global critical section.
-omni::sync::Lockable& g_lock()
+omni::sync::CriticalSection& g_lock()
 {
-	static omni::sync::CriticalSection LOCK;
+	static omni::sync::CriticalSection LOCK(1024); // (!) spin count
 	return LOCK;
 }
 #endif // OMNI_MT
@@ -110,7 +110,7 @@ namespace omni
 */
 RandomValue rand(RandomValue lo, RandomValue up)
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_rand()(lo, up);
 }
 
@@ -125,7 +125,7 @@ RandomValue rand(RandomValue lo, RandomValue up)
 */
 RandomValue rand(RandomValue up)
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_rand()(up);
 }
 
@@ -139,7 +139,7 @@ RandomValue rand(RandomValue up)
 */
 RandomValue rand()
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_rand()();
 }
 
@@ -166,7 +166,7 @@ RandomValue rand_max()
 */
 void srand(RandomValue seed)
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 
 	g_rand() = Random(seed);
 	g_unif() = Uniform(seed);
@@ -205,7 +205,7 @@ RandomValue randomize()
 */
 double runif(double lo, double up)
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_unif()(lo, up);
 }
 
@@ -221,7 +221,7 @@ double runif(double lo, double up)
 */
 double runif(double up)
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_unif()(up);
 }
 
@@ -236,7 +236,7 @@ double runif(double up)
 */
 double runif()
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_unif()();
 }
 
@@ -253,7 +253,7 @@ double runif()
 */
 double rnorm(double mean, double stdev)
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_norm()(mean, stdev);
 }
 
@@ -269,7 +269,7 @@ double rnorm(double mean, double stdev)
 */
 double rnorm(double stdev)
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_norm()(stdev);
 }
 
@@ -284,7 +284,7 @@ double rnorm(double stdev)
 */
 double rnorm()
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_norm()();
 }
 
@@ -327,7 +327,7 @@ std::complex<double> wgn(double stdev)
 */
 double rexp(double stdev)
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_exp()(stdev);
 }
 
@@ -342,7 +342,7 @@ double rexp(double stdev)
 */
 double rexp()
 {
-	OMNI_MT_CODE(sync::Locker guard(g_lock()));
+	OMNI_MT_CODE(sync::AutoLock guard(g_lock()));
 	return g_exp()();
 }
 

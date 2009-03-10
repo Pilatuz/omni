@@ -36,12 +36,15 @@ int main()
 
 	try {
 
-		if (!test_SIMD(std::cout))
-			std::cout << "test FAILED\n";
-		else
-			std::cout << "test SUCCESS\n";
+		if (1) // explicit test
+		{
+			if (!test_SIMD(std::cout))
+				std::cout << "test FAILED\n";
+			else
+				std::cout << "test SUCCESS\n";
 
-		return 0;
+			return 0;
+		}
 
 		omni::rnd::randomize();
 		omni::test::UnitTest::testAll(std::cout);

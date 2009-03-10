@@ -64,9 +64,9 @@ typedef omni::pool::Manager<sizeof(void*),
 
 @return The global synchronization object.
 */
-	sync::Lockable& g_lock()
+	sync::CriticalSection& g_lock()
 	{
-		static sync::CriticalSection G;
+		static sync::CriticalSection G(4096); // (!) spin count
 		return G;
 	}
 #endif // OMNI_MT
@@ -85,7 +85,7 @@ namespace omni
 
 #if OMNI_MT
 		using details::g_lock;
-		using sync::Locker;
+		using sync::AutoLock;
 #endif // OMNI_MT
 
 
@@ -112,7 +112,7 @@ void* mem_get(size_t buf_size)
 
 	if (buf_size <= details::GManager::MAX_SIZE)
 	{
-		OMNI_MT_CODE(Locker guard(g_lock()));
+		OMNI_MT_CODE(AutoLock guard(g_lock()));
 		buf = g_pool().get(buf_size);
 	}
 	else
@@ -145,7 +145,7 @@ void mem_put(void *buf, size_t buf_size)
 
 	if (buf_size <= details::GManager::MAX_SIZE)
 	{
-		OMNI_MT_CODE(Locker guard(g_lock()));
+		OMNI_MT_CODE(AutoLock guard(g_lock()));
 		g_pool().put(buf, buf_size);
 	}
 	else

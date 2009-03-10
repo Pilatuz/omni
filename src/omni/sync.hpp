@@ -23,40 +23,24 @@
 
 #include <omni/defs.hpp>
 
+// use Win32 CRITICAL_SECTION
+#if !defined(_WIN32_WINNT)
+#	define _WIN32_WINNT 0x0500
+#endif
+#define WIN32_LEAN_AND_MEAN // avoid unuseful stuff
+#include <windows.h>
+
+
 namespace omni
 {
 	namespace sync
 	{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief %Lockable interface.
+/// @brief The auto lock.
 /**
-		This class is used as interface for the some synchronization objects.
-	The public interface contains two methods:
-		- enter() - lock synchronization object,
-		- leave() - unlock synchronization object.
-
-		It is recommended to use Locker guard class
-	instead direct enter()/leave() method calling.
-
-@see Locker
-*/
-class Lockable {
-protected:
-	Lockable() {}    ///< @brief Trivial constructor.
-	~Lockable() {}   ///< @brief Trivial destructor.
-
-public:
-	virtual void enter() = 0;
-	virtual void leave() = 0;
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief %Locker guard.
-/**
-		This class holds the synchronization object: constructor locks
-	this object and destructor unlocks this object.
+		This class holds the synchronization object:
+	constructor locks it and destructor unlocks.
 
 		For example, the following code:
 
@@ -74,21 +58,54 @@ public:
 @code
 	void f(Lockable &x)
 	{
-		Locker guard(x);
+		AutoLockT<Lockable> guard(x);
 		// ...
 	}
 @endcode
 
 		Even exception was thrown during function execution, the
 	synchronization object will be properly unlocked.
+
+		It is recommended to use appropriate typedef, for example:
+
+@code
+	typedef AutoLockT<CriticalSection> AutoLock;
+@endcode
+
+@tparam LOCK The type of syncronization object.
 */
-class Locker: private omni::NonCopyable {
+template<typename LOCK>
+class AutoLockT:
+	private omni::NonCopyable
+{
 public:
-	explicit Locker(Lockable &lock);
-	~Locker();
+
+	/// @brief Lock synchronization object.
+	/**
+			This constructor holds the synchronization object @a lock
+		and locks it by calling LOCK::enter() method.
+
+	@param[in] lock The synchronization object.
+	*/
+	explicit AutoLockT(LOCK &lock)
+		: m_lock(lock)
+	{
+		m_lock.enter();
+	}
+
+
+	/// @brief Unlock synchronization object.
+	/**
+			The destructor unlocks the locked in constructor
+		synchronization object by calling LOCK::leave() method.
+	*/
+	~AutoLockT()
+	{
+		m_lock.leave();
+	}
 
 private:
-	Lockable &m_lock;
+	LOCK &m_lock; ///< @brief The synchronization object.
 };
 
 
@@ -97,23 +114,60 @@ private:
 /**
 		This class is used for intra-process synchronization.
 
-		It implements Lockable interface for @b Win32 and @b *nix
-	platform (based on @b CRITICAL_SECTION structure for @b Win32
-	and on pthread_mutex for @b *nix).
+	Based on the Win32 CRITICAL_SECTION object.
 */
-class CriticalSection: public Lockable,
-	private omni::NonCopyable {
+class CriticalSection:
+	private omni::NonCopyable
+{
 public:
 	CriticalSection();
+	explicit CriticalSection(long spinCount);
 	~CriticalSection();
 
-public: // Lockable interface
-	virtual void enter();
-	virtual void leave();
+public:
+	long setSpinCount(long spinCount);
+
+public:
+	bool try_enter();
+	void enter();
+	void leave();
 
 private:
-	class Impl;
-	Impl *impl;
+	CRITICAL_SECTION m_impl; ///< @brief The critical section.
+};
+
+
+/// @brief The critical section auto lock.
+typedef AutoLockT<CriticalSection> AutoLock;
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The event.
+/**
+		If the event object is manual-reset, then you should call the reset()
+	method to switch event to non-signaled state. Otherwise the event object
+	is auto-reset, i.e. event switches to non-signaled state once a single
+	waiting thread has been released.
+*/
+class Event:
+	private NonCopyable
+{
+public:
+	Event(bool manualReset, bool initialSignaled, wchar_t const* name);
+	Event(bool manualReset, bool initialSignaled, char const* name);
+	Event(bool manualReset, bool initialSignaled);
+	~Event();
+
+public:
+	bool reset();
+	bool set();
+
+public:
+	bool wait(DWORD timeout_ms);
+	bool wait();
+
+private:
+	HANDLE m_impl; ///< @brief The event object.
 };
 
 	} // sync namespace
