@@ -31,7 +31,6 @@ namespace omni
 
 @code
 	#include <omni/conf.hpp>
-	using namespace omni::conf;
 @endcode
 
 @see @ref omni_config
@@ -47,51 +46,7 @@ namespace omni
 @warning Do not use this namespace.
 */
 		namespace details
-		{
-			/// @cond details
-
-// explicit <wchar_t> instantiation...
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::DELIMITERS[] = L"\t\r\n\f #?=</>\'\"";
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::SEPARATOR[]  = L":";
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::ENDLINE  = L'\n';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::SPACE    = L' ';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::COMMENT  = L'#';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::METADATA = L'?';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::EQUAL    = L'=';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::BEGIN    = L'<';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::CLOSE    = L'/';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::END      = L'>';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::SQUOTE   = L'\'';
-template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::DQUOTE   = L'\"';
-
-template<>
-bool CharConst<wchar_t>::is_delim(Char cx)
-{
-	return wcschr(DELIMITERS, cx) != 0;
-}
-
-// explicit <char> instantiation...
-template<> const CharConst<char>::Char CharConst<char>::DELIMITERS[] = "\t\r\n\f #?=</>\'\"";
-template<> const CharConst<char>::Char CharConst<char>::SEPARATOR[]  = ":";
-template<> const CharConst<char>::Char CharConst<char>::ENDLINE  = '\n';
-template<> const CharConst<char>::Char CharConst<char>::SPACE    = ' ';
-template<> const CharConst<char>::Char CharConst<char>::COMMENT  = '#';
-template<> const CharConst<char>::Char CharConst<char>::METADATA = '?';
-template<> const CharConst<char>::Char CharConst<char>::EQUAL    = '=';
-template<> const CharConst<char>::Char CharConst<char>::BEGIN    = '<';
-template<> const CharConst<char>::Char CharConst<char>::CLOSE    = '/';
-template<> const CharConst<char>::Char CharConst<char>::END      = '>';
-template<> const CharConst<char>::Char CharConst<char>::SQUOTE   = '\'';
-template<> const CharConst<char>::Char CharConst<char>::DQUOTE   = '\"';
-
-template<>
-bool CharConst<char>::is_delim(Char cx)
-{
-	return strchr(DELIMITERS, cx) != 0;
-}
-
-			/// @endcond
-		} // details namespace
+		{}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -111,6 +66,66 @@ bool CharConst<char>::is_delim(Char cx)
 */
 		namespace io
 		{}
+
+
+		// CharConst
+		/// @cond details
+		namespace details
+		{
+
+// explicit CharConst<wchar_t> instantiation...
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::SEPARATOR[]  = L":";
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::ENDLINE  = L'\n';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::SPACE    = L' ';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::COMMENT  = L'#';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::EQUAL    = L'=';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::BEGIN    = L'<';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::CLOSE    = L'/';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::END      = L'>';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::SQUOTE   = L'\'';
+template<> const CharConst<wchar_t>::Char CharConst<wchar_t>::DQUOTE   = L'\"';
+
+template<>
+bool CharConst<wchar_t>::is_delim(Char ch)
+{
+	return iswspace(ch)
+		|| (COMMENT == ch)
+		|| (EQUAL == ch)
+		|| (BEGIN == ch)
+		|| (CLOSE == ch)
+		|| (END == ch)
+		|| (SQUOTE == ch)
+		|| (DQUOTE == ch);
+}
+
+// explicit CharConst<char> instantiation...
+template<> const CharConst<char>::Char CharConst<char>::SEPARATOR[]  = ":";
+template<> const CharConst<char>::Char CharConst<char>::ENDLINE  = '\n';
+template<> const CharConst<char>::Char CharConst<char>::SPACE    = ' ';
+template<> const CharConst<char>::Char CharConst<char>::COMMENT  = '#';
+template<> const CharConst<char>::Char CharConst<char>::EQUAL    = '=';
+template<> const CharConst<char>::Char CharConst<char>::BEGIN    = '<';
+template<> const CharConst<char>::Char CharConst<char>::CLOSE    = '/';
+template<> const CharConst<char>::Char CharConst<char>::END      = '>';
+template<> const CharConst<char>::Char CharConst<char>::SQUOTE   = '\'';
+template<> const CharConst<char>::Char CharConst<char>::DQUOTE   = '\"';
+
+template<>
+bool CharConst<char>::is_delim(Char ch)
+{
+	return isspace(ch)
+		|| (COMMENT == ch)
+		|| (EQUAL == ch)
+		|| (BEGIN == ch)
+		|| (CLOSE == ch)
+		|| (END == ch)
+		|| (SQUOTE == ch)
+		|| (DQUOTE == ch);
+}
+
+
+		} // CharConst
+		/// @endcond
 
 	} // conf namespace
 } // omni namespace

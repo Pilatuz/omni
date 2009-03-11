@@ -27,26 +27,25 @@
 #include <stdexcept>
 #include <assert.h>
 #include <sstream>
+#include <limits>
 #include <string>
 #include <vector>
+#include <list>
 
 namespace omni
 {
-	// forward declarations and typedefs...
+	// forward declarations
 	namespace conf
 	{
-		// main classes
-		template<typename Str> class ElementT;
-		template<typename Str> class SectionT;
-		template<typename Str> class ElementListT;
-		template<typename Str> class SectionListT;
+		// main class
+		template<typename Str> class ItemT;
 
 		// exceptions
 		namespace err
 		{
 			template<typename Str> class FailureT;
 			template<typename Str>   class AccessFailureT;
-			template<typename Str>     class ElementNotFoundT;
+			template<typename Str>     class ChildNotFoundT;
 			template<typename Str>     class NameIsAmbiguousT;
 			template<typename Str>   class ParsingFailureT;
 			template<typename Str>     class SyntaxErrorT;
@@ -66,809 +65,220 @@ namespace omni
 		namespace details
 		{
 			template<typename Ch> class CharConst;
-			template<typename Val> struct ConstTraits;
-			template<typename Val> struct NConstTraits;
-			template<typename Base, typename Tr> class Iterator;
-			template<typename In> bool equal(In, In, In);
 		} // implementation defined
+	} // forward declarations
 
 
 #if OMNI_UNICODE
-	/// @brief Default string container.
-	typedef std::wstring String;
+	/// @brief The default configuration.
+	typedef conf::ItemT<std::wstring> Config;
 #else
-	/// @brief Default string container.
-	typedef std::string String;
+	/// @brief The default configuration.
+	typedef conf::ItemT<std::string> Config;
 #endif // OMNI_UNICODE
 
-// main classes
-typedef ElementT<String> Element; ///< @brief Configuration element.
-typedef SectionT<String> Section; ///< @brief Configuration section.
-typedef ElementListT<String> ElementList; ///< @brief List of configuration elements.
-typedef SectionListT<String> SectionList; ///< @brief List of configuration sections.
 
-namespace err
-{
-	typedef FailureT<String>          Failure;          ///< @brief Basic exception.
-	typedef AccessFailureT<String>    AccessFailure;    ///< @brief Access failure.
-	typedef ElementNotFoundT<String>  ElementNotFound;  ///< @brief Element not found.
-	typedef NameIsAmbiguousT<String>  NameIsAmbiguous;  ///< @brief Ambiguous element name.
-	typedef ParsingFailureT<String>   ParsingFailure;   ///< @brief Basic parsing failure.
-	typedef SyntaxErrorT<String>      SyntaxError;      ///< @brief Invalid syntax.
-	typedef NameMismatchT<String>     NameMismatch;     ///< @brief Mismatch failure.
-	typedef WritingFailureT<String>   WritingFailure;   ///< @brief Basic writing failure.
-	typedef NameIsEmptyT<String>      NameIsEmpty;      ///< @brief Empty name failure.
-}
-
-namespace io
-{
-	typedef ParserT<String> Parser; ///< @brief Basic parser.
-	typedef WriterT<String> Writer; ///< @brief Basic writer.
-}
-
-	} // forward declarations and typedefs
-
-
-	// ElementT<> template class...
+	// ItemT<> template class...
 	namespace conf
 	{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Configuration element.
+/// @brief The configuration item.
 /**
-		This class represents a custom configuration element. The configuration
-	element contains name, value and optional prefix and suffix comments.
+		This class represents a custom configuration. The configuration
+	contains name, value and optional any number of child configurations.
 	For example:
 
 @code
-# prefix comment
-elem_name = "elem_value" # suffix comment
+# comment
+elem_name = "elem_value" # comment
 @endcode
 
 		If the example will be parsed, then the element
 	will have the following properties:
 		- name() will be equal to the "elem_name",
 		- val() will be equal to the "elem_value",
-		- prefix() will be equal to the " prefix comment",
-		- suffix() will be equal to the " suffix comment".
 
-		The fullName() method returns a configuration element's full name,
-	including full path (i.e. names of all parents, see SectionT class).
+		The fullName() method returns a configuration's full name,
+	including full path (i.e. names of all parents).
 
-		It is possible to implicit assign the configuration element's value.
+		It is possible to implicit assign the configuration's value.
 
 @code
-	void f(Element &elem)
+	void f(Config &cfg)
 	{
-		elem.val() = "new value";
+		cfg.val() = "new value";
 		// -or-
-		elem = "new value";
+		cfg = "new value";
 	}
 @endcode
 
-		The equal() method compares two configuration elements.
-	Two configuration elements are equal if they have the same names,
-	same values, and same prefix and suffix comments.
-	The @b == and @b != operators also available.
+		The equal() method compares two configurations.
+	Two configurations are equal if they have the same names,
+	same values, and same child configurations.
+	The @b == and @b != operators are also available.
 
 		The @a Str template parameter defines the string container type.
-	A usual @a Str types are @a std::wstring or @a std::string.
+	A usual @a Str types are @a std::wstring for UNICODE projects
+	or @a std::string for ANSI projects.
 
+
+		The child configurations can be manipulated through several
+	methods: push_back(), remove(), exists(). It is also possible
+	to use iterator methods: begin() and end().
+
+		To access child configuration by name you can use one of the overloaded
+	get() methods. To access child configuration value directly you can use one of the
+	overloaded getv() method. Also you can use operator[]():
+
+@code
+	// configuration's value access
+	void f(Config const& s)
+	{
+		s.get("elem_name").val();
+		s["elem_name"].val();
+		s.getv("elem_name");
+	}
+@endcode
+
+		You can access child configuration by name only if the name is unique. Otherwise
+	you should use begin() and end() methods to iterate all child configurations.
+
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
 @see @ref omni_config
 */
 template<typename Str>
-class ElementT {
-	typedef ElementT<Str> ThisType;
-	typedef SectionT<Str> ParentType;
-
-	friend class io::WriterT<Str>;
-	friend class SectionT<Str>;
-
-	typedef Str implementation_defined_1;
-	typedef typename Str::traits_type Traits;
-	typedef typename Traits::char_type implementation_defined_2;
+class ItemT
+{
 
 //////////////////////////////////////////////////////////////////////////
-/// @name Main typedefs
+/** @name Main typedefs */
 /// @{
 public:
-	typedef implementation_defined_1 String;  ///< @brief String type.
-	typedef implementation_defined_2 Char;    ///< @brief Char type.
+	typedef Str String; ///< @brief The string type.
+	typedef typename Str::traits_type StrTraits; ///< @brief The string traits type.
+	typedef typename StrTraits::char_type Char;  ///< @brief The character type.
 
+	typedef typename String::allocator_type Allocator; ///< @brief The allocator type.
+	typedef std::list< ItemT, typename Allocator::
+		template rebind<ItemT>::other > Container; ///< @brief The childs container type.
+	typedef typename Container::const_iterator const_iterator; ///< @brief The constant iterator.
+	typedef typename Container::iterator iterator; ///< @brief The iterator.
 /// @}
-//////////////////////////////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////////////////////////////
-/// @name Constructors & destructor
+/** @name Exception typedefs */
+/// @{
+public:
+	typedef err::FailureT<String> Failure;
+	typedef err::AccessFailureT<String> AccessFailure;
+	typedef err::ChildNotFoundT<String> ChildNotFound;
+	typedef err::NameIsAmbiguousT<String> NameIsAmbiguous;
+	typedef err::ParsingFailureT<String> ParsingFailure;
+	typedef err::SyntaxErrorT<String> SyntaxError;
+	typedef err::NameMismatchT<String> NameMismatch;
+	typedef err::WritingFailureT<String> WritingFailure;
+	typedef err::NameIsEmptyT<String> NameIsEmpty;
+/// @}
+
+
+//////////////////////////////////////////////////////////////////////////
+/** @name Constructors and destructor */
 /// @{
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Default constructor.
+/// @brief The default constructor.
 /**
-		This constructor creates a empty configuration element:
-	the name, value, prefix and suffix comments are empty.
+		This constructor creates an empty configuration:
+	the name, the value, and the childs are empty.
 */
-	ElementT()
-		: m_parent(0) // will be set later
+	ItemT()
+		: m_parent(0)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Create with specified name.
 /**
-		This constructor initializes element name by @a element_name.
-	The value, prefix and suffix comments are empty.
+		This constructor initializes the configuration name.
+	The value, and the childs are empty.
 
-@param[in] element_name The element's name.
+@param[in] theName The configuration name.
 */
-	explicit ElementT(const String &element_name)
+	explicit ItemT(String const& theName)
 		: m_parent(0), // will be set later
-		  m_name(element_name)
+		  m_name(theName)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Create with specified name.
+/// @brief Create with specified name (C-style string).
 /**
-		This constructor initializes element name by @a element_name.
-	The value, prefix and suffix comments are empty.
+		This constructor initializes the configuration name.
+	The value, and the childs are empty.
 
-@param[in] element_name The element's name.
+@param[in] theName The configuration name.
 */
-	explicit ElementT(const Char *element_name)
+	explicit ItemT(Char const* theName)
 		: m_parent(0), // will be set later
-		  m_name(element_name)
+		  m_name(theName)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Copy constructor.
 /**
-		This constructor initializes the element by @a other.
+		This constructor creates the copy of the @a other configuration.
 
-@param[in] other The other element.
+@param[in] other The other configuration.
 */
-	ElementT(const ThisType &other)
+	ItemT(ItemT const& other)
 		: m_parent(0), // will be set later
 		  m_name(other.m_name),
 		  m_val(other.m_val),
-		  m_prefix(other.m_prefix),
-		  m_suffix(other.m_suffix)
-	{}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Destructor.
-/**
-		The virtual destructor is used for derived classes.
-*/
-	virtual ~ElementT()
-	{}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Assignments
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Assignment operator.
-/**
-@param[in] other The other element.
-@return Self reference.
-*/
-	ThisType& operator=(const ThisType &other)
+		  m_childs(other.m_childs)
 	{
-		ThisType t(other);
-		swap(t);
-
-		return *this;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Assign a new element's value.
-/**
-		This assignment operator allows to implicit set the element's value.
-
-@param[in] new_val The new element's value.
-@return Self reference.
-*/
-	ThisType& operator=(const String &new_val)
-	{
-		m_val = new_val;
-		return *this;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Assign a new element's value.
-/**
-		This assignment operator allows to implicit set the element's value.
-
-@param[in] new_val The new element's value.
-@return Self reference.
-*/
-	ThisType& operator=(const Char *new_val)
-	{
-		m_val = new_val;
-		return *this;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Name & value
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element's name.
-/**
-		This method returns a constant reference to the element's name.
-
-@return Constant name reference.
-*/
-	const String& name() const
-	{
-		return m_name;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get/set element's name.
-/**
-		This method returns a non-constant reference to the element's name.
-
-@return Non-constant name reference.
-*/
-	String& name()
-	{
-		return m_name;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element's value.
-/**
-		This method returns a constant reference to the element's value.
-
-@return Constant value reference.
-*/
-	const String& val() const
-	{
-		return m_val;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get/set element's value.
-/**
-		This method returns a non-constant reference to the element's value.
-
-@return Non-constant value reference.
-*/
-	String& val()
-	{
-		return m_val;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Prefix & suffix comments
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element's prefix comment.
-/**
-		This method returns a constant reference
-	to the element's prefix comment.
-
-@return Constant prefix comment reference.
-*/
-	const String& prefix() const
-	{
-		return m_prefix;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get/set element's prefix comment.
-/**
-		This method returns a non-constant reference
-	to the element's prefix comment.
-
-@return Non-constant prefix comment reference.
-*/
-	String& prefix()
-	{
-		return m_prefix;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element's suffix comment.
-/**
-		This method returns a constant reference
-	to the element's suffix comment.
-
-@return Constant suffix comment reference.
-*/
-	const String& suffix() const
-	{
-		return m_suffix;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get/set element's suffix comment.
-/**
-		This method returns a non-constant reference
-	to the element's suffix comment.
-
-@return Non-constant suffix comment reference.
-*/
-	String& suffix()
-	{
-		return m_suffix;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Full name
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element's full name.
-/**
-		This method returns the element's full name, including all parents.
-	The parent names are separated by @a sep string. For example,
-	if @a sep is equal to the "|", then the full name of element "param1"
-	will be "root|section|param1":
-
-@code
-	<root>
-		<section>
-			param1 = "value1"
-		</section>
-	</root>
-@endcode
-
-@param[in] sep The separator.
-@return The element's full name.
-*/
-	const String fullName(const String &sep) const
-	{
-		if (m_parent)
-		{
-			String full_name = m_parent->fullName(sep);
-			if (!full_name.empty())
-			{
-				full_name += sep;
-				full_name += m_name;
-				return full_name;
-			}
-		}
-
-		return m_name;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element's full name.
-/**
-		This method returns the element's full name, including all parents.
-	The parent names are separated by @a sep string. For example,
-	if @a sep is equal to the "|", then the full name of element "param1"
-	will be "root|section|param1":
-
-@code
-	<root>
-		<section>
-			param1 = "value1"
-		</section>
-	</root>
-@endcode
-
-@param[in] sep The separator.
-@return The element's full name.
-*/
-	const String fullName(const Char *sep) const
-	{
-		if (m_parent)
-		{
-			String full_name = m_parent->fullName(sep);
-			if (!full_name.empty())
-			{
-				full_name += sep;
-				full_name += m_name;
-				return full_name;
-			}
-		}
-
-		return m_name;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element's full name.
-/**
-		This method returns the element's full name
-	using default separator ":".
-
-@return The element's full name.
-*/
-	const String fullName() const
-	{
-		return fullName(details::CharConst<Char>::SEPARATOR);
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Auxiliary
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two elements equal?
-/**
-		The two elements are equal if they have the same names,
-	the same values and the same prefix and suffix comments.
-
-@param[in] other The other element.
-@return @b true if two elements are equal, otherwise @b false.
-*/
-	bool equal(const ThisType &other) const
-	{
-		return (m_name == other.m_name)
-			&& (m_val == other.m_val)
-			&& (m_prefix == other.m_prefix)
-			&& (m_suffix == other.m_suffix);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Swap two elements.
-/**
-		This method swaps the two elements.
-	The parents are not changed.
-
-@param[in,out] other The other element.
-*/
-	void swap(ThisType &other)
-	{
-		// (!) do not swap parents
-
-		m_name.swap(other.m_name);
-		m_val.swap(other.m_val);
-
-		m_prefix.swap(other.m_prefix);
-		m_suffix.swap(other.m_suffix);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get empty element.
-/**
-		This static method returns a constant reference to the empty element.
-	This empty element may be used as default value.
-
-@code
-	void f(const Section &cfg)
-	{
-		const Element &elem = cfg.elements.get("param", Element::EMPTY());
-
-		// ...
-	}
-@endcode
-
-@return The empty element.
-*/
-	static const ThisType& EMPTY()
-	{
-		static ThisType g_empty;
-		return g_empty;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-private:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is it section?
-/**
-		This method is used for dynamic type identification.
-
-@return Always @b false.
-*/
-	virtual bool is_section() const
-	{
-		return false;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get parent section.
-/**
-		This method returns a pointer to the parent
-	or null if element has no parent (i.e. element is root).
-
-@return Pointer to the parent or null.
-*/
-	const ParentType* parent() const
-	{
-		return m_parent;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Set parent section.
-/**
-		This method sets the new element's parent.
-
-@param[in] new_parent Pointer to the parent or null.
-*/
-	void set_parent(ParentType *new_parent)
-	{
-		m_parent = new_parent;
-	}
-
-
-private:
-	ParentType *m_parent; ///< @brief The parent or null.
-
-	String m_name;        ///< @brief The name.
-	String m_val;         ///< @brief The value.
-
-	String m_prefix;      ///< @brief The prefix comment.
-	String m_suffix;      ///< @brief The suffix comment.
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two elements equal?
-/** @relates ElementT
-
-		This operator is equivalent to the:
-
-@code
-	x.equal(y);
-@endcode
-
-@param[in] x The first element.
-@param[in] y The second element.
-@return @b true if two elements are equal, otherwise @b false.
-*/
-template<typename Str> inline
-	bool operator==(const ElementT<Str> &x, const ElementT<Str> &y)
-{
-	return x.equal(y);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two elements non-equal?
-/** @relates ElementT
-
-		This operator is equivalent to the:
-
-@code
-	!x.equal(y);
-@endcode
-
-@param[in] x The first element.
-@param[in] y The second element.
-@return @b true if two elements are non-equal, otherwise @b false.
-*/
-template<typename Str> inline
-	bool operator!=(const ElementT<Str> &x, const ElementT<Str> &y)
-{
-	return !x.equal(y);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Swap two elements.
-/** @relates ElementT
-
-		This function is equivalent to the:
-
-@code
-	x.swap(y);
-@endcode
-
-@param[in,out] x The first element.
-@param[in,out] y The second element.
-*/
-template<typename Str> inline
-	void swap(ElementT<Str> &x, ElementT<Str> &y)
-{
-	x.swap(y);
-}
-
-	} // ElementT<> template class
-
-
-	// SectionT<> template class...
-	namespace conf
-	{
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Configuration section.
-/**
-		The configuration section contains the list of the child elements
-	and the list of the child sections.
-
-		Because the SectionT class is derived from the ElementT class,
-	it also contains name, value (!), prefix and suffix comments.
-
-		Единый список секций и параметров служит для организации проивольного
-	порядка секций и параметров. Т.е. секции и параметры могут чередоваться.
-	Так, например, при чтении секции из файла конфигурации сохраняется
-	относительный порядок дочерних секций и параметров.
-
-		The @a Str template parameter defines the string container type.
-	A usual @a Str types are @a std::wstring or @a std::string.
-
-@see @ref omni_config
-*/
-template<typename Str>
-class SectionT: public ElementT<Str> {
-	typedef ElementT<Str> inherited;
-	typedef SectionT<Str> ThisType;
-
-	friend class ElementListT<Str>;
-	friend class SectionListT<Str>;
-	friend class io::WriterT<Str>;
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Main typedefs
-/// @{
-public:
-	typedef typename inherited::String String;  ///< @brief String type.
-	typedef typename inherited::Char   Char;    ///< @brief Char type.
-
-	typedef ElementListT<String> ElementList; ///< @brief List of child elements.
-	typedef SectionListT<String> SectionList; ///< @brief List of child sections.
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Constructors & destructor
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Default constructor.
-/**
-		The created section has no child elements and no child sections.
-*/
-	SectionT()
-	{
-		sections.set_owner(this);
-		elements.set_owner(this);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create with specified name.
-/**
-		This constructor creates the empty section with name @a section_name.
-
-@param[in] section_name The section's name.
-*/
-	explicit SectionT(const String &section_name)
-		: inherited(section_name)
-	{
-		sections.set_owner(this);
-		elements.set_owner(this);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create with specified name.
-/**
-		This constructor creates the empty section with name @a section_name.
-
-@param[in] section_name The section's name.
-*/
-	explicit SectionT(const Char *section_name)
-		: inherited(section_name)
-	{
-		sections.set_owner(this);
-		elements.set_owner(this);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Copy constructor.
-/**
-		This constructor initializes the section by @a other.
-
-@param[in] other The other section.
-*/
-	SectionT(const ThisType &other)
-		: inherited(other)
-	{
-		sections.set_owner(this);
-		elements.set_owner(this);
-
-		// TODO: speed optimization if possible?
-
-		// copy all child elements
-		typename Container::const_iterator i = other.m_childs.begin();
-		typename Container::const_iterator ie = other.m_childs.end();
+		// update childs parent
+		const iterator ie = m_childs.end();
+		iterator i = m_childs.begin();
 		for (; i != ie; ++i)
-		{
-			const inherited &elem = *(*i);
-
-			if (elem.is_section())
-				sections.push_back(static_cast<const ThisType&>(elem));
-			else
-				elements.push_back(elem);
-		}
+			i->m_parent = this;
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Destructor.
 /**
-		The destructor removes all child elements and all child sections.
+		Checks the configuration consistency and release all resources.
 */
-	virtual ~SectionT()
+	~ItemT()
 	{
-		sections.clear();
-		elements.clear();
+		// checks the childs parent
+		const_iterator const ie = m_childs.end();
+		const_iterator i = m_childs.begin();
+		for (; i != ie; ++i)
+			assert(this == i->m_parent
+				&& "invalid parent");
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////////////////////////////
 /// @name Assignments
 /// @{
 public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Assignment operator.
-/**
-@param[in] other The other section.
-@return Self reference.
-*/
-	ThisType& operator=(const ThisType &other)
-	{
-		ThisType t(other);
-		swap(t);
-
-		return *this;
-	}
-
-	// using inherited::operator=;
-
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Merge configuration.
 /**
-		This method replaces the some child elements and some child sections
-	with corresponding child elements and child sections of @a other section.
-	The only elements with the same names will be replaces. If element with
-	specified name not exists yet, it will be added.
+		This method replaces the some childs with corresponding childs
+	of @a other configuration. The only childs with the same names will
+	be replaced. If child with specified name not exists yet, it will be added.
 
-	For examples, let two section A and B:
+	For examples, let two configuration A and B:
 
 @code
 	<A>
@@ -892,78 +302,234 @@ public:
 	</B>
 @endcode
 
-@param[in] other The other section.
-@return Self reference.
+		If the child configuration has ambiguous name, exception will be thrown.
+
+@param[in] other The other configuration.
+@return The self reference.
+@throw NameIsAmbiguous if child configuration has ambiguous name.
 */
-	ThisType& merge(const ThisType &other)
+	ItemT& merge(ItemT const& other)
 	{
-		{ // merge child sections
-			typename SectionList::const_iterator i = other.sections.begin();
-			typename SectionList::const_iterator ie = other.sections.end();
+		assert(!"not implemented yet");
+		// TODO: Config::merge()
+		//{ // merge childs
+		//	const_iterator const ie = other.end();
+		//	const_iterator i = other.begin();
 
-			for (; i != ie; ++i)
-				sections[i->name()].merge(*i);
-		}
+		//	for (; i != ie; ++i)
+		//		get(i->name(), true).merge(*i);
+		//}
 
-		{ // merge child elements
-			typename ElementList::const_iterator i = other.elements.begin();
-			typename ElementList::const_iterator ie = other.elements.end();
-			for (; i != ie; ++i)
-				elements[i->name()] = (*i);
-		}
+		//{ // merge child elements
+		//	typename ElementList::const_iterator i = other.elements.begin();
+		//	typename ElementList::const_iterator ie = other.elements.end();
+		//	for (; i != ie; ++i)
+		//		elements[i->name()] = (*i);
+		//}
 
+		return *this;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Assignment operator.
+/**
+@param[in] other The other configuration.
+@return The self reference.
+*/
+	ItemT& operator=(ItemT const& other)
+	{
+		swap(ItemT(other));
+		return *this;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Assign a new value.
+/**
+		This assignment operator allows to implicit set the configuration value.
+
+@param[in] theVal The new value.
+@return The self reference.
+*/
+	ItemT& operator=(String const& theVal)
+	{
+		m_val = theVal;
+		return *this;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Assign a new value (C-style string).
+/**
+		This assignment operator allows to implicit set the configuration value.
+
+@param[in] theVal The new value.
+@return The self reference.
+*/
+	ItemT& operator=(Char const* theVal)
+	{
+		m_val = theVal;
 		return *this;
 	}
 
 /// @}
 //////////////////////////////////////////////////////////////////////////
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @name Child elements & child sections
+/// @name Name and value
 /// @{
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief List of the child elements.
+/// @brief Get name.
 /**
-		Because ElementList has operator()() and operator[]()
-	you cat use the following code:
+		This method returns a constant reference to the configuration name.
 
-@code
-	void f(const Section &cfg)
-	{
-		cfg.elements().get("elem_name");
-		cfg.elements.get("elem_name");
-		cfg.elements["elem_name"];
-	}
-@endcode
-
-@see ElementListT
+@return The name.
 */
-	ElementList elements;
+	String const& name() const
+	{
+		return m_name;
+	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief List of the child sections.
+/// @brief Get/set name.
 /**
-		Because ElementList has operator()() and operator[]()
-	you cat use the following code:
+		This method returns a non-constant reference to the configuration name.
 
-@code
-	void f(const Section &cfg)
-	{
-		cfg.sections().get("child_name");
-		cfg.sections.get("child_name");
-		cfg.sections["child_name"];
-	}
-@endcode
-
-@see SectionListT
+@return The name.
 */
-	SectionList sections;
+	String& name()
+	{
+		return m_name;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get value.
+/**
+		This method returns a constant reference to the configuration value.
+
+@return The value.
+*/
+	String const& val() const
+	{
+		return m_val;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get/set value.
+/**
+		This method returns a non-constant reference to the configuration value.
+
+@return The value.
+*/
+	String& val()
+	{
+		return m_val;
+	}
 
 /// @}
 //////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @name Full name
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get full name.
+/**
+		This method returns the configuration full name, including all parents.
+	The parent names are separated by @a sep string. For example,
+	if @a sep is equal to the "|", then the full name of element "param1"
+	will be "root|section|param1":
+
+@code
+	<root>
+		<section>
+			param1 = "value1"
+		</section>
+	</root>
+@endcode
+
+@param[in] sep The separator.
+@return The full name.
+*/
+	String const fullName(String const& sep) const
+	{
+		if (m_parent)
+		{
+			String full_name = m_parent->fullName(sep);
+			if (!full_name.empty())
+			{
+				full_name += sep;
+				full_name += m_name;
+				return full_name;
+			}
+		}
+
+		return m_name;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get full name (C-style string).
+/**
+		This method returns the configuration full name, including all parents.
+	The parent names are separated by @a sep string. For example,
+	if @a sep is equal to the "|", then the full name of element "param1"
+	will be "root|section|param1":
+
+@code
+	<root>
+		<section>
+			param1 = "value1"
+		</section>
+	</root>
+@endcode
+
+@param[in] sep The separator.
+@return The full name.
+*/
+	String const fullName(Char const* sep) const
+	{
+		if (m_parent)
+		{
+			String full_name = m_parent->fullName(sep);
+			if (!full_name.empty())
+			{
+				full_name += sep;
+				full_name += m_name;
+				return full_name;
+			}
+		}
+
+		return m_name;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get full name.
+/**
+		This method returns the configuration full name
+	using default separator ":".
+
+@return The full name.
+*/
+	String const fullName() const
+	{
+		return fullName(details::CharConst<Char>::SEPARATOR);
+	}
+
+/// @}
+//////////////////////////////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////////////////////////////
 /// @name Auxiliary
@@ -971,147 +537,900 @@ public:
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Are two sections equal?
+/// @brief Are two configurations equal?
 /**
-		The two sections are equal is they have the same names,
-	the same values, the same prefix and suffix comments and
-	the same child elements and child sections.
+		The two configurations are equal if they have the same names,
+	the same values and the same child configurations.
 
-@param[in] other The other section.
-@return @b true if two sections are equal, otherwise @b false.
+@param[in] other The other configuration.
+@return @b true if two configurations are equal, otherwise @b false.
 */
-	bool equal(const ThisType &other) const
+	bool equal(ItemT const& other) const
 	{
-		return inherited::equal(other)
-			&& sections.equal(other.sections)
-			&& elements.equal(other.elements);
+		if (m_name != other.m_name)
+			return false;
+		if (m_val != other.m_val)
+			return false;
+
+		if (m_childs.size() != other.m_childs.size())
+			return false;
+		return std::equal(m_childs.begin(), m_childs.end(),
+			other.m_childs.begin());
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Swap sections.
+/// @brief Swap two configurations.
 /**
-		This method swaps the two sections.
+		This method swaps the two configurations.
+	The parents are not changed.
 
-@param[in,out] other The other section.
+@param[in,out] other The other configuration.
 */
-	void swap(ThisType &other)
+	void swap(ItemT &other)
 	{
-		inherited::swap(other);
+		// (!) do not swap parents
 
-		// change child elements
+		m_name.swap(other.m_name);
+		m_val.swap(other.m_val);
+
 		m_childs.swap(other.m_childs);
-		sections.swap(other.sections);
-		elements.swap(other.elements);
 
-		{ // change parent of all child elements
-			typename Container::iterator i = this->m_childs.begin();
-			typename Container::iterator ie = this->m_childs.end();
-
+		{ // update this.childs parent
+			iterator const ie = m_childs.end();
+			iterator i = m_childs.begin();
 			for (; i != ie; ++i)
-				(*i)->set_parent(this);
+				i->m_parent = this;
 		}
 
-		{ // change parent of all child elements
-			typename Container::iterator i = other.m_childs.begin();
-			typename Container::iterator ie = other.m_childs.end();
-
+		{ // update other.childs parent
+			iterator const ie = other.m_childs.end();
+			iterator i = other.m_childs.begin();
 			for (; i != ie; ++i)
-				(*i)->set_parent(&other);
+				i->m_parent = &other;
 		}
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Get empty section.
+/// @brief Get empty configuration.
 /**
-		This static method returns a constant reference to the empty section.
-	This empty section may be used as default value.
+		This static method returns a constant reference to the empty configuration.
+	This empty configuration may be used as default value in get() methods.
 
 @code
-	void f(const Section &cfg)
+	void f(const omni::Config &cfg)
 	{
-		const Section &sub_cfg = cfg.sections.get("child", Section::EMPTY());
+		const omni::Config &elem = cfg.get("param", omni::Config::EMPTY());
 
 		// ...
 	}
 @endcode
 
-@return The empty section.
+@return The empty configuration.
 */
-	static const ThisType& EMPTY()
+	static ItemT const& EMPTY()
 	{
-		static ThisType g_empty;
+		static ItemT g_empty;
 		return g_empty;
 	}
 
 /// @}
 //////////////////////////////////////////////////////////////////////////
 
-private:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Is it section?
-/**
-		This method is used for dynamic type identification.
+/// @name Iterators
+/// @{
+public:
 
-@return Always @b true.
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the begin of the childs.
+/**
+@return The constant iterator.
 */
-	virtual bool is_section() const
+	const_iterator const begin() const
 	{
-		return true;
+		return m_childs.begin();
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Insert child element or child section.
+/// @brief Get the begin of the childs.
 /**
-		The element will be inserted into the internal order list.
-
-@param[in] elem The child element or child section.
+@return The non-constant iterator.
 */
-	void do_insert(inherited *elem)
+	iterator const begin()
 	{
-		m_childs.push_back(elem);
-		elem->set_parent(this);
+		return m_childs.begin();
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Remove child element or child section.
+/// @brief Get the end of the childs.
 /**
-		The element will be removed from the internal order list.
-
-@param[in] elem The child element or child section.
+@return The constant iterator.
 */
-	void do_remove(inherited *elem)
+	const_iterator const end() const
 	{
-		typename Container::iterator found = std::find(
-			m_childs.begin(), m_childs.end(), elem);
-		assert(found != m_childs.end()
-			&& "element not exists");
+		return m_childs.end();
+	}
 
-		if (found != m_childs.end())
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the end of the childs.
+/**
+@return The non-constant iterator.
+*/
+	iterator const end()
+	{
+		return m_childs.end();
+	}
+
+/// @}
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @name Front & Back
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the first child.
+/**
+@return The constant reference.
+*/
+	ItemT const& front() const
+	{
+		return m_childs.front();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the first child.
+/**
+@return The non-constant reference.
+*/
+	ItemT& front()
+	{
+		return m_childs.front();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the last child.
+/**
+@return The constant reference.
+*/
+	ItemT const& back() const
+	{
+		return m_childs.back();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the last child.
+/**
+@return The non-constant reference.
+*/
+	ItemT& back()
+	{
+		return m_childs.back();
+	}
+
+/// @}
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @name Get child by name
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child by name.
+/**
+		This method returns a child with specified name @a theName.
+	If the child with that name is not exists or the name
+	is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@return The child's constant reference.
+@throw ChildNotFound If child not found.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT const& get(String const& theName) const
+	{
+		const_iterator found = find(theName, begin());
+		if (found == end())
+			throw ChildNotFound(theName, fullName());
+
+		ItemT const& child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child by name (C-style string).
+/**
+		This method returns a child with specified name @a theName.
+	If the child with that name is not exists or the name
+	is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@return The child's constant reference.
+@throw ChildNotFound If child not found.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT const& get(Char const* theName) const
+	{
+		const_iterator found = find(theName, begin());
+		if (found == end())
+			throw ChildNotFound(theName, fullName());
+
+		ItemT const& child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child by name or default.
+/**
+		This method returns a child with specified name @a theName.
+	If the child with that name is not exists, then the @a def configuration
+	will be return. If the child's name is not unique the exception
+	will be thrown.
+
+@param[in] theName The child name.
+@param[in] def The default configuration.
+@return The child's constant reference.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT const& get(String const& theName, ItemT const& def) const
+	{
+		const_iterator found = find(theName, begin());
+		if (found == end())
+			return def;
+
+		ItemT const& child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get element by name or default (C-style string).
+/**
+		This method returns a child with specified name @a theName.
+	If the child with that name is not exists, then the @a def configuration
+	will be return. If the child's name is not unique the exception
+	will be thrown.
+
+@param[in] theName The child name.
+@param[in] def The default configuration.
+@return The child's constant reference.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT const& get(Char const* theName, ItemT const& def) const
+	{
+		const_iterator found = find(theName, begin());
+		if (found == end())
+			return def;
+
+		ItemT const& child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get element by name or create.
+/**
+		This method returns a child with specified name @a theName.
+	If the child with that name is not exists, then the it will be created
+	if @a create flag is set, otherwise the exception will be thrown.
+	If the child's name is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@param[in] create Create if not exists flag.
+@return The child's non-constant reference.
+@throw ChildNotFound If child not found and @a create flag is not set.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT& get(String const& theName, bool create = false)
+	{
+		iterator found = find(theName, begin());
+		if (found == end())
 		{
-			m_childs.erase(found);
+			if (create)
+			{
+				push_back(theName);
+				return back();
+			}
+			else
+				throw ChildNotFound(theName, fullName());
+		}
 
-			assert(this == elem->parent()
-				&& "invalid parent");
-			elem->set_parent(0);
+		ItemT &child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get element by name or create (C-style string).
+/**
+		This method returns a child with specified name @a theName.
+	If the child with that name is not exists, then the it will be created
+	if @a create flag is set, otherwise the exception will be thrown.
+	If the child's name is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@param[in] create Create if not exists flag.
+@return The child's non-constant reference.
+@throw ChildNotFound If child not found and @a create flag is not set.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT& get(Char const* theName, bool create = false)
+	{
+		iterator found = find(theName, begin());
+		if (found == end())
+		{
+			if (create)
+			{
+				push_back(theName);
+				return back();
+			}
+			else
+				throw ChildNotFound(theName, fullName());
+		}
+
+		ItemT &child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child;
+	}
+
+/// @}
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @name Get child's value by name
+/// @{
+
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child's value by name.
+/**
+		This method returns a child's value with specified name @a theName.
+	If the child with that name is not exists or the name
+	is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@return The child's value.
+@throw ChildNotFound If child not found.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	String const& getv(String const& theName) const
+	{
+		return get(theName).val();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child's value by name (C-style string).
+/**
+		This method returns a child's value with specified name @a theName.
+	If the child with that name is not exists or the name
+	is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@return The child's value.
+@throw ChildNotFound If child not found.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	String const& getv(Char const* theName) const
+	{
+		return get(theName).val();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child's value by name or default.
+/**
+		This method returns a child's value with specified name @a theName.
+	If the child with that name is not exists, then the @a def will be return.
+	If the child's name is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@param[in] def The default value.
+@return The child's value.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	String const& getv(String const& theName, String const& def) const
+	{
+		const_iterator found = find(theName, begin());
+		if (found == end())
+			return def;
+
+		ItemT const& child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child.val();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child's value by name or default (C-style string).
+/**
+		This method returns a child's value with specified name @a theName.
+	If the child with that name is not exists, then the @a def will be return.
+	If the child's name is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@param[in] def The default value.
+@return The child's value.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	String const& getv(Char const* theName, String const& def) const
+	{
+		const_iterator found = find(theName, begin());
+		if (found == end())
+			return def;
+
+		ItemT const& child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child.val();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child's value by name or default (C-style string).
+/**
+		This method returns a child's value with specified name @a theName.
+	If the child with that name is not exists, then the @a def will be return.
+	If the child's name is not unique the exception will be thrown.
+
+@param[in] theName The child name.
+@param[in] def The default value.
+@return The child's value.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	Char const* getv(Char const* theName, Char const* def) const
+	{
+		const_iterator found = find(theName, begin());
+		if (found == end())
+			return def;
+
+		ItemT const& child = *found;
+		if (find(theName, ++found) != end())
+			throw NameIsAmbiguous(theName, fullName());
+
+		return child.val().c_str();
+	}
+
+/// @}
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @name Auxiliary operators
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child by name.
+/**
+		This method is equivalent for get(theName).
+
+@param[in] theName The child name.
+@return The child's constant reference.
+@throw ChildNotFound If child not found.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT const& operator[](String const& theName) const
+	{
+		return get(theName);
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child by name (C-style string).
+/**
+		This method is equivalent for get(theName).
+
+@param[in] theName The child name.
+@return The child's constant reference.
+@throw ChildNotFound If child not found.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT const& operator[](Char const* theName) const
+	{
+		return get(theName);
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child by name or create.
+/**
+		This method is equivalent for get(theName, true), i.e.
+	if the child with that name is not exists it will be created!
+
+@param[in] theName The child name.
+@return The child's non-constant reference.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT& operator[](String const& theName)
+	{
+		// (!) create if not exists
+		return get(theName, true);
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get child by name or create (C-style string).
+/**
+		This method is equivalent for get(theName, true), i.e.
+	if the child with that name is not exists it will be created!
+
+@param[in] theName The child name.
+@return The child's non-constant reference.
+@throw NameIsAmbiguous If child's name is not unique.
+*/
+	ItemT& operator[](Char const* theName)
+	{
+		// (!) create if not exists
+		return get(theName, true);
+	}
+
+/// @}
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @name Manipulators
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Create a new child at the end.
+/**
+		This method creates a new child as a copy of the @a other,
+	and puts it to the end of child list.
+
+@param[in] other The prototype of the child configuration.
+@return The created child reference.
+*/
+	ItemT& push_back(ItemT const& other)
+	{
+		m_childs.push_back(other);
+		ItemT &child = m_childs.back();
+
+		// (!) update the parent
+		child.m_parent = this;
+
+		return child;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Create a new child at the end.
+/**
+		This method creates a new child with name @a theName,
+	and puts it to the end of child list.
+
+@param[in] theName The child's name.
+@return The created child reference.
+*/
+	ItemT& push_back(String const& theName)
+	{
+		m_childs.push_back(ItemT());
+		ItemT &child = m_childs.back();
+		child.name() = theName;
+
+		// (!) update the parent
+		child.m_parent = this;
+
+		return child;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Create a new child at the end (C-style string).
+/**
+		This method creates a new child with name @a theName,
+	and puts it to the end of child list.
+
+@param[in] theName The child's name.
+@return The created child reference.
+*/
+	ItemT& push_back(Char const* theName)
+	{
+		m_childs.push_back(ItemT());
+		ItemT &child = m_childs.back();
+		child.name() = theName;
+
+		// (!) update the parent
+		child.m_parent = this;
+
+		return child;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Remove the child configuration by iterator.
+/**
+		This method removes the child configuration.
+
+@warning The input configuration should be a child of this configuration!
+
+@param[in] pos The child configuration iterator to remove.
+*/
+	iterator erase(iterator pos)
+	{
+		return m_childs.erase(pos);
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Remove the child configuration.
+/**
+		This method removes the child configuration.
+
+@warning The input configuration should be a child of this configuration!
+
+@param[in] child The child configuration to remove.
+*/
+	void remove(ItemT const& child)
+	{
+		assert(this == child.m_parent
+			&& "invalid child parent");
+
+		m_childs.remove(child);
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Remove the child configuration.
+/**
+		This methos removes the all child configurations with name @a theName.
+
+@param[in] theName The child's name to remove.
+*/
+	void remove(String const& theName)
+	{
+		iterator ie = end();
+		for (iterator i = begin(); i != ie; )
+		{
+			if (i->name() == theName)
+				i = erase(i);
+			else
+				++i;
 		}
 	}
 
 
-private:
-	typedef std::vector<inherited*> Container; ///< @brief The order list type.
+//////////////////////////////////////////////////////////////////////////
+/// @brief Remove the child configuration (C-style string).
+/**
+		This methos removes the all child configurations with name @a theName.
 
-	Container m_childs; ///< @brief The order list.
+@param[in] theName The child's name to remove.
+*/
+	void remove(const Char *theName)
+	{
+		iterator ie = end();
+		for (iterator i = begin(); i != ie; )
+		{
+			if (i->name() == theName)
+				i = erase(i);
+			else
+				++i;
+		}
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Remove all child configurations.
+/**
+		This method removes all child configurations.
+*/
+	void clear()
+	{
+		m_childs.clear();
+	}
+
+/// @}
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @name Selectors
+/// @{
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is child exists?
+/**
+		This method checks at least one child configuration
+	with name @a theName.
+
+@param[in] theName The child name
+@return @b true if there is at least one child configuration with specified name,
+	otherwise @b false
+*/
+	bool exists(String const& theName) const
+	{
+		return find(theName, begin()) != end();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is child exists? (C-style string)
+/**
+		This method checks at least one child configuration
+	with name @a theName.
+
+@param[in] theName The child name
+@return @b true if there is at least one child configuration with specified name,
+	otherwise @b false
+*/
+	bool exists(Char const* theName) const
+	{
+		return find(theName, begin()) != end();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get number of child configurations.
+/**
+@return The number of child configurations.
+*/
+	size_t size() const
+	{
+		return m_childs.size();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is there no child configurations?
+/**
+@return @b true If there are no child configurations, otherwise @b false.
+*/
+	bool empty() const
+	{
+		return m_childs.empty();
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the parent.
+/**
+@return The parent pointer or null.
+*/
+	ItemT const* parent() const
+	{
+		return m_parent;
+	}
+
+private:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Find the child configuration.
+/**
+		This method search the child configuration with name @a theName
+	starting at the @a pos position.
+
+@param[in] theName The child configuration name.
+@param[in] pos The search starting position.
+@return The found child configuration position or end(), if there is no childs with specified name.
+*/
+	const_iterator const find(String const& theName, const_iterator pos) const
+	{
+		const_iterator const last = end();
+		for (; pos != last; ++pos)
+			if (pos->name() == theName)
+				break;
+
+		return pos;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Find the child configuration (C-style string).
+/**
+		This method search the child configuration with name @a theName
+	starting at the @a pos position.
+
+@param[in] theName The child configuration name.
+@param[in] pos The search starting position.
+@return The found child configuration position or end(), if there is no childs with specified name.
+*/
+	const_iterator const find(Char const* theName, const_iterator pos) const
+	{
+		const_iterator const last = end();
+		for (; pos != last; ++pos)
+			if (pos->name() == theName)
+				break;
+
+		return pos;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Find the child configuration.
+/**
+		This method search the child configuration with name @a theName
+	starting at the @a pos position.
+
+@param[in] theName The child configuration name.
+@param[in] pos The search starting position.
+@return The found child configuration position or end(), if there is no childs with specified name.
+*/
+	iterator const find(String const& theName, iterator pos)
+	{
+		iterator const last = end();
+		for (; pos != last; ++pos)
+			if (pos->name() == theName)
+				break;
+
+		return pos;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Find the child configuration (C-style string).
+/**
+		This method search the child configuration with name @a theName
+	starting at the @a pos position.
+
+@param[in] theName The child configuration name.
+@param[in] pos The search starting position.
+@return The found child configuration position or end(), if there is no childs with specified name.
+*/
+	iterator const find(Char const* theName, iterator pos)
+	{
+		iterator const last = end();
+		for (; pos != last; ++pos)
+			if (pos->name() == theName)
+				break;
+
+		return pos;
+	}
+
+
+private:
+	ItemT *m_parent; ///< @brief The parent or null.
+
+	String m_name; ///< @brief The item's name.
+	String m_val;  ///< @brief The item's value.
+
+	Container m_childs; ///< @brief The childs collection.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Are two sections equal?
-/** @relates SectionT
+/// @brief Are two configurations equal?
+/** @relates ItemT
 
 		This operator is equivalent to the:
 
@@ -1119,20 +1438,20 @@ private:
 	x.equal(y);
 @endcode
 
-@param[in] x The first section.
-@param[in] y The second section.
-@return @b true if two sections are equal, otherwise @b false.
+@param[in] x The first configuration.
+@param[in] y The second configuration.
+@return @b true if two configurations are equal, otherwise @b false.
 */
 template<typename Str> inline
-	bool operator==(const SectionT<Str> &x, const SectionT<Str> &y)
+bool operator==(const ItemT<Str> &x, const ItemT<Str> &y)
 {
 	return x.equal(y);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Are two sections non-equal?
-/** @relates SectionT
+/// @brief Are two configurations non-equal?
+/** @relates ItemT
 
 		This operator is equivalent to the:
 
@@ -1140,20 +1459,20 @@ template<typename Str> inline
 	!x.equal(y);
 @endcode
 
-@param[in] x The first section.
-@param[in] y The second section.
-@return @b true if two sections are non-equal, otherwise @b false.
+@param[in] x The first configuration.
+@param[in] y The second configuration.
+@return @b true if two configurations are non-equal, otherwise @b false.
 */
 template<typename Str> inline
-	bool operator!=(const SectionT<Str> &x, const SectionT<Str> &y)
+bool operator!=(const ItemT<Str> &x, const ItemT<Str> &y)
 {
 	return !x.equal(y);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Swap two sections.
-/** @relates SectionT
+/// @brief Swap two configurations.
+/** @relates ItemT
 
 		This function is equivalent to the:
 
@@ -1161,2160 +1480,16 @@ template<typename Str> inline
 	x.swap(y);
 @endcode
 
-@param[in,out] x The first section.
-@param[in,out] y The second section.
+@param[in,out] x The first configuration.
+@param[in,out] y The second configuration.
 */
 template<typename Str> inline
-	void swap(SectionT<Str> &x, SectionT<Str> &y)
+void swap(ItemT<Str> &x, ItemT<Str> &y)
 {
 	x.swap(y);
 }
 
-	} // SectionT<> template class
-
-
-	// ElementListT<> template classes
-	namespace conf
-	{
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief List of configuration elements.
-/**
-		This is auxiliary class. You can't create instances of this class.
-	Instead use SectionT::elements property.
-
-		The class is a container of configuration elements. It contains
-	a several manipulators: push_back(), remove(), exists(). It also
-	supports iterator methods: begin() and end().
-
-		The class contains operator()(), which returns self reference.
-	So, you can use one of the following:
-
-@code
-	void f(Section &s)
-	{
-		s.elements().push_back();
-		// -or-
-		s.elements.push_back();
-	}
-@endcode
-
-		To access child element by name you can use one of the overloaded
-	get() methods. To access child element value you can use one of the
-	overloaded getv() method. Also you can use operator[]():
-
-@code
-	// element's value access
-	void f(const Section &s)
-	{
-		s.elements.get("elem_name").val();
-		s.elements["elem_name"].val();
-		s.elements.getv("elem_name");
-	}
-@endcode
-
-		You can access element by name only if the name is unique. Otherwise
-	you can use begin() and end() methods to iterate all child elements.
-
-@see @ref omni_config
-*/
-template<typename Str>
-class ElementListT: private omni::NonCopyable {
-	typedef ElementListT<Str> ThisType;
-	typedef SectionT<Str>* OwnerType;
-
-	typedef typename String::allocator_type Allocator;
-	typedef std::vector<ElementT<Str>*, typename Allocator::
-		template rebind<ElementT<Str>*>::other > Container;
-
-	typedef details::Iterator<typename Container::const_iterator,
-		details::ConstTraits< ElementT<Str> > > implementation_defined_1;
-	typedef details::Iterator<typename Container::iterator,
-		details::NConstTraits< ElementT<Str> > > implementation_defined_2;
-
-	friend class SectionT<Str>;
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Main typedefs
-/// @{
-public:
-	typedef ElementT<Str> value_type; ///< @brief Value type.
-
-	typedef const value_type& const_reference; ///< @brief Constant reference.
-	typedef       value_type&       reference; ///< @brief Non-constant reference.
-
-	typedef typename value_type::String String;   ///< @brief String type.
-	typedef typename value_type::Char Char;       ///< @brief Char type.
-
-	typedef typename Container::size_type size_type; ///< @brief The size type.
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-private:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Default constructor.
-/**
-		This constructor creates empty list.
-
-	Only friends may create the element list.
-*/
-	ElementListT()
-		: m_owner(0) // will be set later
-	{}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Destructor.
-/**
-		Only friends may destroy the element list.
-*/
-	~ElementListT()
-	{
-		assert(empty() && "list not empty");
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Iterators
-/// @{
-public:
-
-	typedef implementation_defined_1 const_iterator; ///< @brief Constant iterator.
-	typedef implementation_defined_2 iterator; ///< @brief Non-constant iterator.
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Begin of the list.
-/**
-@return The constant iterator.
-*/
-	const const_iterator begin() const
-	{
-		return const_iterator(m_items.begin());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Begin of the list.
-/**
-@return The non-constant iterator.
-*/
-	const iterator begin()
-	{
-		return iterator(m_items.begin());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief End of the list.
-/**
-@return The constant iterator.
-*/
-	const const_iterator end() const
-	{
-		return const_iterator(m_items.end());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief End of the list.
-/**
-@return The non-constant iterator.
-*/
-	const iterator end()
-	{
-		return iterator(m_items.end());
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Front & Back
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief First element.
-/**
-@return Constant reference.
-*/
-	const_reference front() const
-	{
-		return *m_items.front();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief First element.
-/**
-@return Non-constant reference.
-*/
-	reference front()
-	{
-		return *m_items.front();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Last element.
-/**
-@return Constant reference.
-*/
-	const_reference back() const
-	{
-		return *m_items.back();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Last element.
-/**
-@return Non-constant reference.
-*/
-	reference back()
-	{
-		return *m_items.back();
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Get element by name
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name.
-/**
-		This method returns a element with specified name @a name.
-	If the element with that name is not exists or the name
-	is not unique the exception will be thrown.
-
-@param[in] name The element's name.
-@return Constant reference.
-@throw omni::conf::err::ElementNotFoundT If element not found.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	const_reference get(const String &name) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			throw err::ElementNotFoundT<String>(name, m_owner->fullName());
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name.
-/**
-		This method returns a element with specified name @a name.
-	If the element with that name is not exists or the name
-	is not unique the exception will be thrown.
-
-@param[in] name The element's name.
-@return Constant reference.
-@throw omni::conf::err::ElementNotFoundT If element not found.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	const_reference get(const Char *name) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			throw err::ElementNotFoundT<String>(name, m_owner->fullName());
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or default.
-/**
-		This method returns a element with specified name @a name.
-	If the element with that name is not exists, then the @a def element
-	will be returned. If the element's name is not unique the exception
-	will be thrown.
-
-@param[in] name The element's name.
-@param[in] def The default element.
-@return Constant reference.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	const_reference get(const String &name, const_reference def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or default.
-/**
-		This method returns a element with specified name @a name.
-	If the element with that name is not exists, then the @a def element
-	will be returned. If the element's name is not unique the exception
-	will be thrown.
-
-@param[in] name The element's name.
-@param[in] def The default element.
-@return Constant reference.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	const_reference get(const Char *name, const_reference def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or create.
-/**
-		Метод возвращает элемент с именем @a name. Если элемента с таким
-	именем нет, но установлен флаг @a create, то будет создан новый элемент.
-	Если же флаг @a create не установлен, будет сгенерировано исключение.
-	Если есть два или более элементов с таким именем, также будет
-	сгенерировано исключение.
-
-@param[in] name The element's name.
-@param[in] create Create if not exists flag.
-@return Non-constant reference.
-@throw omni::conf::err::ElementNotFoundT IF element not found and @a create flag not set.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	reference get(const String &name, bool create = false)
-	{
-		iterator found = find(name, begin());
-		if (found == end())
-		{
-			if (create)
-				return push_back(name);
-			else
-				throw err::ElementNotFoundT<String>(name, m_owner->fullName());
-		}
-
-		reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or create.
-/**
-		Метод возвращает элемент с именем @a name. Если элемента с таким
-	именем нет, но установлен флаг @a create, то будет создан новый элемент.
-	Если же флаг @a create не установлен, будет сгенерировано исключение.
-	Если есть два или более элементов с таким именем, также будет
-	сгенерировано исключение.
-
-@param[in] name The element's name.
-@param[in] create Create if not exists flag.
-@return Non-constant reference.
-@throw omni::conf::err::ElementNotFoundT IF element not found and @a create flag not set.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	reference get(const Char *name, bool create = false)
-	{
-		iterator found = find(name, begin());
-		if (found == end())
-		{
-			if (create)
-				return push_back(name);
-			else
-				throw err::ElementNotFoundT<String>(name, m_owner->fullName());
-		}
-
-		reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Get element's value by name
-/// @{
-
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента с
-	таким именем нет или есть два или более, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@return Значение найденного элемента списка
-@throw omni::config::NotFoundFailureT Если элемент с таким именем не найден
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const String& getv(const String &name) const
-	{
-		return get(name).val();
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента с
-	таким именем нет или есть два или более, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@return Значение найденного элемента списка
-@throw omni::config::NotFoundFailureT Если элемент с таким именем не найден
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const String& getv(const Char *name) const
-	{
-		return get(name).val();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем (по умолчанию)
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента
-	с таким именем нет, то будет возвращено значение @a def. Если с таким
-	именем есть два или более элементов, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@param[in] def Возвращаемое значение по умолчанию
-@return Значение найденного элемента списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const String& getv(const String &name, const String &def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem.val();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем (по умолчанию)
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента
-	с таким именем нет, то будет возвращено значение @a def. Если с таким
-	именем есть два или более элементов, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@param[in] def Возвращаемое значение по умолчанию
-@return Значение найденного элемента списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const String& getv(const Char *name, const String &def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem.val();
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем (по умолчанию)
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента
-	с таким именем нет, то будет возвращено значение @a def. Если с таким
-	именем есть два или более элементов, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@param[in] def Возвращаемое значение по умолчанию
-@return Значение найденного элемента списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const Char* getv(const Char *name, const Char *def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem.val().c_str();
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Auxiliary operators
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Элемент с заданным именем
-/**
-		Метод является псевдонимом для get(name).
-
-@param[in] name Имя элемента списка
-@return Константная ссылка на найденный элемент списка
-@throw omni::config::NotFoundFailureT Если элемент с таким именем не найден
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const_reference operator[](const String &name) const
-	{
-		return get(name);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Элемент с заданным именем
-/**
-		Метод является псевдонимом для get(name).
-
-@param[in] name Имя элемента списка
-@return Константная ссылка на найденный элемент списка
-@throw omni::config::NotFoundFailureT Если элемент с таким именем не найден
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const_reference operator[](const Char *name) const
-	{
-		return get(name);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Элемент с заданным именем (с созданием)
-/**
-		Метод является псевдонимом для get(name, true).
-	Т.е. если элемент не существует, он будет создан!
-
-@param[in] name Имя элемента списка
-@return Неконстантная ссылка на найденный элемент списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	reference operator[](const String &name)
-	{
-		// (!) create if not exists
-		return get(name, true);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Элемент с заданным именем (с созданием)
-/**
-		Метод является псевдонимом для get(name, true).
-	Т.е. если элемент не существует, он будет создан!
-
-@param[in] name Имя элемента списка
-@return Неконстантная ссылка на найденный элемент списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	reference operator[](const Char *name)
-	{
-		// (!) create if not exists
-		return get(name, true);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Ссылка на себя
-/**
-		Метод возвращает ссылку на себя.
-
-@return Self reference.
-*/
-	const ThisType& operator()() const
-	{
-		return *this;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Ссылка на себя
-/**
-		Метод возвращает ссылку на себя.
-
-@return Self reference.
-*/
-	ThisType& operator()()
-	{
-		return *this;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Manipulators
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать новый элемент в конце списка (копия)
-/**
-		Метод создаёт новый элемент копию @a prototype,
-	который добавляется в конец списка.
-
-@param[in] prototype Прототип создаваемого элемента
-@return Неконстантная ссылка на созданный элемент
-*/
-	reference push_back(const_reference prototype)
-	{
-		return do_push(create(prototype));
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать новый элемент в конце списка (имя)
-/**
-		Метод создаёт новый элемент с именем @a name,
-	который добавляется в конец списка.
-
-@param[in] name Имя элемента списка
-@return Неконстантная ссылка на созданный элемент
-*/
-	reference push_back(const String &name)
-	{
-		return do_push(create(name));
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать новый элемент в конце списка (имя)
-/**
-		Метод создаёт новый элемент с именем @a name,
-	который добавляется в конец списка.
-
-@param[in] name Имя элемента списка
-@return Неконстантная ссылка на созданный элемент
-*/
-	reference push_back(const Char *name)
-	{
-		return do_push(create(name));
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать новый элемент в конце списка
-/**
-		Метод создаёт новый элемент с именем по умолчанию,
-	который добавляется в конец списка.
-
-@return Неконстантная ссылка на созданный элемент
-*/
-	reference push_back()
-	{
-		return do_push(create());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить существующий элемент
-/**
-		Метод удаляет элемент из списка.
-
-	Элемент должен принадлежать этому же списку!
-
-@param[in] x Неконстантная ссылка на удаляемый элемент списка
-*/
-	void remove(reference x)
-	{
-		typename Container::iterator found = std::find(
-			m_items.begin(), m_items.end(), &x);
-		assert(found != m_items.end()
-			&& "element not found");
-
-		if (found != m_items.end())
-			remove(iterator(found));
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить существующий элемент
-/**
-		Метод удаляет элемент из списка.
-
-	Элемент должен принадлежать этому же списку!
-
-@param[in] pos Неконстантная ссылка на удаляемый элемент списка
-*/
-	void remove(iterator pos)
-	{
-		value_type *elem = *pos.base();
-
-		m_items.erase(pos.base());
-		m_owner->do_remove(elem);
-
-		destroy(elem);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить существующий элемент
-/**
-		Метод удаляет элемент из списка.
-
-	Элемент должен принадлежать этому же списку!
-
-@param[in] name элемент списка
-*/
-	void remove(const String &name)
-	{
-		// TODO: speed optimization
-		iterator found = find(name, begin());
-		while (found != end())
-		{
-			remove(found);
-			found = find(name,
-				begin());
-		}
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить существующий элемент
-/**
-		Метод удаляет элемент из списка.
-
-	Элемент должен принадлежать этому же списку!
-
-@param[in] name элемент списка
-*/
-	void remove(const Char *name)
-	{
-		// TODO: speed optimization
-		iterator found = find(name, begin());
-		while (found != end())
-		{
-			remove(found);
-			found = find(name,
-				begin());
-		}
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить все элементы списка
-/**
-		Метод удяляет все элементы списка.
-*/
-	void clear()
-	{
-		typename Container::reverse_iterator i = m_items.rbegin();
-		typename Container::reverse_iterator ie = m_items.rend();
-		for (; i != ie; ++i)
-		{
-			value_type *elem = (*i);
-			m_owner->do_remove(elem);
-
-			destroy(elem);
-		}
-		m_items.clear();
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Selectors
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Проверить наличие элемента с заданным именем
-/**
-		Метод проверяет, существует ли хотя бы один элемент с именем @a name.
-
-@param[in] name Имя элемента списка
-@return @b true если существует хотя бы один элемент с заданным именем,
-	иначе @b false
-*/
-	bool exists(const String &name) const
-	{
-		return find(name, begin()) != end();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Проверить наличие элемента с заданным именем
-/**
-		Метод проверяет, существует ли хотя бы один элемент с именем @a name.
-
-@param[in] name Имя элемента списка
-@return @b true если существует хотя бы один элемент с заданным именем,
-	иначе @b false
-*/
-	bool exists(const Char *name) const
-	{
-		return find(name, begin()) != end();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Количество элементов в списке
-/**
-		Метод возвращает количество элементов в списке.
-
-@return Количество элементов в списке
-*/
-	size_type size() const
-	{
-		return m_items.size();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Проверить список на пустоту
-/**
-		Метод проверяет, является ли список элементов пустым.
-
-@return @b true Если список пуст, иначе @b false
-*/
-	bool empty() const
-	{
-		return m_items.empty();
-	}
-
-private:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Равенство двух списков
-/**
-		Метод сравнивает два списка между собой. Два списка считаются равными,
-	если оба имеют одинаковое количество элементов и если каждый элемент
-	одного списка равен соответствующему элементу второго списка.
-
-@param[in] x Второй список для сравнения
-@return @b true Если списка равны, иначе @b false
-*/
-	bool equal(const ThisType &other) const
-	{
-		if (size() != other.size())
-			return false;
-
-		return details::equal(begin(),
-			end(), other.begin());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Найти элемент с заданным именем
-/**
-		Метод ищет элемент списка с именем @a name начиная с позиции @a where.
-
-@param[in] name Имя элемента списка
-@param[in] pos Элемент с которого начинается поиск
-@return Найденный элемент списка или end(), если элемент не найден
-*/
-	const const_iterator find(const String &name, const_iterator pos) const
-	{
-		const_iterator last = end();
-		for (; pos != last; ++pos)
-			if (pos->name() == name)
-				break;
-
-		return pos;
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Найти элемент с заданным именем
-/**
-		Метод ищет элемент списка с именем @a name начиная с позиции @a where.
-
-@param[in] name Имя элемента списка
-@param[in] pos Элемент с которого начинается поиск
-@return Найденный элемент списка или end(), если элемент не найден
-*/
-	const const_iterator find(const Char *name, const_iterator pos) const
-	{
-		const_iterator last = end();
-		for (; pos != last; ++pos)
-			if (pos->name() == name)
-				break;
-
-		return pos;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Найти элемент с заданным именем
-/**
-		Метод ищет элемент списка с именем @a name начиная с позиции @a where.
-
-@param[in] name Имя элемента списка
-@param[in] pos Элемент с которого начинается поиск
-@return Найденный элемент списка или end(), если элемент не найден
-*/
-	const iterator find(const String &name, iterator pos)
-	{
-		iterator last = end();
-		for (; pos != last; ++pos)
-			if (pos->name() == name)
-				break;
-
-		return pos;
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Найти элемент с заданным именем
-/**
-		Метод ищет элемент списка с именем @a name начиная с позиции @a where.
-
-@param[in] name Имя элемента списка
-@param[in] pos Элемент с которого начинается поиск
-@return Найденный элемент списка или end(), если элемент не найден
-*/
-	const iterator find(const Char *name, iterator pos)
-	{
-		iterator last = end();
-		for (; pos != last; ++pos)
-			if (pos->name() == name)
-				break;
-
-		return pos;
-	}
-
-
-private:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create the new element.
-/**
-@param arg The constructor argument.
-@return The created element.
-*/
-	template<typename T>
-	value_type* create(const T &arg)
-	{
-		value_type *elem = m_alloc.allocate(1);
-
-		try
-		{
-			new (elem) value_type(arg); // (!) constructor call
-		}
-		catch (...)
-		{
-			m_alloc.deallocate(elem, 1);
-			throw;
-		}
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create the new element.
-/**
-		The element's default constructor is used.
-
-@return The created element.
-*/
-	value_type* create()
-	{
-		value_type *elem = m_alloc.allocate(1);
-
-		try
-		{
-			new (elem) value_type(); // (!) constructor call
-		}
-		catch (...)
-		{
-			m_alloc.deallocate(elem, 1);
-			throw;
-		}
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Destroy the element.
-/**
-		This method calls the destructor and releases the allocated memory.
-
-@param elem The element.
-*/
-	void destroy(value_type *elem)
-	{
-		elem->~value_type(); // (!) destructor call
-		m_alloc.deallocate(elem, 1);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Добавить элемент в список
-/**
-	Метод добавляет уже созданный элемент @a p в начало или конец списка.
-
-@param[in] p Добавляемый элемент
-*/
-	reference do_push(value_type *p)
-	{
-		try
-		{
-			m_items.push_back(p);
-			try
-			{
-				m_owner->do_insert(p);
-			}
-			catch (...)
-			{
-				m_items.pop_back();
-				throw;
-			}
-		}
-		catch (...)
-		{
-			destroy(p);
-			throw;
-		}
-
-		return *p;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Установить владельца списком
-/**
-		Метод устанавливает нового владельца списка.
-
-@param[in] owner Новый владелец списка
-*/
-	void set_owner(OwnerType owner)
-	{
-		assert(!m_owner || !owner
-			&& "invalid operation");
-		m_owner = owner;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Обменять два списка
-/**
-		Метод меняет содержимое двух списков местами.
-	Владельцы списка не меняются.
-
-@param[in,out] x Список для обмена
-*/
-	void swap(ThisType &x)
-	{
-		m_items.swap(x.m_items);
-	}
-
-
-private:
-	typename Allocator::template
-		rebind<value_type>::other m_alloc;  ///< @brief The allocator.
-
-	OwnerType m_owner;  ///< @brief The list's owner.
-	Container m_items;  ///< @brief The elements list.
-};
-
-	} // ElementListT<> template classes
-
-
-	// SectionListT<> template classes
-	namespace conf
-	{
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief List of configuration sections.
-/**
-		This is auxiliary class. You can't create instances of this class.
-	Instead use SectionT::sections property.
-
-		The class is a contains of configuration sections. It contains
-	a several manipulators: push_back(), remove(), exists(). It also
-	supports iterator methods: begin() and end().
-
-		The class contains operator()(), which returns self reference.
-	So, you can use one of the following:
-
-@code
-	void f(Section &s)
-	{
-		s.sections().push_back();
-		// -or-
-		s.sections.push_back();
-	}
-@endcode
-
-		To access child section by name you can use one of the overloaded
-	get() methods. To access child section value you can use one of the
-	overloaded getv() method. Also you can use operator[]():
-
-@code
-	// child sections access
-	void f(const Section &s)
-	{
-		s.sections.get("child_name");
-		s.sections["child_name"];
-		s.sections.getv("child_name"); // (!) value
-	}
-@endcode
-
-		You can access section by name only if the name is unique. Otherwise
-	you can use begin() and end() methods to iterate all child sections.
-
-@see @ref omni_config
-*/
-template<typename Str>
-class SectionListT: private omni::NonCopyable {
-	typedef SectionListT<Str> ThisType;
-	typedef SectionT<Str>* OwnerType;
-
-	typedef typename String::allocator_type Allocator;
-	typedef std::vector<SectionT<Str>*, typename Allocator::
-		template rebind<SectionT<Str>*>::other > Container;
-
-	typedef details::Iterator<typename Container::const_iterator,
-		details::ConstTraits< SectionT<Str> > > implementation_defined_1;
-	typedef details::Iterator<typename Container::iterator,
-		details::NConstTraits< SectionT<Str> > > implementation_defined_2;
-
-	friend class SectionT<Str>;
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Main typedefs
-/// @{
-public:
-	typedef SectionT<Str> value_type; ///< @brief Value type.
-
-	typedef const value_type& const_reference; ///< @brief Constant reference.
-	typedef       value_type&       reference; ///< @brief Non-constant reference.
-
-	typedef typename value_type::String String;   ///< @brief String type.
-	typedef typename value_type::Char Char;       ///< @brief Char type.
-
-	typedef typename Container::size_type size_type; ///< @brief Size type.
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-private:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Default constructor.
-/**
-		This constructor creates empty list.
-
-	Only friends may create the section list.
-*/
-	SectionListT()
-		: m_owner(0) // will be set later
-	{}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Destructor.
-/**
-		Only friends may destroy the list.
-*/
-	~SectionListT()
-	{
-		assert(empty() && "list not empty");
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Iterators
-/// @{
-public:
-
-	typedef implementation_defined_1 const_iterator; ///< @brief Constant iterator.
-	typedef implementation_defined_2 iterator; ///< @brief Non-constant iterator.
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Begin of the list.
-/**
-@return The constant iterator.
-*/
-	const const_iterator begin() const
-	{
-		return const_iterator(m_items.begin());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Begin of the list.
-/**
-@return The non-constant iterator.
-*/
-	const iterator begin()
-	{
-		return iterator(m_items.begin());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief End of the list.
-/**
-@return The constant iterator.
-*/
-	const const_iterator end() const
-	{
-		return const_iterator(m_items.end());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief End of the list.
-/**
-@return The non-constant iterator.
-*/
-	const iterator end()
-	{
-		return iterator(m_items.end());
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Front & Back
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief First element.
-/**
-@return Constant reference.
-*/
-	const_reference front() const
-	{
-		return *m_items.front();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief First element.
-/**
-@return Non-constant reference.
-*/
-	reference front()
-	{
-		return *m_items.front();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Last element.
-/**
-@return Constant reference.
-*/
-	const_reference back() const
-	{
-		return *m_items.back();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Last element.
-/**
-@return Non-constant reference.
-*/
-	reference back()
-	{
-		return *m_items.back();
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Get section by name
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name.
-/**
-		This method returns a element with specified name @a name.
-	If the element with that name is not exists or the name
-	is not unique the exception will be thrown.
-
-@param[in] name The element's name.
-@return Constant reference.
-@throw omni::conf::err::ElementNotFoundT If element not found.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	const_reference get(const String &name) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			throw err::ElementNotFoundT<String>(name, m_owner->fullName());
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name.
-/**
-		This method returns a element with specified name @a name.
-	If the element with that name is not exists or the name
-	is not unique the exception will be thrown.
-
-@param[in] name The element's name.
-@return Constant reference.
-@throw omni::conf::err::ElementNotFoundT If element not found.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	const_reference get(const Char *name) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			throw err::ElementNotFoundT<String>(name, m_owner->fullName());
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or default.
-/**
-		This method returns a element with specified name @a name.
-	If the element with that name is not exists, then the @a def element
-	will be returned. If the element's name is not unique the exception
-	will be thrown.
-
-@param[in] name The element's name.
-@param[in] def The default element.
-@return Constant reference.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	const_reference get(const String &name, const_reference def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or default.
-/**
-		This method returns a element with specified name @a name.
-	If the element with that name is not exists, then the @a def element
-	will be returned. If the element's name is not unique the exception
-	will be thrown.
-
-@param[in] name The element's name.
-@param[in] def The default element.
-@return Constant reference.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	const_reference get(const Char *name, const_reference def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or create.
-/**
-		Метод возвращает элемент с именем @a name. Если элемента с таким
-	именем нет, но установлен флаг @a create, то будет создан новый элемент.
-	Если же флаг @a create не установлен, будет сгенерировано исключение.
-	Если есть два или более элементов с таким именем, также будет
-	сгенерировано исключение.
-
-@param[in] name The element's name.
-@param[in] create Create if not exists flag.
-@return Non-constant reference.
-@throw omni::conf::err::ElementNotFoundT IF element not found and @a create flag not set.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	reference get(const String &name, bool create = false)
-	{
-		iterator found = find(name, begin());
-		if (found == end())
-		{
-			if (create)
-				return push_back(name);
-			else
-				throw err::ElementNotFoundT<String>(name, m_owner->fullName());
-		}
-
-		reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or create.
-/**
-		Метод возвращает элемент с именем @a name. Если элемента с таким
-	именем нет, но установлен флаг @a create, то будет создан новый элемент.
-	Если же флаг @a create не установлен, будет сгенерировано исключение.
-	Если есть два или более элементов с таким именем, также будет
-	сгенерировано исключение.
-
-@param[in] name The element's name.
-@param[in] create Create if not exists flag.
-@return Non-constant reference.
-@throw omni::conf::err::ElementNotFoundT IF element not found and @a create flag not set.
-@throw omni::conf::err::NameIsAmbiguousT If element's name is not unique.
-*/
-	reference get(const Char *name, bool create = false)
-	{
-		iterator found = find(name, begin());
-		if (found == end())
-		{
-			if (create)
-				return push_back(name);
-			else
-				throw err::ElementNotFoundT<String>(name, m_owner->fullName());
-		}
-
-		reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Get section's value by name
-/// @{
-
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента с
-	таким именем нет или есть два или более, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@return Значение найденного элемента списка
-@throw omni::config::NotFoundFailureT Если элемент с таким именем не найден
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const String& getv(const String &name) const
-	{
-		return get(name).val();
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента с
-	таким именем нет или есть два или более, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@return Значение найденного элемента списка
-@throw omni::config::NotFoundFailureT Если элемент с таким именем не найден
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const String& getv(const Char *name) const
-	{
-		return get(name).val();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем (по умолчанию)
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента
-	с таким именем нет, то будет возвращено значение @a def. Если с таким
-	именем есть два или более элементов, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@param[in] def Возвращаемое значение по умолчанию
-@return Значение найденного элемента списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const String& getv(const String &name, const String &def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem.val();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем (по умолчанию)
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента
-	с таким именем нет, то будет возвращено значение @a def. Если с таким
-	именем есть два или более элементов, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@param[in] def Возвращаемое значение по умолчанию
-@return Значение найденного элемента списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const String& getv(const Char *name, const String &def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem.val();
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Значение элемента с заданным именем (по умолчанию)
-/**
-		Метод возвращает значение элемента с именем @a name. Если элемента
-	с таким именем нет, то будет возвращено значение @a def. Если с таким
-	именем есть два или более элементов, то будет сгенерировано исключение.
-
-@param[in] name Имя элемента списка
-@param[in] def Возвращаемое значение по умолчанию
-@return Значение найденного элемента списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const Char* getv(const Char *name, const Char *def) const
-	{
-		const_iterator found = find(name, begin());
-		if (found == end())
-			return def;
-
-		const_reference elem = *found;
-		if (find(name, ++found) != end())
-			throw err::NameIsAmbiguousT<String>(name, m_owner->fullName());
-
-		return elem.val().c_str();
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Auxiliary operators
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Элемент с заданным именем
-/**
-		Метод является псевдонимом для get(name).
-
-@param[in] name Имя элемента списка
-@return Константная ссылка на найденный элемент списка
-@throw omni::config::NotFoundFailureT Если элемент с таким именем не найден
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const_reference operator[](const String &name) const
-	{
-		return get(name);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Элемент с заданным именем
-/**
-		Метод является псевдонимом для get(name).
-
-@param[in] name Имя элемента списка
-@return Константная ссылка на найденный элемент списка
-@throw omni::config::NotFoundFailureT Если элемент с таким именем не найден
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	const_reference operator[](const Char *name) const
-	{
-		return get(name);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Элемент с заданным именем (с созданием)
-/**
-		Метод является псевдонимом для get(name, true).
-	Т.е. если элемент не существует, он будет создан!
-
-@param[in] name Имя элемента списка
-@return Неконстантная ссылка на найденный элемент списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	reference operator[](const String &name)
-	{
-		// (!) create if not exists
-		return get(name, true);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Элемент с заданным именем (с созданием)
-/**
-		Метод является псевдонимом для get(name, true).
-	Т.е. если элемент не существует, он будет создан!
-
-@param[in] name Имя элемента списка
-@return Неконстантная ссылка на найденный элемент списка
-@throw omni::config::AmbiguousFailureT Если имя элемента не уникально
-*/
-	reference operator[](const Char *name)
-	{
-		// (!) create if not exists
-		return get(name, true);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Ссылка на себя
-/**
-		Метод возвращает ссылку на себя.
-
-@return Self reference.
-*/
-	const ThisType& operator()() const
-	{
-		return *this;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Ссылка на себя
-/**
-		Метод возвращает ссылку на себя.
-
-@return Self reference.
-*/
-	ThisType& operator()()
-	{
-		return *this;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Manipulators
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать новый элемент в конце списка (копия)
-/**
-		Метод создаёт новый элемент копию @a prototype,
-	который добавляется в конец списка.
-
-@param[in] prototype Прототип создаваемого элемента
-@return Неконстантная ссылка на созданный элемент
-*/
-	reference push_back(const_reference prototype)
-	{
-		return do_push(create(prototype));
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать новый элемент в конце списка (имя)
-/**
-		Метод создаёт новый элемент с именем @a name,
-	который добавляется в конец списка.
-
-@param[in] name Имя элемента списка
-@return Неконстантная ссылка на созданный элемент
-*/
-	reference push_back(const String &name)
-	{
-		return do_push(create(name));
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать новый элемент в конце списка (имя)
-/**
-		Метод создаёт новый элемент с именем @a name,
-	который добавляется в конец списка.
-
-@param[in] name Имя элемента списка
-@return Неконстантная ссылка на созданный элемент
-*/
-	reference push_back(const Char *name)
-	{
-		return do_push(create(name));
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать новый элемент в конце списка
-/**
-		Метод создаёт новый элемент с именем по умолчанию,
-	который добавляется в конец списка.
-
-@return Неконстантная ссылка на созданный элемент
-*/
-	reference push_back()
-	{
-		return do_push(create());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить существующий элемент
-/**
-		Метод удаляет элемент из списка.
-
-	Элемент должен принадлежать этому же списку!
-
-@param[in] x Неконстантная ссылка на удаляемый элемент списка
-*/
-	void remove(reference x)
-	{
-		typename Container::iterator found = std::find(
-			m_items.begin(), m_items.end(), &x);
-		assert(found != m_items.end()
-			&& "element not found");
-
-		if (found != m_items.end())
-			remove(iterator(found));
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить существующий элемент
-/**
-		Метод удаляет элемент из списка.
-
-	Элемент должен принадлежать этому же списку!
-
-@param[in] pos Неконстантная ссылка на удаляемый элемент списка
-*/
-	void remove(iterator pos)
-	{
-		value_type *elem = *pos.base();
-
-		m_items.erase(pos.base());
-		m_owner->do_remove(elem);
-
-		destroy(elem);
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить существующий элемент
-/**
-		Метод удаляет элемент из списка.
-
-	Элемент должен принадлежать этому же списку!
-
-@param[in] name элемент списка
-*/
-	void remove(const String &name)
-	{
-		// TODO: speed optimization
-		iterator found = find(name, begin());
-		while (found != end())
-		{
-			remove(found);
-			found = find(name,
-				begin());
-		}
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить существующий элемент
-/**
-		Метод удаляет элемент из списка.
-
-	Элемент должен принадлежать этому же списку!
-
-@param[in] name элемент списка
-*/
-	void remove(const Char *name)
-	{
-		// TODO: speed optimization
-		iterator found = find(name, begin());
-		while (found != end())
-		{
-			remove(found);
-			found = find(name,
-				begin());
-		}
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Удалить все элементы списка
-/**
-		Метод удяляет все элементы списка.
-*/
-	void clear()
-	{
-		typename Container::reverse_iterator i = m_items.rbegin();
-		typename Container::reverse_iterator ie = m_items.rend();
-		for (; i != ie; ++i)
-		{
-			value_type *elem = (*i);
-			m_owner->do_remove(elem);
-
-			destroy(elem);
-		}
-		m_items.clear();
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Selectors
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Проверить наличие элемента с заданным именем
-/**
-		Метод проверяет, существует ли хотя бы один элемент с именем @a name.
-
-@param[in] name Имя элемента списка
-@return @b true если существует хотя бы один элемент с заданным именем,
-	иначе @b false
-*/
-	bool exists(const String &name) const
-	{
-		return find(name, begin()) != end();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Проверить наличие элемента с заданным именем
-/**
-		Метод проверяет, существует ли хотя бы один элемент с именем @a name.
-
-@param[in] name Имя элемента списка
-@return @b true если существует хотя бы один элемент с заданным именем,
-	иначе @b false
-*/
-	bool exists(const Char *name) const
-	{
-		return find(name, begin()) != end();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Количество элементов в списке
-/**
-		Метод возвращает количество элементов в списке.
-
-@return Количество элементов в списке
-*/
-	size_type size() const
-	{
-		return m_items.size();
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Проверить список на пустоту
-/**
-		Метод проверяет, является ли список элементов пустым.
-
-@return @b true Если список пуст, иначе @b false
-*/
-	bool empty() const
-	{
-		return m_items.empty();
-	}
-
-private:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Равенство двух списков
-/**
-		Метод сравнивает два списка между собой. Два списка считаются равными,
-	если оба имеют одинаковое количество элементов и если каждый элемент
-	одного списка равен соответствующему элементу второго списка.
-
-@param[in] x Второй список для сравнения
-@return @b true Если списка равны, иначе @b false
-*/
-	bool equal(const ThisType &other) const
-	{
-		if (size() != other.size())
-			return false;
-
-		return details::equal(begin(),
-			end(), other.begin());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Найти элемент с заданным именем
-/**
-		Метод ищет элемент списка с именем @a name начиная с позиции @a where.
-
-@param[in] name Имя элемента списка
-@param[in] where Элемент с которого начинается поиск
-@return Найденный элемент списка или end(), если элемент не найден
-*/
-	const const_iterator find(const String &name, const_iterator pos) const
-	{
-		const_iterator last = end();
-		for (; pos != last; ++pos)
-			if (pos->name() == name)
-				break;
-
-		return pos;
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Найти элемент с заданным именем
-/**
-		Метод ищет элемент списка с именем @a name начиная с позиции @a where.
-
-@param[in] name Имя элемента списка
-@param[in] where Элемент с которого начинается поиск
-@return Найденный элемент списка или end(), если элемент не найден
-*/
-	const const_iterator find(const Char *name, const_iterator pos) const
-	{
-		const_iterator last = end();
-		for (; pos != last; ++pos)
-			if (pos->name() == name)
-				break;
-
-		return pos;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Найти элемент с заданным именем
-/**
-		Метод ищет элемент списка с именем @a name начиная с позиции @a where.
-
-@param[in] name Имя элемента списка
-@param[in] where Элемент с которого начинается поиск
-@return Найденный элемент списка или end(), если элемент не найден
-*/
-	const iterator find(const String &name, iterator pos)
-	{
-		iterator last = end();
-		for (; pos != last; ++pos)
-			if (pos->name() == name)
-				break;
-
-		return pos;
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Найти элемент с заданным именем
-/**
-		Метод ищет элемент списка с именем @a name начиная с позиции @a where.
-
-@param[in] name Имя элемента списка
-@param[in] where Элемент с которого начинается поиск
-@return Найденный элемент списка или end(), если элемент не найден
-*/
-	const iterator find(const Char *name, iterator pos)
-	{
-		iterator last = end();
-		for (; pos != last; ++pos)
-			if (pos->name() == name)
-				break;
-
-		return pos;
-	}
-
-
-private:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create the new element.
-/**
-@param arg The constructor argument.
-@return The created element.
-*/
-	template<typename T>
-	value_type* create(const T &arg)
-	{
-		value_type *elem = m_alloc.allocate(1);
-
-		try
-		{
-			new (elem) value_type(arg); // (!) constructor call
-		}
-		catch (...)
-		{
-			m_alloc.deallocate(elem, 1);
-			throw;
-		}
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create the new element.
-/**
-		The element's default constructor is used.
-
-@return The created element.
-*/
-	value_type* create()
-	{
-		value_type *elem = m_alloc.allocate(1);
-
-		try
-		{
-			new (elem) value_type(); // (!) constructor call
-		}
-		catch (...)
-		{
-			m_alloc.deallocate(elem, 1);
-			throw;
-		}
-
-		return elem;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Destroy the element.
-/**
-		This method calls the destructor and releases the allocated memory.
-
-@param elem The element.
-*/
-	void destroy(value_type *elem)
-	{
-		elem->~value_type(); // (!) destructor call
-		m_alloc.deallocate(elem, 1);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Добавить элемент в список
-/**
-	Метод добавляет уже созданный элемент @a p в начало или конец списка.
-
-@param[in] p Добавляемый элемент
-*/
-	reference do_push(value_type *p)
-	{
-		try
-		{
-			m_items.push_back(p);
-			try
-			{
-				m_owner->do_insert(p);
-			}
-			catch (...)
-			{
-				m_items.pop_back();
-				throw;
-			}
-		}
-		catch (...)
-		{
-			destroy(p);
-			throw;
-		}
-
-		return *p;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Установить владельца списком
-/**
-		Метод устанавливает нового владельца списка.
-
-@param[in] owner Новый владелец списка
-*/
-	void set_owner(OwnerType owner)
-	{
-		assert(!m_owner || !owner
-			&& "invalid operation");
-		m_owner = owner;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Обменять два списка
-/**
-		Метод меняет содержимое двух списков местами.
-	Владельцы списка не меняются.
-
-@param[in,out] x Список для обмена
-*/
-	void swap(ThisType &x)
-	{
-		m_items.swap(x.m_items);
-	}
-
-
-private:
-	typename Allocator::template
-		rebind<value_type>::other m_alloc;  ///< @brief The allocator.
-
-	OwnerType m_owner;  ///< @brief Владелец списка
-	Container m_items;  ///< @brief Список элементов
-};
-
-	} // SectionListT<> template classes
+	} // ItemT<> template class
 
 
 	// exception template classes...
@@ -3324,275 +1499,275 @@ private:
 		{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Базовое исключение
+/// @brief The basic exception.
 /**
-		Базовое исключение конфигураций. Класс наследует стандартное исключение
-	@a std::runtime_error и, соответственно, его метод @b what(). Однако
-	это сообщение не является самым информативным. Дополнительная информация
-	об исключении содержится в свойствах производных классов.
+		This class is derived from the standard std::runtime_error, so you
+	can use what() method. Detailed information are availalbe through
+	various derived classes.
 
-		Параметр шаблона @a Ch определяет тип символов строки FailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::Failure.
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::Failure
 */
 template<typename Str>
-class FailureT: public std::runtime_error {
+class FailureT:
+	public std::runtime_error
+{
 	typedef std::runtime_error inherited;
 protected:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] msg Сообщение об исключении
+@param[in] msg The error message.
 */
-	explicit FailureT(const std::string &msg)
+	explicit FailureT(std::string const& msg)
 		: inherited(msg)
 	{}
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor (C-style string).
 /**
-@param[in] msg Сообщение об исключении
+@param[in] msg The error message.
 */
-	explicit FailureT(const char *msg)
+	explicit FailureT(char const* msg)
 		: inherited(msg)
 	{}
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @brief Destructor.
+/// @brief The destructor.
 	virtual ~FailureT() OMNI_THROW0()
 	{}
 
-protected:
-	typedef Str String; ///< @brief Тип строки
+public:
+	typedef Str String; ///< @brief The string type.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Ошибка доступа к элементам
+/// @brief The child access exception.
 /**
-		Ошибка доступа к списку секций или параметров. Класс содержит имя
-	секции или параметра elementName(), при обращении к которому произошло
-	исключение. Также класс содержит полное имя родительской
-	секции parentFullName().
+		Child configuration access exception. This class contains the name of
+	the child configuration (name()) and the full path of the parent configuration (path()).
 
-		Параметр шаблона @a Ch определяет тип символов строки AccessFailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::AccessFailure.
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::AccessFailure
 */
 template<typename Str>
-class AccessFailureT: public FailureT<Str> {
+class AccessFailureT:
+	public FailureT<Str>
+{
 	typedef FailureT<Str> inherited;
 
 public:
-	typedef typename inherited::String String;
+	typedef typename inherited::String String; ///< @brief The string type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] msg Сообщение об исключении
-@param[in] element_name Имя секции или параметра
-@param[in] element_path Полное имя родительской секции
+@param[in] msg The error message.
+@param[in] theName The child configuration name.
+@param[in] thePath The parent configuration path.
 */
-	AccessFailureT(const std::string &msg,
-		const String &element_name,
-		const String &element_path)
+	AccessFailureT(std::string const& msg,
+		String const& theName,
+		String const& thePath)
 			: inherited(msg),
-			  m_name(element_name),
-			  m_path(element_path)
+			  m_name(theName),
+			  m_path(thePath)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor (C-style string).
 /**
-@param[in] msg Сообщение об исключении
-@param[in] element_name Имя секции или параметра
-@param[in] element_path Полное имя родительской секции
+@param[in] msg The custom description.
+@param[in] theName The child configuration name.
+@param[in] thePath The parent configuration path.
 */
-	AccessFailureT(const char *msg,
-		const String &element_name,
-		const String &element_path)
+	AccessFailureT(char const* msg,
+		String const& theName,
+		String const& thePath)
 			: inherited(msg),
-			  m_name(element_name),
-			  m_path(element_path)
+			  m_name(theName),
+			  m_path(thePath)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Virtual destructor.
+/// @brief The destructor.
 	virtual ~AccessFailureT() OMNI_THROW0()
 	{}
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Полное имя родительской секции
+/// @brief Get the parent configuration full name.
 /**
-		Метод возвращает полное имя секции, при доступе к элементам которой
-	произошло исключение.
-
-@brief Полное имя
+@brief The parent configuration full name.
 */
-	const String& path() const
+	String const& path() const
 	{
 		return m_path;
 	}
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Наименование секции или параметра
-/**
-		Метод возвращает имя секции или параметра, при обращении к которому
-	произошло исключение.
 
-@return Имя элемента
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the child configuration name.
+/**
+@return The child configuration name.
 */
-	const String& name() const
+	String const& name() const
 	{
 		return m_name;
 	}
 
 private:
-	String m_path; ///< @brief Полное имя родительской секции
-	String m_name; ///< @brief Наименование элемента
+	String m_path; ///< @brief The parent configuration name.
+	String m_name; ///< @brief The child configuration name.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Элемент не найден
+/// @brief Child not found exception.
 /**
-		Исключение генерируется если секция или параметр с заданным именем
-	не найдены в родительской секции. Метод elementName() возвращает имя
-	искомой секции или параметра. Метод parentFullName() возвращает полное
-	имя родительской секции. Метод @b what() возвращает
-	строку "element not found".
+		This exception will be thrown if the child configuration not found.
 
-		Параметр шаблона @a Ch определяет тип символов строки NotFoundFailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::NotFoundFailure.
+		The @b what() method will be return "child not found" string.
+
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::ChildNotFound
 */
 template<typename Str>
-class ElementNotFoundT: public AccessFailureT<Str> {
+class ChildNotFoundT:
+	public AccessFailureT<Str>
+{
 	typedef AccessFailureT<Str> inherited;
 
 public:
-	typedef typename inherited::String String;
+	typedef typename inherited::String String; ///< @brief The string type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] element_name Имя секции или параметра
-@param[in] element_path Полное имя родительской секции
+@param[in] theName The child configuration name.
+@param[in] thePath The parent configuration path.
 */
-	ElementNotFoundT(const String &element_name, const String &element_path)
-		: inherited("element not found", element_name, element_path)
+	ChildNotFoundT(String const& theName, String const& thePath)
+		: inherited("child not found", theName, thePath)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Virtual destructor.
-	virtual ~ElementNotFoundT() OMNI_THROW0()
+/// @brief The destructor.
+	virtual ~ChildNotFoundT() OMNI_THROW0()
 	{}
 };
 
 
-
 //////////////////////////////////////////////////////////////////////////
-/// @brief Неуникальное имя элемента
+/// @brief The child name is not unique.
 /**
-		Исключение генерируется если имя секции или параметра не уникальны
-	в родительской секции. Метод elementName() возвращает имя искомой
-	секции или параметра. Метод parentFullName() возвращает полное
-	имя родительской секции. Метод @b what() возвращает
-	строку "ambiguous element name".
+		This exception will be thrown if the child configuration name is ambiguous,
+	i.e. if there are two or more childs with the same name.
 
-		Параметр шаблона @a Ch определяет тип символов строки AmbiguousFailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::AmbiguousFailure.
+		The @b what() method will be return "ambiguous child name" string.
+
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::AccessFailure
 */
 template<typename Str>
-class NameIsAmbiguousT: public AccessFailureT<Str> {
+class NameIsAmbiguousT:
+	public AccessFailureT<Str>
+{
 	typedef AccessFailureT<Str> inherited;
 
 public:
-	typedef typename inherited::String String;
+	typedef typename inherited::String String; ///< @brief The string type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] element_name Имя секции или параметра
-@param[in] element_path Полное имя родительской секции
+@param[in] theName The child configuration name.
+@param[in] thePath The parent configuration path.
 */
-	NameIsAmbiguousT(const String &element_name, const String &element_path)
-		: inherited("ambiguous element name", element_name, element_path)
+	NameIsAmbiguousT(String const& theName, String const& thePath)
+		: inherited("ambiguous child name", theName, thePath)
 	{}
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @brief Virtual destructor.
+/// @brief The destructor.
 	virtual ~NameIsAmbiguousT() OMNI_THROW0()
 	{}
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Ошибка разбора конфигурации
+/// @brief Parsing configuration exception.
 /**
-		Исключение генерируется, если встретилась ошибка при разборе
-	конфигурации из потока ввода. Метод lineNumber() возвращает номер
-	строки, где произошла ошибка.
+		This exception may be thrown during configuration parsing procedure.
+	The lineNumber() method returns the line number where parser is stopped.
 
-		Параметр шаблона @a Ch определяет тип символов строки ParsingFailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::ParsingFailure.
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::ParsingFailure
 */
 template<typename Str>
-class ParsingFailureT: public FailureT<Str> {
+class ParsingFailureT:
+	public FailureT<Str>
+{
 	typedef FailureT<Str> inherited;
 
 public:
-	typedef typename inherited::String String;
+	typedef typename inherited::String String; ///< @brief The string type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] msg Сообщение об ошибке
-@param[in] line_number The line number.
+@param[in] msg The error message.
+@param[in] theLine The line number.
 */
-	ParsingFailureT(const std::string &msg, long line_number)
-		: inherited(msg), m_line(line_number)
+	ParsingFailureT(std::string const& msg, long theLine)
+		: inherited(msg), m_line(theLine)
 	{}
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
-/**
-@param[in] msg Сообщение об ошибке
-@param[in] line_number The line number.
-*/
-	ParsingFailureT(const char *msg, long line_number)
-		: inherited(msg), m_line(line_number)
-	{}
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Virtual destructor.
+/// @brief The main constructor (C-style string).
+/**
+@param[in] msg The error message.
+@param[in] theLine The line number.
+*/
+	ParsingFailureT(char const* msg, long theLine)
+		: inherited(msg), m_line(theLine)
+	{}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The destructor.
 	virtual ~ParsingFailureT() OMNI_THROW0()
 	{}
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Номер строки
+/// @brief Get the line number.
 /**
-		Метод возвращает номер строки, при разборе которой произошло исключение.
-
-@return Номер строки
+@return The line number.
 */
 	long line() const
 	{
@@ -3600,207 +1775,205 @@ public:
 	}
 
 private:
-	long m_line; ///< @brief Номер строки
+	long m_line; ///< @brief The line number.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Синтаксическая ошибка
+/// @brief Syntax error.
 /**
-		Исключение генерируется, если встретилась синтаксическая ошибка при
-	разборе конфигурации из потока ввода. Метод sectionName() возвращает
-	полное имя текущей секции конфигурации, при разборе которой произошло
-	исключение.
+		This exception will be thrown if the syntax error occurs during
+	configuration parsing procedure. The path() method returns the configuration
+	path.
 
-		Параметр шаблона @a Ch определяет тип символов строки SyntaxFailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::SyntaxFailure.
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::SyntaxError
 */
 template<typename Str>
-class SyntaxErrorT: public ParsingFailureT<Str> {
+class SyntaxErrorT:
+	public ParsingFailureT<Str>
+{
 	typedef ParsingFailureT<Str> inherited;
 
 public:
-	typedef typename inherited::String String;
+	typedef typename inherited::String String; ///< @brief The string type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] msg Сообщение об ошибке
-@param[in] section_path Полное имя текущей секции
-@param[in] line Номер строки
+@param[in] msg The error message.
+@param[in] thePath The configuration path.
+@param[in] theLine The line number.
 */
-	SyntaxErrorT(const std::string &msg,
-			const String &section_path, long line)
-		: inherited(msg, line),
-		  m_path(section_path)
+	SyntaxErrorT(std::string const& msg,
+			String const& thePath, long theLine)
+		: inherited(msg, theLine),
+		  m_path(thePath)
 	{}
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
-/**
-@param[in] msg Сообщение об ошибке
-@param[in] section_path Полное имя текущей секции
-@param[in] line Номер строки
-*/
-	SyntaxErrorT(const char *msg,
-			const String &section_path, long line)
-		: inherited(msg, line),
-		  m_path(section_path)
-	{}
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Virtual destructor.
+/// @brief The main constructor (C-style string).
+/**
+@param[in] msg The error message.
+@param[in] thePath The configuration path.
+@param[in] theLine The line number.
+*/
+	SyntaxErrorT(char const* msg,
+			String const& thePath, long theLine)
+		: inherited(msg, theLine),
+		  m_path(thePath)
+	{}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The destructor.
 	virtual ~SyntaxErrorT() OMNI_THROW0()
 	{}
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Полное имя текущей секции
+/// @brief Get the configuration path.
 /**
-		Метод возвращает полное имя секции, при разборе
-	которой произошло исключение.
-
-@return Имя текущей секции
+@return The configuration path.
 */
-	const String& path() const
+	String const& path() const
 	{
 		return m_path;
 	}
 
 private:
-	String m_path; /// < @brief Имя секции
+	String m_path; /// < @brief The configuration path.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Несоответствие имени секции
+/// @brief Name mismatch exception.
 /**
-		Исключение генерируется, если закрываемое имя секции не соответствует
-	ранее открытой. Например:
+		This exception will be thrown if the closed name isn't equal to the open name.
+	For example:
 
-	@code
-		<section1>
-			# ...
-		</section2>
-	@endcode
+@code
+	<section1>
+		# ...
+	</section2>
+@endcode
 
-		Метод expectedName() возвращает ожидаемое имя секции, а метод
-	foundName() возвращает встретившееся имя секции.
+		The expected() method returns the expected configuration name.
+	The found() method returns the found configuration name.
 
-		Параметр шаблона @a Ch определяет тип символов строки MismatchFailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::MismatchFailure.
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::NameMismatch
 */
 template<typename Str>
-class NameMismatchT: public ParsingFailureT<Str> {
+class NameMismatchT:
+	public ParsingFailureT<Str>
+{
 	typedef ParsingFailureT<Str> inherited;
 
 public:
-	typedef typename inherited::String String;
+	typedef typename inherited::String String; ///< @brief The string type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-	@param[in] expected_name Ожидаемое имя
-	@param[in] found_name Найденное имя
-	@param[in] line_number Номер строки
+	@param[in] theExpected The expected configuration name.
+	@param[in] theFound The found configuration name.
+	@param[in] theLine The line number.
 */
-	NameMismatchT(const String &expected_name,
-			const String &found_name, long line_number)
-		: inherited("name mismatch", line_number),
-		  m_expected(expected_name),
-		  m_found(found_name)
+	NameMismatchT(String const& theExpected,
+			String const& theFound, long theLine)
+		: inherited("name mismatch", theLine),
+		  m_expected(theExpected),
+		  m_found(theFound)
 	{}
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @brief Virtual destructor.
+/// @brief The destructor.
 	virtual ~NameMismatchT() OMNI_THROW0()
 	{}
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Ожидаемое имя
+/// @brief Get the expected configuration name.
 /**
-		Метод возвращает ожидаемое имя секции.
-
-@return Имя секции
+@return The expected configuration name.
 */
-	const String& expected() const
+	String const& expected() const
 	{
 		return m_expected;
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Найденное имя
+/// @brief Get the found configuration name.
 /**
-		Метод возвращает найденное имя секции.
-
-@return Имя секции
+@return The found configuration name.
 */
-	const String& found() const
+	String const& found() const
 	{
 		return m_found;
 	}
 
 private:
-	String m_expected; ///< @brief Ожидаемое имя
-	String m_found;    ///< @brief Найденное имя
+	String m_expected; ///< @brief The expected configuration name.
+	String m_found;    ///< @brief The found configuration name.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Ошибка сохранения конфигурации
-/** @class WritingFailureT
+/// @brief Writing configuration exception.
+/**
+		This exception may be thrown during configuration writing procedure.
 
-		Исключение генерируется, если при сохранении конфигурации в поток
-	вывода встретилось пустое имя секции или параметра. Метод fullName()
-	возвращает полное имя секции или параметра.
-
-		Параметр шаблона @a Ch определяет тип символов строки WritingFailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::WritingFailure.
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::WritingFailure
 */
 template<typename Str>
-class WritingFailureT: public FailureT<Str> {
+class WritingFailureT:
+	public FailureT<Str>
+{
 	typedef FailureT<Str> inherited;
 
 public:
-	typedef typename inherited::String String;
+	typedef typename inherited::String String; ///< @brief The string type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] msg Сообщение об ошибке
-@param[in] element_path Полное имя секции или параметра
+@param[in] msg The error message.
+@param[in] thePath The configuration path.
 */
-	WritingFailureT(const std::string &msg, const String &element_path)
-		: inherited(msg), m_path(element_path)
+	WritingFailureT(std::string const& msg, String const& thePath)
+		: inherited(msg), m_path(thePath)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor (C-style string).
 /**
-@param[in] msg Сообщение об ошибке
-@param[in] element_path Полное имя секции или параметра
+@param[in] msg The error message.
+@param[in] thePath The configuration path.
 */
-	WritingFailureT(const char *msg, const String &element_path)
-		: inherited(msg), m_path(element_path)
+	WritingFailureT(char const* msg, String const& thePath)
+		: inherited(msg), m_path(thePath)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Virtual destructor.
+/// @brief The destructor.
 	virtual ~WritingFailureT() OMNI_THROW0()
 	{}
 
@@ -3808,57 +1981,54 @@ public:
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Полное имя секции или параметра
+/// @brief Get the configuration path.
 /**
-		Метод возвращает полное имя секции или параметра, при записи которого
-	произошло исключение.
-
-@return Имя секции или параметра
+@return The configuration path.
 */
-	const String& path() const
+	String const& path() const
 	{
 		return m_path;
 	}
 
-
 private:
-	String m_path; ///< @brief Полное имя секции или параметра
+	String m_path; ///< @brief The configuration path.
 };
 
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Name is Empty
+/// @brief Name is empty.
 /**
-		Исключение генерируется, если при сохранении конфигурации в поток
-	вывода встретилось пустое имя секции или параметра. Метод fullName()
-	возвращает полное имя секции или параметра.
+		This exception will be thrown during writing procedure if the empty
+	configuration name is occurs.
 
-		Параметр шаблона @a Ch определяет тип символов строки WritingFailureT::string_type.
-	Допустимо использование @b wchar_t и @b char. Также в зависимости от
-	макроса #OMNI_UNICODE определяется тип omni::config::WritingFailure.
+@tparam Str The STL string container.
+	Should be std::string or std::wstring.
+@see ItemT<Str>::NameIsEmpty
 */
 template<typename Str>
-class NameIsEmptyT: public WritingFailureT<Str> {
+class NameIsEmptyT:
+	public WritingFailureT<Str>
+{
 	typedef WritingFailureT<Str> inherited;
 
 public:
-	typedef typename inherited::String String;
+	typedef typename inherited::String String; ///< @brief The string type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать исключение с параметрами
+/// @brief The main constructor.
 /**
-@param[in] element_path Полное имя секции или параметра
+@param[in] thePath The configuration path.
 */
-	explicit NameIsEmptyT(const String &element_path)
-		: inherited("name is empty", element_path)
+	explicit NameIsEmptyT(String const& thePath)
+		: inherited("name is empty", thePath)
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Virtual destructor.
+/// @brief The destructor.
 	virtual ~NameIsEmptyT() OMNI_THROW0()
 	{}
 };
@@ -3874,42 +2044,35 @@ public:
 		{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Парсер конфигурации.
-/* @class ParserT
-
-		Вспомогательный класс используется для разбора входного потока.
-	Выполняет подсчёт строк, ассоциирование элементов и комментариев,
-	и проверку корректности открываемых и закрываемых скобок.
+/// @brief The configuration parser.
+/**
+		This class parses configuration from the input stream.
 */
 template<typename Str>
-class ParserT {
+class ParserT
+{
 public:
-	typedef Str String;
-	typedef typename String::traits_type Traits;
-	typedef typename Traits::char_type Char;
-	typedef typename String::allocator_type Allocator;
-	typedef std::basic_istream<Char, Traits> IStream;
-	typedef std::basic_ostringstream<Char, Traits, Allocator> OSStream;
+	typedef Str String; ///< @brief The string type.
+	typedef typename Str::traits_type StrTraits; ///< @brief The string traits type.
+	typedef typename StrTraits::char_type Char;  ///< @brief The character type.
+	typedef std::basic_istream<Char, StrTraits> IStream; ///< @brief The input stream.
 
-	typedef SectionT<String> Section;
-	typedef ElementT<String> Element;
+public:
+	typedef err::ParsingFailureT<String> ParsingFailure;
+	typedef err::SyntaxErrorT<String> SyntaxError;
+	typedef err::NameMismatchT<String> NameMismatch;
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Инициализировать парсер
+/// @brief The main constructor.
 /**
-		Конструктор начинает подсчёт строк с единицы. Выполняет начальную
-	инициализацию парсера. Делает текущей секцию @a root.
+		Initializes the parser and starts the line counting from one.
 
-@param[in,out] root Текущая секция
+@param[in,out] root The root configuration.
 */
-	explicit ParserT(Section &root)
-		: m_last_element(0),
-		  m_last_element_line(0),
-		  m_last_comment_begin(0),
-		  m_last_comment_end(0),
-		  m_line_counter(1),
+	explicit ParserT(ItemT<String> &root)
+		: m_line_counter(1),
 		  m_brace_depth(0)
 	{
 		push(root);
@@ -3917,16 +2080,12 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Разобрать секцию из потока ввода
+/// @brief Parse the configuration from the input stream.
 /**
-		Функция осуществляет разбор входного потока на секции и параметры
-	конфигурации. Секция @a cfg должна быть пустой, иначе разбираемые секции
-	и параметры будут добавляться к уже существующим.
-
-@param[in] is Поток ввода
-@throw omni::config::ParsingFailureT Неверный поток вывода
-@throw omni::config::SyntaxFailureT Неверный синтаксис
-@throw omni::config::MismatchFailureT Если имя закрываемой секции не соответствует открываемой
+@param[in] is The input stream.
+@throw ParsingFailure If the input stream is invalid.
+@throw SyntaxFailure If there is invalid syntax.
+@throw MismatchFailure If there is name mismatch.
 */
 	virtual void parse(IStream &is)
 	{
@@ -3938,95 +2097,78 @@ public:
 		{
 			skip_ws(is);
 
-			typename Traits::int_type meta = is.peek();
-			if (Traits::eq_int_type(meta, Traits::eof()))
+			typename StrTraits::int_type meta = is.peek();
+			if (StrTraits::eq_int_type(meta, StrTraits::eof()))
 				break;
 
-			typename Traits::char_type cx = Traits::to_char_type(meta);
+			typename StrTraits::char_type cx = StrTraits::to_char_type(meta);
 
 			// comment (#)
-			if (Traits::eq(cx, ChConst::COMMENT))
-			{
-				parse_comment(is.ignore());
-				assign_suffix(); // suffix comment - the same line
-			}
+			if (StrTraits::eq(cx, ChConst::COMMENT))
+				skip_comment(is.ignore());
 
 			// open bracket '<'
-			else if (Traits::eq(cx, ChConst::BEGIN))
+			else if (StrTraits::eq(cx, ChConst::BEGIN))
 			{
-				bool is_metadata = false;
 				bool is_open = true;
 
 				// open or close section? '/'
-				cx = Traits::to_char_type(is.ignore().peek());
-				if (Traits::eq(cx, ChConst::CLOSE))
+				cx = StrTraits::to_char_type(is.ignore().peek());
+				if (StrTraits::eq(cx, ChConst::CLOSE))
 				{
 					is_open = false;
 					is.ignore();
 				}
-				else if (Traits::eq(cx, ChConst::METADATA))
+
+				get_token(is, token); // section name
+				if (token.empty())
+					throw SyntaxError("empty name",
+						top().fullName(), getLineNumber());
+				brace_open();
+
+				if (is_open) // create new section
 				{
-					is_metadata = true;
-					is.ignore();
-				}
+					ItemT<String> &child = top().push_back(token);
+					push(child); // push to the section stack
 
-				if (!is_metadata)
+					parse_value(is, child);
+				}
+				else // close section
 				{
-					get_token(is, token); // section name
-					if (token.empty())
-						throw err::SyntaxErrorT<String>("empty section's name",
-							top().fullName(), lineNumber());
-					brace_open();
+					skip_ws(is);
 
-					if (is_open) // create new section
-					{
-						Section &child = top().sections.push_back(token);
-						push(child); // push to the section stack
+					cx = StrTraits::to_char_type(is.peek());
+					if (!StrTraits::eq(cx, ChConst::END)) // syntax error (>)
+						throw SyntaxError("expected \">\" char",
+							top().fullName(), getLineNumber());
 
-						assign_prefix(child);
-						parse_value(is, child);
-					}
-					else // close section
-					{
-						skip_ws(is);
+					is.ignore(); // ignore '>' char
+					brace_close();
 
-						cx = Traits::to_char_type(is.peek());
-						if (!Traits::eq(cx, ChConst::END)) // syntax error (>)
-							throw err::SyntaxErrorT<String>("expected \">\" char",
-								top().fullName(), lineNumber());
+					if (token != top().name())
+						throw NameMismatch(top().name(),
+							token, getLineNumber());
 
-						is.ignore(); // ignore '>' char
-						brace_close();
-
-						if (token != top().name())
-							throw err::NameMismatchT<String>(top().name(),
-								token, lineNumber());
-
-						set_last_element(&top());
-						pop();
-					}
+					pop(); // (!) pop the configuration
 				}
-				else // parse meta data section <? ... ?>
-					parse_metadata(is);
 			}
 
 			// close section (/>)
-			else if (Traits::eq(cx, ChConst::CLOSE))
+			else if (StrTraits::eq(cx, ChConst::CLOSE))
 			{
-				cx = Traits::to_char_type(is.ignore().peek());
-				if (!Traits::eq(cx, ChConst::END)) // syntax error '>'
-					throw err::SyntaxErrorT<String>("expected slash and closing bracket",
-						top().fullName(), lineNumber());
+				cx = StrTraits::to_char_type(is.ignore().peek());
+				if (!StrTraits::eq(cx, ChConst::END)) // syntax error '>'
+					throw SyntaxError("expected slash and closing bracket",
+						top().fullName(), getLineNumber());
 
 				is.ignore(); // ignore '>' char
 				brace_close();
 
-				set_last_element(&top());
-				pop();
+				pop(); // (!) pop the configuration
 			}
 
 			// close section '>'
-			else if (Traits::eq(cx, ChConst::END))
+			else if (StrTraits::eq(cx, ChConst::END))
 			{
 				is.ignore(); // ignore '>' char
 				brace_close();
@@ -4037,73 +2179,64 @@ public:
 			{
 				get_token(is, token); // parse element name
 				if (token.empty())
-					throw err::SyntaxErrorT<String>("empty element's name",
-						top().fullName(), lineNumber());
+					throw SyntaxError("empty name",
+						top().fullName(), getLineNumber());
 
-				Element &elem = top().elements.push_back(token);
-				set_last_element(&elem);
-
-				assign_prefix(elem);
-				if (parse_value(is, elem))
-					set_last_element(&elem);
+				ItemT<String> &elem = top().push_back(token);
+				parse_value(is, elem);
 			}
 		}
 
 		if (1 < m_stack.size())
-			throw err::ParsingFailureT<String>("unexpected end of input stream", lineNumber());
+			throw ParsingFailure("unexpected end of input stream", getLineNumber());
 	}
 
-protected: /// @name Стэк секций
+protected:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Новая текущая секция
+/// @brief Push the new configuration.
 /**
-		Метод запоминает предыдущую секцию и делает секцию @a cfg текущей.
-	Вызывается при открытии секции.
+		This method is called when the new configuration is open.
 
-@param[in] section Новая текущая секция
+@param[in] cfg The configuration.
 */
-	void push(Section &section)
+	void push(ItemT<String> &cfg)
 	{
-		m_stack.push_back(&section);
+		m_stack.push_back(&cfg);
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Текущая секция
+/// @brief Get the current configuration.
 /**
-		Метод возвращает текущую секцию.
-
-@return Текущая секция
+@return The current configuration.
 */
-	Section& top() const
+	ItemT<String>& top() const
 	{
 		return *m_stack.back();
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Старая текущая секция
+/// @brief Pop the configuration.
 /**
-		Метод возвращается к предыдущей текущей секции.
-	Вызывается при закрытии секции.
+		This method is called when the configuration is closed.
 
-@throw omni::config::ParsingFailureT Если закрыты все секции.
+@throw ParsingFailure If all configurations are closed.
 */
 	void pop()
 	{
 		m_stack.pop_back();
 
 		if (m_stack.empty()) // if all sections are closed
-			throw err::ParsingFailureT<String>("root section is closed", lineNumber());
+			throw ParsingFailure("root section is closed", getLineNumber());
 	}
 
-protected: /// @name Скобки
+protected:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Открыть скобку
+/// @brief Open brace.
 /**
-		Метод увеличивает на единицу количество открытых скобок.
 */
 	void brace_open()
 	{
@@ -4112,32 +2245,26 @@ protected: /// @name Скобки
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Закрыть скобку
+/// @brief Close brace.
 /**
-		Метод уменьшает на единицу количество открытых скобок. Если закрытий
-	больше чем открытий будет сгенерировано исключение.
-
-@throw omni::config::SyntaxFailureT Если закрытие встретилось раньше открытия
+@throw SyntaxFailure If brace is closed before opening.
 */
 	void brace_close()
 	{
 		m_brace_depth -= 1;
 		if (m_brace_depth < 0)
-			throw err::SyntaxErrorT<String>("unexpected symbol (>)",
-				top().fullName(), lineNumber());
+			throw SyntaxError("unexpected symbol (>)",
+				top().fullName(), getLineNumber());
 	}
 
-protected: /// @name Разбор потока ввода
+protected:
+
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Прочитать токен из потока ввода
+/// @brief Get the unquoted token from input stream.
 /**
-		Метод читает из потока ввода @a is строку, пока не встретится
-	один из заданных символов разделителей из @a delimiters.
-	Считанная строка сохраняется в @a token.
-
-@param[in,out] is Поток ввода
-@param[out] token Буфер для прочитанного токена
+@param[in,out] is The input stream.
+@param[out] token The token.
 */
 	static void get_pure_token(IStream &is, String &token)
 	{
@@ -4148,14 +2275,14 @@ protected: /// @name Разбор потока ввода
 		{
 			for (;;)
 			{
-				typename Traits::int_type meta = is.peek();
-				if (Traits::eq_int_type(meta, Traits::eof()))
+				typename StrTraits::int_type meta = is.peek();
+				if (StrTraits::eq_int_type(meta, StrTraits::eof()))
 				{
 					state |= std::ios_base::eofbit;
 					break;
 				}
 
-				typename Traits::char_type cx = Traits::to_char_type(meta);
+				typename StrTraits::char_type cx = StrTraits::to_char_type(meta);
 				if (details::CharConst<Char>::is_delim(cx))
 					break;
 
@@ -4169,19 +2296,13 @@ protected: /// @name Разбор потока ввода
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Прочитать строку в кавычках из потока ввода
+/// @brief Get the quoted token from input stream.
 /**
-		Метод читает строку в кавычках. Обязательно первым символом должен
-	быть символ кавычки! Если строка должна содержать кавычки, то они
-	дублируются. Например, строка "Ах, эти "чёрные" глаза." должна выглядеть
-	так: "Ах, эти ""чёрные"" глаза." При чтении двойные кавычки заменяются
-	одинарными.
-
-@param[in,out] is Поток ввода
-@param[out] token Буфер для прочитанной строки
-@param[in] quote Символ кавычки ('\"' или '\'')
+@param[in,out] is The input stream.
+@param[out] token The token.
+@param[in] quote The quote character. Should be '\"' or '\''.
 */
-	static void get_quoted_token(IStream &is, String &token, const Char quote)
+	static void get_quoted_token(IStream &is, String &token, Char quote)
 	{
 		std::ios_base::iostate state = std::ios_base::goodbit;
 		const typename IStream::sentry ok(is, true);
@@ -4189,34 +2310,34 @@ protected: /// @name Разбор потока ввода
 		if (ok)
 		{
 			// ignore first quote char (if present)
-			if (Traits::eq_int_type(is.peek(),
-				Traits::to_int_type(quote)))
+			if (StrTraits::eq_int_type(is.peek(),
+				StrTraits::to_int_type(quote)))
 					is.ignore();
 
 			for (;;)
 			{
-				typename Traits::int_type meta = is.peek();
-				if (Traits::eq_int_type(meta, Traits::eof()))
+				typename StrTraits::int_type meta = is.peek();
+				if (StrTraits::eq_int_type(meta, StrTraits::eof()))
 				{
 					state |= std::ios_base::eofbit;
 					break;
 				}
 
-				typename Traits::char_type cx = Traits::to_char_type(meta);
-				if (Traits::eq(cx, quote))
+				typename StrTraits::char_type cx = StrTraits::to_char_type(meta);
+				if (StrTraits::eq(cx, quote))
 				{
 					is.ignore();
 
 					// test for second quote
 					meta = is.peek();
-					if (Traits::eq_int_type(meta, Traits::eof()))
+					if (StrTraits::eq_int_type(meta, StrTraits::eof()))
 					{
 						state |= std::ios_base::eofbit;
 						break;
 					}
 
-					cx = Traits::to_char_type(meta);
-					if (!Traits::eq(cx, quote))
+					cx = StrTraits::to_char_type(meta);
+					if (!StrTraits::eq(cx, quote))
 						break;
 				}
 
@@ -4230,14 +2351,10 @@ protected: /// @name Разбор потока ввода
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Разобрать токен
+/// @brief Parse token from input stream.
 /**
-		Метод читает из потока ввода @a is имя секции или параметра или их
-	значение. Имя может быть заключено в одинарные или двойные кавычки.
-
-@param[in,out] is Поток ввода
-@param[out] token The string token.
-@return Имя или значение
+@param[in,out] is The input stream.
+@param[out] token The token.
 */
 	void get_token(IStream &is, String &token)
 	{
@@ -4246,14 +2363,14 @@ protected: /// @name Разбор потока ввода
 		skip_ws(is);
 		token.resize(0); // (!) clear
 
-		typename Traits::int_type meta = is.peek();
-		if (!Traits::eq_int_type(meta, Traits::eof()))
+		typename StrTraits::int_type meta = is.peek();
+		if (!StrTraits::eq_int_type(meta, StrTraits::eof()))
 		{
-			typename Traits::char_type cx = Traits::to_char_type(meta);
+			typename StrTraits::char_type cx = StrTraits::to_char_type(meta);
 
-			if (Traits::eq(cx, ChConst::DQUOTE)) // "token"
+			if (StrTraits::eq(cx, ChConst::DQUOTE)) // "token"
 				get_quoted_token(is, token, ChConst::DQUOTE);
-			else if (Traits::eq(cx, ChConst::SQUOTE)) // 'token'
+			else if (StrTraits::eq(cx, ChConst::SQUOTE)) // 'token'
 				get_quoted_token(is, token, ChConst::SQUOTE);
 			else // one word
 				get_pure_token(is, token);
@@ -4278,128 +2395,28 @@ protected: /// @name Разбор потока ввода
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Разобрать метаданные
+/// @brief Parse the configuration value.
 /**
-		Метод разбирает служебную секцию. Пока секция "<? ... ?>" просто
-	игнорируется. Вложенность не поддерживается.
+		This method assigns the configuration value if present.
 
-@param[in,out] is Поток ввода
-@throw omni::config::SyntaxFailureT Если не найден закрывающий тэг "?>"
+@param[in,out] is The input stream.
+@param[in,out] cfg The configuration.
+@return @b true If value is assigned, otherwise @b false
 */
-	void parse_metadata(IStream &is)
-	{
-		typedef details::CharConst<Char> ChConst;
-		long metadata_started = m_line_counter;
-
-		bool section_closed = false;
-		String metadata;
-		for (;;)
-		{
-			get_token(is, metadata);
-
-			typename Traits::int_type meta = is.peek();
-			if (Traits::eq_int_type(meta, Traits::eof()))
-				break;
-
-			typename Traits::char_type cx = Traits::to_char_type(meta);
-			if (Traits::eq(cx, ChConst::METADATA))
-			{
-				is.ignore();
-
-				meta = is.peek();
-				if (Traits::eq_int_type(meta, Traits::eof()))
-					break;
-
-				cx = Traits::to_char_type(meta);
-				if (Traits::eq(cx, ChConst::END))
-				{
-					section_closed = true;
-					is.ignore(); // ignore '>' char
-					break;
-				}
-			}
-			else if (ChConst::is_delim(cx))
-				is.ignore();
-		}
-
-		if (!section_closed) // meta data section must be closed
-			throw err::SyntaxErrorT<String>("metadata section must be closed",
-				top().fullName(), metadata_started);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Разобрать комментарий
-/**
-		Метод читает из потока ввода блок комментариев. Блок комментариев
-	должен быть расположен на смежных строках.
-
-@param[in,out] is Поток ввода
-*/
-	void parse_comment(IStream &is)
-	{
-		typedef details::CharConst<Char> ChConst;
-
-		OSStream os;
-		os.imbue(is.getloc());
-		bool one_line = true;
-
-		String line;
-
-		m_last_comment_begin = m_line_counter;
-		while (is && !is.eof())
-		{
-			std::getline(is, line, ChConst::ENDLINE);
-			m_line_counter += 1;
-
-			if (one_line)
-				one_line = false;
-			else
-				os.put(ChConst::ENDLINE);
-			os << line;
-
-			m_last_comment_end = m_line_counter;
-			if (skip_ws(is))
-				break; // (!)
-
-			typename Traits::int_type meta = is.peek();
-			if (Traits::eq_int_type(meta, Traits::eof()))
-				break;
-
-			typename Traits::char_type cx = Traits::to_char_type(meta);
-			if (Traits::eq(cx, ChConst::COMMENT))
-				is.ignore(); // ignore (#)
-			else
-				break;
-		}
-
-		m_last_comment = os.str();
-	}
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Разобрать значение
-/**
-		Метод пытается прочитать из потока ввода @a is
-	значение параметра @a element.
-
-@param[in,out] is Поток ввода
-@param[in,out] element Параметр
-@return @b true Если присвоено значение, иначе @b false
-*/
-	bool parse_value(IStream &is, Element &element)
+	bool parse_value(IStream &is, ItemT<String> &cfg)
 	{
 		typedef details::CharConst<Char> ChConst;
 
 		skip_ws(is);
 
-		typename Traits::int_type meta = is.peek();
-		if (!Traits::eq_int_type(meta, Traits::eof()))
+		typename StrTraits::int_type meta = is.peek();
+		if (!StrTraits::eq_int_type(meta, StrTraits::eof()))
 		{
-			typename Traits::char_type cx = Traits::to_char_type(meta);
-			if (Traits::eq(cx, ChConst::EQUAL))
+			typename StrTraits::char_type cx = StrTraits::to_char_type(meta);
+			if (StrTraits::eq(cx, ChConst::EQUAL))
 			{
 				is.ignore(); // ignore (=)
-				get_token(is, element.val());
+				get_token(is, cfg.val());
 				return true;
 			}
 		}
@@ -4409,13 +2426,27 @@ protected: /// @name Разбор потока ввода
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Пропустить пробелы и служебные символы
+/// @brief Skip the whole line.
 /**
-		Метод пропускает пробелы и служебные символы из потока @a is.
-	Является аналогом @a std::ws(). Подсчитывает строки.
+		This method ignores the comment line.
 
-@param[in,out] is Поток ввода
-@return Количество пропущенных строк
+@param[in,out] is The input stream.
+*/
+	void skip_comment(IStream &is)
+	{
+		typedef details::CharConst<Char> ChConst;
+
+		is.ignore(std::numeric_limits<int>::max(),
+			StrTraits::to_int_type(ChConst::ENDLINE));
+		m_line_counter += 1;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Skip the whitespaces.
+/**
+@param[in,out] is The input stream.
+@return The number of skipped lines.
 */
 	long skip_ws(IStream &is)
 	{
@@ -4432,17 +2463,17 @@ protected: /// @name Разбор потока ввода
 
 			try
 			{
-				for (typename Traits::int_type meta = is.rdbuf()->sgetc();
+				for (typename StrTraits::int_type meta = is.rdbuf()->sgetc();
 					; meta = is.rdbuf()->snextc())
 				{
-					if (Traits::eq_int_type(meta, Traits::eof()))
+					if (StrTraits::eq_int_type(meta, StrTraits::eof()))
 					{
 						state |= std::ios::eofbit;
 						break;
 					}
 
-					typename Traits::char_type cx = Traits::to_char_type(meta);
-					if (Traits::eq(cx, ChConst::ENDLINE))
+					typename StrTraits::char_type cx = StrTraits::to_char_type(meta);
+					if (StrTraits::eq(cx, ChConst::ENDLINE))
 						N_lines += 1;
 					else if (!fac.is(Facet::space, cx))
 						break;
@@ -4459,101 +2490,43 @@ protected: /// @name Разбор потока ввода
 		return N_lines;
 	}
 
+public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Номер текущей строки
+/// @brief Get the current line number.
 /**
-		Метод возвращает номер текущей строки.
-
-@return Номер строки
+@return The current line number.
 */
-	long lineNumber() const
+	long getLineNumber() const
 	{
 		return m_line_counter;
 	}
 
-protected: /// @name Комментарии
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Новый текущий элемент
-/**
-		Метод устанавливает новый текущий элемент. Используется для
-	постфиксных комментариев.
-
-@param[in] element Новый элемент
-*/
-	void set_last_element(Element *element)
-	{
-		m_last_element_line = m_line_counter;
-		m_last_element = element;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Установить префиксный комментарий
-/**
-		Метод устанавливает префиксный комментарий для элемента @a cfg.
-
-@param[in,out] element Элемент конфигурации
-*/
-	void assign_prefix(Element &element)
-	{
-		if (!m_last_comment.empty())
-			if (m_last_comment_end == m_line_counter) // (!)
-		{
-			element.prefix() = m_last_comment;
-			m_last_comment.resize(0);
-		}
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Установить постфиксный комментарий
-/**
-		Метод устанавливает суффиксный комментарий для текущего элемента.
-*/
-	void assign_suffix()
-	{
-		if (m_last_element && !m_last_comment.empty())
-			if (m_last_element_line == m_last_comment_begin) // (!)
-		{
-			m_last_element->suffix() = m_last_comment;
-			m_last_comment.resize(0);
-			m_last_element = 0;
-		}
-	}
+private:
+	std::vector<ItemT<String>*> m_stack; ///< @brief The configuration stack.
 
 private:
-	std::vector<Section*> m_stack; ///< @brief Стэк секций
-
-	Element *m_last_element;  ///< @brief Последний параметр или секция
-	long m_last_element_line;      ///< @brief Номер строки последнего параметра или секции
-	String m_last_comment;    ///< @brief Последний блок комментариев
-	long m_last_comment_begin;     ///< @brief Номер первой строки блока комментариев
-	long m_last_comment_end;       ///< @brief Номер последней строки блока комментариев
-
-	long m_line_counter;           ///< @brief Счётчик строк
-	long m_brace_depth;            ///< @brief Счётчик вложенности скобок
+	long m_line_counter;  ///< @brief The line counter.
+	long m_brace_depth;   ///< @brief The brace depth.
 };
 
 		} // io namespace
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Разобрать из потока ввода
-/** @relates SectionT
+/// @brief Parse the configuration from the input stream.
+/** @relates ItemT
 
-		Оператор разбирает секцию @a cfg из потока ввода @a is.
-
-@param[in] is Поток ввода
-@param[out] cfg Секция
+@param[in] is The input stream.
+@param[out] cfg The configuration.
+@return The input stream.
 */
 template<typename Ch, typename Tr, typename Str> inline
 	std::basic_istream<Ch, Tr>& operator>>(
 		std::basic_istream<Ch, Tr> &is,
-		SectionT<Str> &cfg)
+		ItemT<Str> &cfg)
 {
-	SectionT<Str> tmp;
+	ItemT<Str> tmp;
 	io::ParserT<Str> parser(tmp);
 	parser.parse(is);
 
@@ -4571,203 +2544,141 @@ template<typename Ch, typename Tr, typename Str> inline
 		{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Форматирование вывода секций и параметров
-/** @class WriterT
-
-		Базовый класс форматирования вывода секций и параметров. Определяет
-	несколько абстрактных методов, используемых для вывода конфигураций:
-	open_section(), close_section(), put_element(). Определяя эти методы
-	можно реализовать свой стиль форматирования.
-
-		Для сохранения секции в поток вывода используется метод print().
+/// @brief The configuration writer.
+/**
+	TODO: writer description
 */
 template<typename Str>
-class WriterT {
-protected:
-	typedef Str String;
-	typedef typename String::traits_type Traits;
-	typedef typename Traits::char_type Char;
-	typedef typename String::allocator_type Allocator;
-	typedef std::basic_ostream<Char, Traits> OStream;
-	typedef std::basic_istringstream<Char, Traits, Allocator> ISStream;
-	typedef std::basic_ostringstream<Char, Traits, Allocator> OSStream;
+class WriterT
+{
+public:
+	typedef Str String; ///< @brief The string type.
+	typedef typename Str::traits_type StrTraits; ///< @brief The string traits type.
+	typedef typename StrTraits::char_type Char;  ///< @brief The character type.
+	typedef std::basic_ostream<Char, StrTraits> OStream; ///< @brief The output stream.
 
-	typedef ElementT<String> Element;
-	typedef SectionT<String> Section;
+public:
+	typedef err::WritingFailureT<String> WritingFailure;
+	typedef err::NameIsEmptyT<String> NameIsEmpty;
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Параметры по умолчанию
+/// @brief The default constructor.
 /**
-		Устанавливает параметры по умолчанию: 2 пробела на отступ.
-	Двойные кавычки. Значения всегда в кавычках.
+		The following default parameters are used by default:
+			- tab size is 2 spaces
+			- double quoted
+			- print empty values
 */
 	WriterT()
 		: tabSize(2), indent(0),
 		  rootName(false),
-		  newLine(true)
-{
-	doubleQuote = true;
-}
+		  newLine(true),
+		  printEmptyValues(true),
+		  doubleQuote(true)
+{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вывести конфигурацию в поток вывода
+/// @brief Print the configuration to the output stream.
 /**
-		Метод выполняет перечисление дочерних секций и параметров и вызывает
-	для них методы open_section(), close_section() и put_element()
-	соответственно. Порядок секций и параметров соответствует прочитанному
-	из файла при разборе или задаваемому при создании секции. Т.е. в общем
-	случае дочерние секции могут чередоваться с дочерними параметрами.
+@param[in,out] os The output stream.
+@param[in] cfg The configuration.
+@return The output stream.
 
-		Для дочерних секций метод вызывается рекурсивно.
-
-		Может генерировать исключение, например, если, параметр не имеет имени.
-
-@param[in,out] os Поток вывода
-@param[in] section Секция конфигурации
-@throw omni::config::WritingFailureT если какие-либо секция или параметр
-	не соответствуют требованиям форматирования
+@throw NameIsEmpty if configuration name is empty.
 */
-	void print(OStream &os, const Section &section) const
+	OStream& print(OStream &os, ItemT<String> const& cfg) const
 	{
-		open_section(os, section);
-
-		typedef typename Section::Container::const_iterator item_iterator;
-		item_iterator i  = section.m_childs.begin();
-		item_iterator ie = section.m_childs.end();
-		for (; i != ie; ++i)
+		if (!cfg.empty() || is_root(cfg)) // (!) root is always section
 		{
-			Element *elem = *i;
+			open_section(os, cfg);
 
-			if (elem->is_section())
-			{
-				Section *child = static_cast<Section*>(elem);
-				print(os, *child);
-			}
-			else
-				put_element(os, *elem);
+			typedef typename ItemT<String>::const_iterator item_iterator;
+			item_iterator i = cfg.begin();
+			item_iterator const ie = cfg.end();
+			for (; i != ie; ++i)
+				print(os, *i);
+
+			close_section(os, cfg);
 		}
+		else
+			put_element(os, cfg);
 
-		close_section(os, section);
+		return os;
 	}
 
 protected:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Начало секции
+/// @brief Section begin.
 /**
-		Метод выводит префиксный комментарий (если не пустой), имя секции
-	и её значение (если не пустое).
-
-	@code
-	# prefix comment
-	# prefix comment continue
-	<section_name = section_value>
-	@endcode
-
-		Если секция является главной и флаг rootName не установлен,
-	то имя секции не будет выводиться, как и комментарий.
-
-		Также, если установлено выравнивание дочерних элементов, то
-	определяется максимальная ширина поля.
-
-@param[in,out] os Поток вывода
-@param[in] section Секция конфигурации
-@throw omni::config::WritingFailureT Если нет имени секции
+@param[in,out] os The output stream.
+@param[in] cfg The configuration.
+@throw NameIsEmpty If configuration name is empty.
 */
-	virtual void open_section(OStream &os, const Section &section) const
+	virtual void open_section(OStream &os, ItemT<String> const& cfg) const
 	{
 		typedef details::CharConst<Char> ChConst;
 		const Char quote = doubleQuote ? ChConst::DQUOTE : ChConst::SQUOTE;
 
-		if ((rootName || !is_root(section)) && section.name().empty())
-			throw err::NameIsEmptyT<String>(section.fullName());
-
-		const String indent_str(indent, ChConst::SPACE);
-
-		if (rootName || !is_root(section))
+		if (rootName || !is_root(cfg))
 		{
-			if (newLine && !is_front(section))
-				os.put(ChConst::ENDLINE);
+			if (cfg.name().empty())
+				throw NameIsEmpty(cfg.fullName());
 
-			if (!section.prefix().empty()) // prefix comment
-				put_comment_block(os, section.prefix(),
-					indent_str, false);
+			if (newLine && !is_front(cfg))
+				os.put(ChConst::ENDLINE);
 
 			// open section
-			(os << indent_str).put(ChConst::BEGIN);
-			if (need_quote(section.name()))
-				put_qstring(os, section.name(), quote);
+			put_indent(os, ChConst::SPACE).put(ChConst::BEGIN);
+			if (need_quote(cfg.name()))
+				put_qstring(os, cfg.name(), quote);
 			else
-				os << section.name();
-			if (!section.val().empty())
+				os << cfg.name();
+			if (!cfg.val().empty())
 			{
 				os.put(ChConst::SPACE).put(ChConst::EQUAL).put(ChConst::SPACE);
-				put_qstring(os, section.val(), quote);
+				put_qstring(os, cfg.val(), quote); // (!) always quoted
 			}
 			os.put(ChConst::END).put(ChConst::ENDLINE);
-		}
 
-		if (rootName || !is_root(section))
+			// increase indent
 			indent += tabSize;
+		}
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Окончание секции
+/// @brief Section end.
 /**
-		Метод выводит завершение секции и постфиксный комментарий
-	(если не пустой).
-
-	@code
-	</section_name> # suffix comment
-	                # suffix comment continue
-	@endcode
-
-@param[in,out] os Поток вывода
-@param[in] section Секция конфигурации
-@throw omni::config::WritingFailureT Если нет имени секции
+@param[in,out] os The output stream.
+@param[in] cfg The configuration.
+@throw NameIsEmpty If configuration name is empty.
 */
-	virtual void close_section(OStream &os, const Section &section) const
+	virtual void close_section(OStream &os, ItemT<String> const& cfg) const
 	{
 		typedef details::CharConst<Char> ChConst;
-
 		const Char quote = doubleQuote ? ChConst::DQUOTE : ChConst::SQUOTE;
 
-		if ((rootName || !is_root(section)) && section.name().empty())
-			throw err::NameIsEmptyT<String>(section.fullName());
+		if (rootName || !is_root(cfg))
+		{
+			if (cfg.name().empty())
+				throw NameIsEmpty(cfg.fullName());
 
-		if (rootName || !is_root(section))
+			// decrease indent
 			indent -= tabSize;
 
-		const String indent_str(indent, ChConst::SPACE);
-
-		if (rootName || !is_root(section))
-		{
 			// close section
-			OSStream o_line;
-			o_line.imbue(os.getloc());
-
-			(o_line << indent_str).put(ChConst::BEGIN).put(ChConst::CLOSE);
-			if (need_quote(section.name()))
-				put_qstring(o_line, section.name(), quote);
+			put_indent(os, ChConst::SPACE).put(ChConst::BEGIN).put(ChConst::CLOSE);
+			if (need_quote(cfg.name()))
+				put_qstring(os, cfg.name(), quote);
 			else
-				o_line << section.name();
-			o_line.put(ChConst::END);
+				os << cfg.name();
+			os.put(ChConst::END);
 
-			const String line_str = o_line.str();
-			os << line_str;
-
-			if (!section.suffix().empty()) // suffix comment
-			{
-				const String indent_str(line_str.size()+1, ChConst::SPACE);
-				put_comment_block(os.put(ChConst::SPACE),
-					section.suffix(), indent_str, true);
-			}
-			else
-				os.put(ChConst::ENDLINE);
+			os.put(ChConst::ENDLINE);
 		}
 		else
 			os.put(ChConst::ENDLINE);
@@ -4775,134 +2686,58 @@ protected:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Параметр
+/// @brief Put the empty configuration.
 /**
-		Метод выводит параметр @a element в поток вывода @a os. Выводится
-	префиксный комментарий (если не пустой), имя параметра, знак равно и
-	значение параметра (если не пустое), постфиксный комментарий
-	(если не пустой).
-
-	@code
-		# prefix comment
-		# prefix comment continue
-		element_name = element_value # suffix comment
-		                             # suffix comment continue
-	@endcode
-
-@param[in,out] os Поток вывода
-@param[in] element Параметр конфигурации
-@throw omni::config::WritingFailureT Если нет имени параметра
+@param[in,out] os The output stream.
+@param[in] cfg The empty configuration.
+@throw NameIsEmpty If configuration name is empty.
 */
-	virtual void put_element(OStream &os, const Element &element) const
+	virtual void put_element(OStream &os, ItemT<String> const& cfg) const
 	{
 		typedef details::CharConst<Char> ChConst;
-
 		const Char quote = doubleQuote ? ChConst::DQUOTE : ChConst::SQUOTE;
 
-		if (element.name().empty())
-			throw err::NameIsEmptyT<String>(element.fullName());
+		assert(cfg.empty() && "configuration should be empty");
 
-		const String indent_str(indent, ChConst::SPACE);
+		if (cfg.name().empty())
+			throw NameIsEmpty(cfg.fullName());
 
-		if (!element.prefix().empty()) // prefix comment
-			put_comment_block(os.put(ChConst::ENDLINE),
-				element.prefix(), indent_str, false);
-
-		OSStream o_line;
-		o_line.imbue(os.getloc());
-		o_line << indent_str;
+		put_indent(os, ChConst::SPACE);
 
 		// print "key"="val"
-		if (need_quote(element.name()))
-			put_qstring(o_line, element.name(), quote);
+		if (need_quote(cfg.name()))
+			put_qstring(os, cfg.name(), quote);
 		else
-			o_line << element.name();
+			os << cfg.name();
 
-		if (!element.val().empty())
+		// print the value
+		if (printEmptyValues || !cfg.val().empty())
 		{
-			o_line.put(ChConst::SPACE).put(ChConst::EQUAL).put(ChConst::SPACE);
-			put_qstring(o_line, element.val(), quote);
+			os.put(ChConst::SPACE).put(ChConst::EQUAL).put(ChConst::SPACE);
+			put_qstring(os, cfg.val(), quote); // (!) always quoted
 		}
 
-		const String line_str = o_line.str();
-		os << line_str;
-
-		if (!element.suffix().empty()) // suffix comment
-		{
-			const String indent_str(line_str.size()+1, ChConst::SPACE);
-			put_comment_block(os.put(ChConst::SPACE),
-				element.suffix(), indent_str, true);
-		}
-		else
-			os.put(ChConst::ENDLINE);
+		os.put(ChConst::ENDLINE);
 	}
 
-protected: // auxiliary functions
+protected:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Вывести блок комментариев
+/// @brief Is quote needed?
 /**
-		Метод перед каждой строкой добавляет отступ и символ '#'. Если
-	установлен флаг @a skip_first_indent, то отступ перед первой строкой
-	не добавляется. Это позволяет выводить суффиксные комментарии.
+		This static method checks the input string. If it contains any
+	delimiters then the method returns @b true.
 
-	@code
-		....# prefix first line
-		....# prefix second line
-		....< XXX >
-		....</ XXX > # suffix first line
-		.............# suffix second line
-	@endcode
-
-		Блок комментариев @a comment может содержать несколько строк,
-	разделённых символом перевода строки.
-
-@param[in,out] os Поток вывода
-@param[in] comment Блок комментариев
-@param[in] indent Текущий отступ
-@param[in] skip_first_indent Не выводит отступ для первой строки
+@param[in] str The string.
+@return @b true if string need to be quoted, otherwise @b false.
 */
-	static void put_comment_block(OStream &os, const String &comment,
-		const String &indent, bool skip_first_indent)
+	static bool need_quote(String const& str)
 	{
 		typedef details::CharConst<Char> ChConst;
 
-		ISStream is(comment);
-		is.imbue(os.getloc());
-
-		String line;
-
-		do {
-			std::getline(is, line, ChConst::ENDLINE);
-
-			if (skip_first_indent)
-				skip_first_indent = false;
-			else
-				os << indent;
-
-			os.put(ChConst::COMMENT);
-			os << line;
-			os.put(ChConst::ENDLINE);
-		} while (is && !is.eof());
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Получить строку в кавычках
-/**
-		Метод позволяет преобразовать строку @a text в строку в кавычках.
-	Если флаг @a alwaysQuoted не установлен, и исходная строка не содержит
-	служебных символов, то кавычки не добавляются.
-
-@param[in] text Исходная строка
-@return @b true if text need quote, otherwise @b false.
-*/
-	static bool need_quote(const String &text)
-	{
-		typedef details::CharConst<Char> ChConst;
-
-		for (size_t i = 0; ChConst::DELIMITERS[i]; ++i)
-			if (text.find(ChConst::DELIMITERS[i]) != String::npos)
+		const size_t N = str.size();
+		for (size_t i = 0; i < N; ++i)
+			if (ChConst::is_delim(str[i]))
 				return true;
 
 		return false;
@@ -4910,60 +2745,92 @@ protected: // auxiliary functions
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Записать строку в кавычках в поток вывода
+/// @brief Print the quoted string.
 /**
-		Метод пишет строку @a str в кавычках в поток вывода @a os. Если
-	внутри строки встречаются кавычки, то они дублируются.
+		This method prints the quoted string to the output stream.
+	If string contains the quotes it will be doudled. For example,
+	the following string
 
-@param[in,out] os Поток вывода
-@param[in] str Строка для записи
-@param[in] quote Символ кавычки ('\"' или '\'')
+@code
+	this is "simple" text
+@endcode
+
+		will be printed as
+
+@code
+	"this is ""simple"" text"
+@endcode
+
+
+@param[in,out] os The output stream.
+@param[in] str The string to print.
+@param[in] quote The quote character. Should be '\"' or '\''.
+@return The output stream.
 */
-	static void put_qstring(OStream &os, const String &str, Char quote)
+	static OStream& put_qstring(OStream &os, String const& str, Char quote)
 	{
 		os.put(quote);
-		for (size_t i = 0; i < str.size(); ++i)
+
+		const size_t N = str.size();
+		for (size_t i = 0; i < N; ++i)
 		{
-			if (Traits::eq(str[i], quote))
+			if (StrTraits::eq(str[i], quote))
 				os.put(quote);
 			os.put(str[i]);
 		}
+
 		os.put(quote);
+		return os;
 	}
 
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Put the indent string.
+/**
+		This method prints the current indent number of spaces.
+
+@param[in,out] os The output stream.
+@param[in] space The space character.
+@return The output stream.
+*/
+	OStream& put_indent(OStream &os, Char space) const
+	{
+		for (size_t i = 0; i < indent; ++i)
+			os.put(space);
+
+		return os;
+	}
 
 protected:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Главная секция?
+/// @brief Is configuration a root?
 /**
-		Метод проверяет является ли секция @a section главной,
-	т.е. у неё нет родительской секции.
+		This method checks if the input configuration is a root, i.e. hasn't parent.
 
-@param[in] section Секция конфигурации
-@return @b true если секция является главной
+@param[in] cfg The configuration.
+@return @b true if the configuration is a root, otherwise @b false.
 */
-	static bool is_root(const Section &section)
+	static bool is_root(ItemT<String> const& cfg)
 	{
-		return (0 == section.parent());
+		return (0 == cfg.parent());
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Первая секция?
+/// @brief Is configuration a first child?
 /**
-		Метод проверяет является ли секция @a section
-	первой в списке её родительской секции.
+		This method checks if the input configuration is a first child.
 
-@param[in] section Секция конфигурации
-@return @b true если секция является первой
+@param[in] cfg The configuration.
+@return @b true if the configuration is a first child, otherwise @b false.
 */
-	static bool is_front(const Section &section)
+	static bool is_front(ItemT<String> const& cfg)
 	{
-		const Section *parent = section.parent();
+		const ItemT<String> *parent = cfg.parent();
 
-		if (parent && !parent->sections.empty()
-			&& &parent->sections.front() == &section)
+		if (parent && !parent->empty())
+			if (&parent->front() == &cfg)
 				return true;
 
 		return false;
@@ -4971,63 +2838,65 @@ protected:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Последняя секция?
+/// @brief Is configuration a last child?
 /**
-		Метод проверяет является ли секция @a section
-	последней в списке её родительской секции.
+		This method checks if the input configuration is a last child.
 
-@param[in] section Секция конфигурации
-@return @b true если секция является последней
+@param[in] cfg The configuration.
+@return @b true if the configuration is a last child, otherwise @b false.
 */
-	static bool is_back(const Section &section)
+	static bool is_back(ItemT<String> const& cfg)
 	{
-		const Section *parent = section.parent();
+		const ItemT<String> *parent = cfg.parent();
 
-		if (parent && !parent->sections.empty()
-			&& &parent->sections.back() == &section)
+		if (parent && !parent->empty())
+			if (&parent->back() == &cfg)
 				return true;
 
 		return false;
 	}
 
 public:
-	mutable size_t indent;    ///< @brief Текущий размер отступа
-	        size_t tabSize;   ///< @brief Количество пробелов в одном отступе
+	size_t tabSize;   ///< @brief Number of spaces per one indent.
 
-	bool rootName;
-	bool newLine;
-	bool doubleQuote;
+	bool rootName; ///< @brief Print the root configuration name.
+	bool newLine;  ///< @brief Put the new line before configurations.
+	bool doubleQuote; ///< @brief Use doule-quote instead of single-qoute.
+	bool printEmptyValues; ///< @brief Print the values even it is empty.
+
+public:
+	mutable size_t indent; ///< @brief The current indent.
 };
 
 		} // io namespace
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Write to output stream.
-/** @relates SectionT
+/// @brief Print configuration to output stream.
+/** @relates ItemT
 
-		Оператор выводит секцию @a cfg в поток вывода @a os.
+		This operator prints the configuration to the output stream.
 
-	Используется простое форматирование с параметрами по умолчанию.
+	There is default writer is used.
 
-@param[in] os Output stream.
-@param[in] section Configuration section.
-@return Output stream.
+@param[in] os The output stream.
+@param[in] cfg The configuration.
+@return The output stream.
 */
 template<typename Ch, typename Tr, typename Str> inline
-	std::basic_ostream<Ch, Tr>& operator<<(
-		std::basic_ostream<Ch, Tr> &os,
-		const SectionT<Str> &section)
+	std::basic_ostream<Ch,Tr>& operator<<(
+		std::basic_ostream<Ch,Tr> &os,
+		ItemT<Str> const& cfg)
 {
 	io::WriterT<Str> writer;
-	writer.print(os, section);
+	writer.print(os, cfg);
 	return os;
 }
 
 	} // WriterT template class
 
 
-	// CharConst & Iterator...
+	// CharConst...
 	namespace conf
 	{
 		/// @cond details
@@ -5035,433 +2904,46 @@ template<typename Ch, typename Tr, typename Str> inline
 		{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Char constants.
+/// @brief The character constants.
 /**
-		Шаблонный класс содержит набор строковых и символьных констант
-	специализированных для @b wchar_t и @b char.
+		This template class contains the set of character constants
+	specialized for @b wchar_t and @b char. These constants are used
+	during configuration parsing and/or writing.
 
-		Разделитель CharConst::SEPARATOR используется методом
-	omni::config::ElementT::fullName() между именами родительских
-	и дочерних элементов.
-
-		Остальные константы используются при разборе конфигурации
-	из потока ввода и при сохранении конфигурации в поток вывода.
+		The name separator #SEPARATOR is used
+	by omni::conf::ItemT::fullName() method.
 */
 template<typename Ch>
-class CharConst {
+class CharConst
+{
 public:
-	typedef Ch Char; ///< @brief Char type.
+	typedef Ch Char; ///< @brief The character type.
 
 public: // string constants
-	static const Char DELIMITERS[]; ///< @brief Delimiters string.
-	static const Char SEPARATOR[];  ///< @brief Name separator.
+	static const Char SEPARATOR[];  ///< @brief The default name separator.
 
-	/// @brief Is char delimiter?
-	static bool is_delim(Char cx);
+	/// @brief Is delimiter?
+	/**
+	@param[in] ch The character to test.
+	@return @b true if the input character is delimiter, otherwise @b false.
+	*/
+	static bool is_delim(Char ch);
 
 public: // char constants
-	static const Char ENDLINE;  ///< @brief New line char ('\n').
-	static const Char SPACE;    ///< @brief Space char (' ').
-	static const Char COMMENT;  ///< @brief Comment char ('#').
-	static const Char METADATA; ///< @brief Metadata section ('?').
-	static const Char EQUAL;    ///< @brief Equal char ('=').
-	static const Char BEGIN;    ///< @brief Section begin ('<').
-	static const Char CLOSE;    ///< @brief Close section ('/').
-	static const Char END;      ///< @brief Section end ('>').
-	static const Char SQUOTE;   ///< @brief Single quote ('\'').
-	static const Char DQUOTE;   ///< @brief Double quote ('\"').
+	static const Char ENDLINE;  ///< @brief The new line character ('\n').
+	static const Char SPACE;    ///< @brief The space character (' ').
+	static const Char COMMENT;  ///< @brief The comment character ('#').
+	static const Char EQUAL;    ///< @brief The equal character ('=').
+	static const Char BEGIN;    ///< @brief The section begin ('<').
+	static const Char CLOSE;    ///< @brief The section close ('/').
+	static const Char END;      ///< @brief The section end ('>').
+	static const Char SQUOTE;   ///< @brief The single quote character ('\'').
+	static const Char DQUOTE;   ///< @brief The double quote character ('\"').
 };
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Constants traits.
-template<typename Val>
-struct ConstTraits
-{
-	typedef Val value_type;        ///< @brief Value type.
-	typedef const Val& reference;  ///< @brief Reference type.
-	typedef const Val* pointer;    ///< @brief Pointer type.
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Non-constant traits.
-template<typename Val>
-struct NConstTraits
-{
-	typedef Val value_type;     ///< @brief Value type.
-	typedef Val& reference;     ///< @brief Reference type.
-	typedef Val* pointer;       ///< @brief Pointer type.
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The iterator template class.
-/**
-		This class is used as const and non-cont iterator class for a list
-	of configuration elements and sections.
-*/
-template<typename Base, typename Tr>
-class Iterator
-{
-	typedef Iterator<Base, Tr> ThisType;
-	typedef Base BaseType;
-
-public: // typedefs
-	typedef typename std::iterator_traits<BaseType>::iterator_category iterator_category; ///< @brief The iterator category.
-	typedef typename std::iterator_traits<BaseType>::difference_type difference_type; ///< @brief The difference type.
-
-	typedef typename Tr::value_type value_type; ///< @brief The value type.
-	typedef typename Tr::reference reference;   ///< @brief The reference type.
-	typedef typename Tr::pointer pointer;       ///< @brief The pointer type.
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Constructors
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The default constructor.
-	Iterator()
-	{}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param base_it The base iterator.
-*/
-	explicit Iterator(const BaseType &base_it)
-		: m_base(base_it)
-	{}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The auxiliary copy constructor.
-/**
-@param other The other iterator.
-*/
-	template<typename Base2, typename Tr2>
-	Iterator(const Iterator<Base2, Tr2> &other)
-		: m_base(other.base())
-	{}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The auxiliary assignment operator.
-/**
-@param other The other iterator.
-@return The self reference.
-*/
-	template<typename Base2, typename Tr2>
-	ThisType& operator=(const Iterator<Base2, Tr2> &other)
-	{
-		m_base = other.base();
-		return *this;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Access
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Access by index.
-/**
-@param i The index.
-@return The element at specified index.
-*/
-	reference operator[](difference_type i) const
-	{
-		return *m_base[i];
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Dereference.
-/**
-@return The object reference.
-*/
-	reference operator*() const
-	{
-		return *(*m_base);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Dereference.
-/**
-@return The object pointer.
-*/
-	pointer operator->() const
-	{
-		return *m_base;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the base iterator.
-/**
-@return The base iterator.
-*/
-	const BaseType& base() const
-	{
-		return m_base;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////
-/// @name Increment and decrement
-/// @{
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Prefix increment.
-/**
-@return The self reference.
-*/
-	ThisType& operator++()
-	{
-		++m_base;
-		return *this;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Prefix decrement.
-/**
-@return The self reference.
-*/
-	ThisType& operator--()
-	{
-		--m_base;
-		return *this;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Postfix increment.
-/**
-@return The incremented iterator.
-*/
-	const ThisType operator++(int)
-	{
-		return ThisType(m_base++);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Postfix decrement.
-/**
-@return The decremented iterator.
-*/
-	const ThisType operator--(int)
-	{
-		return ThisType(m_base--);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Increment.
-/**
-@param d The increment distance.
-@return The self reference.
-*/
-	ThisType& operator+=(difference_type d)
-	{
-		m_base += d;
-		return *this;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Decrement.
-/**
-@param d The decrement distance.
-@return The self reference.
-*/
-	ThisType& operator-=(difference_type d)
-	{
-		m_base -= d;
-		return *this;
-	}
-
-/// @}
-//////////////////////////////////////////////////////////////////////////
-
-private:
-	BaseType m_base; ///< @brief The base iterator.
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two iterators equal?
-/** @relates Iterator
-@param x The first iterator.
-@param y The second iterator.
-@return @b true If two iterators are equal, otherwise @b false.
-*/
-template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-bool operator==(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
-{
-	return x.base() == y.base();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two iterators non-equal?
-/** @relates Iterator
-@param x The first iterator.
-@param y The second iterator.
-@return @b true If two iterators are non-equal, otherwise @b false.
-*/
-template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-bool operator!=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
-{
-	return x.base() != y.base();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is first iterator less than second?
-/** @relates Iterator
-@param x The first iterator.
-@param y The second iterator.
-@return @b true If first iterator is less than second iterator, otherwise @b false.
-*/
-template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-bool operator<(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
-{
-	return x.base() < y.base();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is first iterator greater than second?
-/** @relates Iterator
-@param x The first iterator.
-@param y The second iterator.
-@return @b true If first iterator is greater than second iterator, otherwise @b false.
-*/
-template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-bool operator>(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
-{
-	return x.base() > y.base();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is first iterator less than or equal to second?
-/** @relates Iterator
-@param x The first iterator.
-@param y The second iterator.
-@return @b true If first iterator is less than or equal to second iterator, otherwise @b false.
-*/
-template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-bool operator<=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
-{
-	return x.base() <= y.base();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is first iterator greater than or equal to second?
-/** @relates Iterator
-@param x The first iterator.
-@param y The second iterator.
-@return @b true If first iterator is greater than or equal to second iterator, otherwise @b false.
-*/
-template<typename Base1, typename Tr1, typename Base2, typename Tr2> inline
-bool operator>=(const Iterator<Base1, Tr1> &x, const Iterator<Base2, Tr2> &y)
-{
-	return x.base() >= y.base();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Increment.
-/** @relates Iterator
-@param x The iterator.
-@param d The increment distance.
-@return The incremented iterator.
-*/
-template<typename Base, typename Tr> inline
-const Iterator<Base, Tr> operator+(const Iterator<Base, Tr> &x, typename Iterator<Base, Tr>::difference_type d)
-{
-	return Iterator<Base, Tr>(x.base() + d);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Increment.
-/** @relates Iterator
-@param d The increment distance.
-@param x The iterator.
-@return The incremented iterator.
-*/
-template<typename Base, typename Tr> inline
-const Iterator<Base, Tr> operator+(typename Iterator<Base, Tr>::difference_type d, const Iterator<Base, Tr> &x)
-{
-	return Iterator<Base, Tr>(d + x.base());
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Decrement.
-/** @relates Iterator
-@param x The iterator.
-@param d The decrement distance.
-@return The decremented iterator.
-*/
-template<typename Base, typename Tr> inline
-const Iterator<Base, Tr> operator-(const Iterator<Base, Tr> &x, typename Iterator<Base, Tr>::difference_type d)
-{
-	return Iterator<Base, Tr>(x.base() - d);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get distance between two iterators.
-/** @relates Iterator
-@param x The first iterator.
-@param y The second iterator.
-@return The distance between two iterators.
-*/
-template<typename Base, typename Tr> inline
-typename Iterator<Base, Tr>::difference_type operator-(const Iterator<Base, Tr> &x, const Iterator<Base, Tr> &y)
-{
-	return x.base() - y.base();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two sequences equal?
-/**
-@param first1 The begin of the first sequence.
-@param last1 The end of the first sequence.
-@param first2 The begin of the second sequence.
-@return @b true if two sequences are equal, otherwise @b false.
-*/
-template<typename In> inline
-	bool equal(In first1, In last1, In first2)
-{
-#if defined(_MSC_VER) && (1400 <= _MSC_VER)
-	// avoid VS8.0, VS9.0 checked iterators
-	return stdext::unchecked_equal(first1, last1, first2);
-#else
-	return std::equal(first1, last1, first2);
-#endif // (1400 <= _MSC_VER)
-}
 
 		} // details namespace
 		/// @endcond
-	} // CharConst & Iterator
+	} // CharConst
 
 } // omni namespace
 

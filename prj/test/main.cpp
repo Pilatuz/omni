@@ -34,11 +34,11 @@ int main()
 #endif
 	std::cout << "\n";
 
-	try {
-
+	try
+	{
 		if (1) // explicit test
 		{
-			if (!test_SIMD(std::cout))
+			if (!test_conf(std::cout))
 				std::cout << "test FAILED\n";
 			else
 				std::cout << "test SUCCESS\n";
@@ -53,9 +53,14 @@ int main()
 		omni::test::SpeedTest::testAll(std::cout);
 #endif
 
-	} catch (const std::exception &e) {
-		std::cerr << "ERROR: " << e.what() << "\n";
-	} catch (...) {
+	}
+	catch (std::exception const& e)
+	{
+		std::cerr << "ERROR: "
+			<< e.what() << "\n";
+	}
+	catch (...)
+	{
 		std::cerr << "FATAL ERROR!\n";
 	}
 
