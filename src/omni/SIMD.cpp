@@ -14,12 +14,9 @@
 @author Sergey Polichnoy
 */
 #include <omni/SIMD.hpp>
-#include <assert.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 #include <intrin.h>
+#include <assert.h>
 
 namespace omni
 {
@@ -49,7 +46,7 @@ bool Capability::is_MMX()
 			EMMS
 		}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	__except (1) // EXCEPTION_EXECUTE_HANDLER
 	{
 		return false;
 	}
@@ -79,7 +76,7 @@ bool Capability::is_SSE()
 			XORPS xmm0,xmm0
 		}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	__except (1) // EXCEPTION_EXECUTE_HANDLER
 	{
 		return false;
 	}
@@ -109,7 +106,7 @@ bool Capability::is_SSE2()
 			XORPD xmm0,xmm0
 		}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	__except (1) // EXCEPTION_EXECUTE_HANDLER
 	{
 		return false;
 	}
@@ -139,7 +136,7 @@ bool Capability::is_SSE3()
 		//	XORPD xmm0,xmm0
 		//}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	__except (1) // EXCEPTION_EXECUTE_HANDLER
 	{
 		return false;
 	}
@@ -169,7 +166,7 @@ bool Capability::is_SSSE3()
 		//	XORPD xmm0,xmm0
 		//}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	__except (1) // EXCEPTION_EXECUTE_HANDLER
 	{
 		return false;
 	}
@@ -199,7 +196,7 @@ bool Capability::is_SSE4_1()
 		//	XORPD xmm0,xmm0
 		//}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	__except (1) // EXCEPTION_EXECUTE_HANDLER
 	{
 		return false;
 	}
@@ -228,7 +225,7 @@ bool Capability::is_SSE4_2()
 		//	XORPD xmm0,xmm0
 		//}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	__except (1) // EXCEPTION_EXECUTE_HANDLER
 	{
 		return false;
 	}
@@ -252,7 +249,7 @@ bool Capability::is_3DNow()
 			EMMS
 		}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	__except (1) // EXCEPTION_EXECUTE_HANDLER
 	{
 		return false;
 	}
