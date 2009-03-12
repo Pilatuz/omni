@@ -144,43 +144,41 @@ bool test_conf(std::ostream &os)
 		Config s1_;
 		TEST(s1 == s1_);
 
-		const String str2 = _T(" #prefix\n<s1> \n </s1>#suffix");
-		ISStream istr2(str2);
-		Config s2; istr2 >> s2;
+		Config s2; s2.parse(_T(" #prefix\n<s1> \n </s1>#suffix"));
 		Config s2_;
 		s2_[_T("s1")];
 		TEST(s2 == s2_);
 
-		const String str3 = _T(" #prefix\n<s1 \t= \nval1  \n />#suffix");
-		ISStream istr3(str3);
-		Config s3; istr3 >> s3;
+		Config s3; s3.parse(_T(" #prefix\n<s1 \t= \nval1  \n />#suffix"));
 		Config s3_;
 		s3_[_T("s1")] = _T("val1");
 		TEST(s3 == s3_);
 
-		const String str4 = _T("<s1 key1=val1 />");
-		ISStream istr4(str4);
-		Config s4; istr4 >> s4;
+		Config s4; s4.parse(_T("<s1 key1=val1 />"));
 		Config s4_;
 		s4_[_T("s1")][_T("key1")] = _T("val1");
 		TEST(s4 == s4_);
 
-		const String str5 = _T("#prefix\nkey1=val1 key2=val2#suffix");
-		ISStream istr5(str5);
-		Config s5; istr5 >> s5;
+		Config s5; s5.parse(_T("#prefix\nkey1=val1 key2=val2#suffix"));
 		Config s5_;
 		s5_[_T("key1")] = _T("val1");
 		s5_[_T("key2")] = _T("val2");
 		TEST(s5 == s5_);
 
-		const String str6 = _T("key1 key2\n#prefix\nkey3#suffix");
-		ISStream istr6(str6);
-		Config s6; istr6 >> s6;
+		Config s6; s6.parse(_T("key1 key2\n#prefix\nkey3#suffix"));
 		Config s6_;
 		s6_[_T("key1")];
 		s6_[_T("key2")];//.val() = _T("val2");
 		s6_[_T("key3")];
 		TEST(s6 == s6_);
+	}
+
+	{ // merge
+		Config s1; s1.parse(_T("e1=A1 e2=A2 <s1=AA e1=AA1 e2=AA2/>"));
+		Config s2; s2.parse(_T("e2=B2 e3=B3 <s1=BB e3=BB3/> <z2=CC/>"));
+		Config s3; s3.parse(_T("e1=A1 e2=B2 <s1=BB e1=AA1 e2=AA2 e3=BB3/> e3=B3 z2=CC"));
+		s1.merge(s2);
+		TEST(s1 == s3);
 	}
 
 	{ // exceptions

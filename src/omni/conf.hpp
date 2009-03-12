@@ -272,6 +272,49 @@ public:
 public:
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief Parse the configuration.
+/**
+		The current configuration context will be replaced with
+	the configuration parsed from the input string.
+
+@param[in] str The configuration string.
+@return The self reference.
+@throw ParsingFailure if configuration string is invalid.
+@see io::ParserT
+*/
+	ItemT& parse(String const& str)
+	{
+		typedef std::basic_istringstream<Char,
+			StrTraits, Allocator> ISStream;
+
+		ISStream is(str); // input stream
+
+		ItemT tmp;
+		is >> tmp; // use default parser
+		swap(tmp);
+
+		return *this;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Parse the configuration (C-style string).
+/**
+		The current configuration context will be replaced with
+	the configuration parsed from the input string.
+
+@param[in] str The configuration string.
+@return The self reference.
+@throw ParsingFailure if configuration string is invalid.
+@see io::ParserT
+*/
+	ItemT& parse(Char const* str)
+	{
+		return parse(String(str));
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief Merge configuration.
 /**
 		This method replaces the some childs with corresponding childs
@@ -299,7 +342,7 @@ public:
 		elem1 = "B_value1"
 		elem2 = "A_value2"
 		elem3 = "B_value3"
-	</B>
+	</A>
 @endcode
 
 		If the child configuration has ambiguous name, exception will be thrown.
@@ -310,22 +353,17 @@ public:
 */
 	ItemT& merge(ItemT const& other)
 	{
-		assert(!"not implemented yet");
-		// TODO: Config::merge()
-		//{ // merge childs
-		//	const_iterator const ie = other.end();
-		//	const_iterator i = other.begin();
+		const_iterator const ie = other.end();
+		const_iterator i = other.begin();
 
-		//	for (; i != ie; ++i)
-		//		get(i->name(), true).merge(*i);
-		//}
+		for (; i != ie; ++i)
+		{
+			ItemT &child = get(i->name(), true);
+			child.val() = i->val(); // assign value
 
-		//{ // merge child elements
-		//	typename ElementList::const_iterator i = other.elements.begin();
-		//	typename ElementList::const_iterator ie = other.elements.end();
-		//	for (; i != ie; ++i)
-		//		elements[i->name()] = (*i);
-		//}
+			if (!i->empty())
+				child.merge(*i);
+		}
 
 		return *this;
 	}
@@ -2520,6 +2558,7 @@ private:
 @param[in] is The input stream.
 @param[out] cfg The configuration.
 @return The input stream.
+@throw io::ParsingFailureT if the input stream is invalid.
 */
 template<typename Ch, typename Tr, typename Str> inline
 	std::basic_istream<Ch, Tr>& operator>>(
