@@ -159,6 +159,17 @@ public:
 	~Event();
 
 public:
+
+	/// @brief Get the event handle.
+	/**
+	@return The event handle.
+	*/
+	HANDLE handle() const
+	{
+		return m_impl;
+	}
+
+public:
 	bool reset();
 	bool set();
 
