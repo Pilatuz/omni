@@ -176,6 +176,7 @@ public:
 public:
 	bool wait(DWORD timeout_ms);
 	bool wait();
+	bool check();
 
 private:
 	HANDLE m_impl; ///< @brief The event object.

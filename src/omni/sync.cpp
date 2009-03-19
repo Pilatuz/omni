@@ -243,11 +243,26 @@ bool Event::wait(DWORD timeout_ms)
 //////////////////////////////////////////////////////////////////////////
 /// @brief Wait for the event.
 /**
-@return @b true If the event in the signled state, otherwise @b false.
+		This method blocks the calling thread until the event object will be in signaled state.
+
+@return @b true If the event in the signaled state, otherwise @b false.
 */
 bool Event::wait()
 {
 	return wait(INFINITE);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Check for the event.
+/**
+		This method does not block the calling thread.
+
+@return @b true If the event in the signaled state, otherwise @b false.
+*/
+bool Event::check()
+{
+	return wait(0);
 }
 
 	} // Event
