@@ -169,7 +169,7 @@ private:
 //////////////////////////////////////////////////////////////////////////
 // global synchronization
 #if OMNI_MT
-	Lockable& dft_lock()
+	CriticalSection& dft_lock()
 	{
 		static CriticalSection LOCK;
 		return LOCK;
@@ -321,7 +321,7 @@ template<typename T>
 void DFT<T>::init()
 {
 	// get table
-	OMNI_MT_CODE(Locker guard(details::dft_lock()));
+	OMNI_MT_CODE(AutoLock guard(details::dft_lock()));
 	m_impl = details::dft_tables((T*)0).get(m_size);
 }
 
@@ -332,7 +332,7 @@ template<typename T>
 DFT<T>::~DFT()
 {
 	// release table
-	OMNI_MT_CODE(Locker guard(details::dft_lock()));
+	OMNI_MT_CODE(AutoLock guard(details::dft_lock()));
 	details::dft_tables((T*)0).put((details::DFT_Table<T>*)m_impl);
 }
 
