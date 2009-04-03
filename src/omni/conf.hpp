@@ -115,8 +115,8 @@ elem_name = "elem_value" # comment
 
 		The equal() method compares two configurations.
 	Two configurations are equal if they have the same names,
-	same values, and same child configurations.
-	The @b == and @b != operators are also available.
+	same values, and the same child configurations.
+	The == and != operators are also available.
 
 		The @a Str template parameter defines the string container type.
 	A usual @a Str types are @a std::wstring for UNICODE projects
@@ -172,15 +172,15 @@ public:
 /** @name Exception typedefs */
 /// @{
 public:
-	typedef err::FailureT<String> Failure;
-	typedef err::AccessFailureT<String> AccessFailure;
-	typedef err::ChildNotFoundT<String> ChildNotFound;
-	typedef err::NameIsAmbiguousT<String> NameIsAmbiguous;
-	typedef err::ParsingFailureT<String> ParsingFailure;
-	typedef err::SyntaxErrorT<String> SyntaxError;
-	typedef err::NameMismatchT<String> NameMismatch;
-	typedef err::WritingFailureT<String> WritingFailure;
-	typedef err::NameIsEmptyT<String> NameIsEmpty;
+	typedef err::FailureT<String> Failure;                    ///< @brief The basic exception.
+	typedef err::AccessFailureT<String> AccessFailure;        ///< @brief The child access exception.
+	typedef err::ChildNotFoundT<String> ChildNotFound;        ///< @brief Child not found exception.
+	typedef err::NameIsAmbiguousT<String> NameIsAmbiguous;    ///< @brief The child name is not unique.
+	typedef err::ParsingFailureT<String> ParsingFailure;      ///< @brief Configuration parsing exception.
+	typedef err::SyntaxErrorT<String> SyntaxError;            ///< @brief The syntax error.
+	typedef err::NameMismatchT<String> NameMismatch;          ///< @brief The name mismatch exception.
+	typedef err::WritingFailureT<String> WritingFailure;      ///< @brief Configuration writing exception.
+	typedef err::NameIsEmptyT<String> NameIsEmpty;            ///< @brief The name is empty.
 /// @}
 
 
@@ -252,7 +252,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Destructor.
 /**
-		Checks the configuration consistency and release all resources.
+		Checks the configuration consistency and releases all resources.
 */
 	~ItemT()
 	{
@@ -279,7 +279,7 @@ public:
 
 @param[in] str The configuration string.
 @return The self reference.
-@throw ParsingFailure if configuration string is invalid.
+@throw ItemT::ParsingFailure if configuration string is invalid.
 @see io::ParserT
 */
 	ItemT& parse(String const& str)
@@ -305,7 +305,7 @@ public:
 
 @param[in] str The configuration string.
 @return The self reference.
-@throw ParsingFailure if configuration string is invalid.
+@throw ItemT::ParsingFailure if configuration string is invalid.
 @see io::ParserT
 */
 	ItemT& parse(Char const* str)
@@ -345,11 +345,11 @@ public:
 	</A>
 @endcode
 
-		If the child configuration has ambiguous name, exception will be thrown.
+		If the child configuration has ambiguous names, exception will be thrown.
 
 @param[in] other The other configuration.
 @return The self reference.
-@throw NameIsAmbiguous if child configuration has ambiguous name.
+@throw ItemT::NameIsAmbiguous if child configuration has ambiguous names.
 */
 	ItemT& merge(ItemT const& other)
 	{
@@ -775,8 +775,8 @@ public:
 
 @param[in] theName The child name.
 @return The child's constant reference.
-@throw ChildNotFound If child not found.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::ChildNotFound If child not found.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT const& get(String const& theName) const
 	{
@@ -801,8 +801,8 @@ public:
 
 @param[in] theName The child name.
 @return The child's constant reference.
-@throw ChildNotFound If child not found.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::ChildNotFound If child not found.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT const& get(Char const* theName) const
 	{
@@ -829,7 +829,7 @@ public:
 @param[in] theName The child name.
 @param[in] def The default configuration.
 @return The child's constant reference.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT const& get(String const& theName, ItemT const& def) const
 	{
@@ -846,7 +846,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or default (C-style string).
+/// @brief Get child by name or default (C-style string).
 /**
 		This method returns a child with specified name @a theName.
 	If the child with that name is not exists, then the @a def configuration
@@ -856,7 +856,7 @@ public:
 @param[in] theName The child name.
 @param[in] def The default configuration.
 @return The child's constant reference.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT const& get(Char const* theName, ItemT const& def) const
 	{
@@ -873,7 +873,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or create.
+/// @brief Get child by name or create.
 /**
 		This method returns a child with specified name @a theName.
 	If the child with that name is not exists, then the it will be created
@@ -883,8 +883,8 @@ public:
 @param[in] theName The child name.
 @param[in] create Create if not exists flag.
 @return The child's non-constant reference.
-@throw ChildNotFound If child not found and @a create flag is not set.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::ChildNotFound If child not found and @a create flag is not set.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT& get(String const& theName, bool create = false)
 	{
@@ -909,7 +909,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Get element by name or create (C-style string).
+/// @brief Get child by name or create (C-style string).
 /**
 		This method returns a child with specified name @a theName.
 	If the child with that name is not exists, then the it will be created
@@ -919,8 +919,8 @@ public:
 @param[in] theName The child name.
 @param[in] create Create if not exists flag.
 @return The child's non-constant reference.
-@throw ChildNotFound If child not found and @a create flag is not set.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::ChildNotFound If child not found and @a create flag is not set.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT& get(Char const* theName, bool create = false)
 	{
@@ -962,8 +962,8 @@ public:
 
 @param[in] theName The child name.
 @return The child's value.
-@throw ChildNotFound If child not found.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::ChildNotFound If child not found.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	String const& getv(String const& theName) const
 	{
@@ -980,8 +980,8 @@ public:
 
 @param[in] theName The child name.
 @return The child's value.
-@throw ChildNotFound If child not found.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::ChildNotFound If child not found.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	String const& getv(Char const* theName) const
 	{
@@ -999,7 +999,7 @@ public:
 @param[in] theName The child name.
 @param[in] def The default value.
 @return The child's value.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	String const& getv(String const& theName, String const& def) const
 	{
@@ -1025,7 +1025,7 @@ public:
 @param[in] theName The child name.
 @param[in] def The default value.
 @return The child's value.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	String const& getv(Char const* theName, String const& def) const
 	{
@@ -1051,7 +1051,7 @@ public:
 @param[in] theName The child name.
 @param[in] def The default value.
 @return The child's value.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	Char const* getv(Char const* theName, Char const* def) const
 	{
@@ -1078,12 +1078,12 @@ public:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Get child by name.
 /**
-		This method is equivalent for get(theName).
+		This method is equivalent for ItemT::get(theName).
 
 @param[in] theName The child name.
 @return The child's constant reference.
-@throw ChildNotFound If child not found.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::ChildNotFound If child not found.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT const& operator[](String const& theName) const
 	{
@@ -1094,12 +1094,12 @@ public:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Get child by name (C-style string).
 /**
-		This method is equivalent for get(theName).
+		This method is equivalent for ItemT::get(theName).
 
 @param[in] theName The child name.
 @return The child's constant reference.
-@throw ChildNotFound If child not found.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::ChildNotFound If child not found.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT const& operator[](Char const* theName) const
 	{
@@ -1110,12 +1110,12 @@ public:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Get child by name or create.
 /**
-		This method is equivalent for get(theName, true), i.e.
+		This method is equivalent for ItemT::get(theName, true), i.e.
 	if the child with that name is not exists it will be created!
 
 @param[in] theName The child name.
 @return The child's non-constant reference.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT& operator[](String const& theName)
 	{
@@ -1127,12 +1127,12 @@ public:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Get child by name or create (C-style string).
 /**
-		This method is equivalent for get(theName, true), i.e.
+		This method is equivalent for ItemT::get(theName, true), i.e.
 	if the child with that name is not exists it will be created!
 
 @param[in] theName The child name.
 @return The child's non-constant reference.
-@throw NameIsAmbiguous If child's name is not unique.
+@throw ItemT::NameIsAmbiguous If child's name is not unique.
 */
 	ItemT& operator[](Char const* theName)
 	{
@@ -1248,7 +1248,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Remove the child configuration.
+/// @brief Remove the child configurations.
 /**
 		This methos removes the all child configurations with name @a theName.
 
@@ -1268,7 +1268,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Remove the child configuration (C-style string).
+/// @brief Remove the child configurations (C-style string).
 /**
 		This methos removes the all child configurations with name @a theName.
 
@@ -1624,7 +1624,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 /// @brief The main constructor (C-style string).
 /**
-@param[in] msg The custom description.
+@param[in] msg The error message.
 @param[in] theName The child configuration name.
 @param[in] thePath The parent configuration path.
 */
@@ -1647,7 +1647,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Get the parent configuration full name.
 /**
-@brief The parent configuration full name.
+@return The parent configuration full name.
 */
 	String const& path() const
 	{
@@ -1753,10 +1753,10 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Parsing configuration exception.
+/// @brief Configuration parsing exception.
 /**
 		This exception may be thrown during configuration parsing procedure.
-	The lineNumber() method returns the line number where parser is stopped.
+	The line() method returns the line number where parser is stopped.
 
 @tparam Str The STL string container.
 	Should be std::string or std::wstring.
@@ -1969,7 +1969,7 @@ private:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Writing configuration exception.
+/// @brief Configuration writing exception.
 /**
 		This exception may be thrown during configuration writing procedure.
 
@@ -2096,9 +2096,9 @@ public:
 	typedef std::basic_istream<Char, StrTraits> IStream; ///< @brief The input stream.
 
 public:
-	typedef err::ParsingFailureT<String> ParsingFailure;
-	typedef err::SyntaxErrorT<String> SyntaxError;
-	typedef err::NameMismatchT<String> NameMismatch;
+	typedef err::ParsingFailureT<String> ParsingFailure;      ///< @brief Configuration parsing exception.
+	typedef err::SyntaxErrorT<String> SyntaxError;            ///< @brief The syntax error.
+	typedef err::NameMismatchT<String> NameMismatch;          ///< @brief The name mismatch exception.
 
 public:
 
@@ -2121,9 +2121,9 @@ public:
 /// @brief Parse the configuration from the input stream.
 /**
 @param[in] is The input stream.
-@throw ParsingFailure If the input stream is invalid.
-@throw SyntaxFailure If there is invalid syntax.
-@throw MismatchFailure If there is name mismatch.
+@throw ParserT::ParsingFailure If the input stream is invalid.
+@throw ParserT::SyntaxError If there is invalid syntax.
+@throw ParserT::NameMismatch If there is name mismatch.
 */
 	virtual void parse(IStream &is)
 	{
@@ -2276,7 +2276,7 @@ protected:
 /**
 		This method is called when the configuration is closed.
 
-@throw ParsingFailure If all configurations are closed.
+@throw ItemT::ParsingFailure If all configurations are closed.
 */
 	void pop()
 	{
@@ -2301,7 +2301,7 @@ protected:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Close brace.
 /**
-@throw SyntaxFailure If brace is closed before opening.
+@throw ParserT::SyntaxError If brace is closed before opening.
 */
 	void brace_close()
 	{
@@ -2407,6 +2407,8 @@ protected:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Parse token from input stream.
 /**
+		This method parses the next token from the input stream and counts the lines.
+
 @param[in,out] is The input stream.
 @param[out] token The token.
 */
@@ -2499,6 +2501,8 @@ protected:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Skip the whitespaces.
 /**
+		This method skips the whitespaces and counts the lines.
+
 @param[in,out] is The input stream.
 @return The number of skipped lines.
 */
@@ -2574,7 +2578,7 @@ private:
 @param[in] is The input stream.
 @param[out] cfg The configuration.
 @return The input stream.
-@throw io::ParsingFailureT if the input stream is invalid.
+@throw ItemT::ParsingFailure if the input stream is invalid.
 */
 template<typename Ch, typename Tr, typename Str> inline
 	std::basic_istream<Ch, Tr>& operator>>(
@@ -2613,8 +2617,8 @@ public:
 	typedef std::basic_ostream<Char, StrTraits> OStream; ///< @brief The output stream.
 
 public:
-	typedef err::WritingFailureT<String> WritingFailure;
-	typedef err::NameIsEmptyT<String> NameIsEmpty;
+	typedef err::WritingFailureT<String> WritingFailure;      ///< @brief Configuration writing exception.
+	typedef err::NameIsEmptyT<String> NameIsEmpty;            ///< @brief The name is empty.
 
 public:
 
@@ -2642,7 +2646,7 @@ public:
 @param[in] cfg The configuration.
 @return The output stream.
 
-@throw NameIsEmpty if configuration name is empty.
+@throw WriterT::NameIsEmpty if configuration name is empty.
 */
 	OStream& print(OStream &os, ItemT<String> const& cfg) const
 	{
@@ -2671,7 +2675,7 @@ protected:
 /**
 @param[in,out] os The output stream.
 @param[in] cfg The configuration.
-@throw NameIsEmpty If configuration name is empty.
+@throw WriterT::NameIsEmpty If configuration name is empty.
 */
 	virtual void open_section(OStream &os, ItemT<String> const& cfg) const
 	{
@@ -2710,7 +2714,7 @@ protected:
 /**
 @param[in,out] os The output stream.
 @param[in] cfg The configuration.
-@throw NameIsEmpty If configuration name is empty.
+@throw WriterT::NameIsEmpty If configuration name is empty.
 */
 	virtual void close_section(OStream &os, ItemT<String> const& cfg) const
 	{
@@ -2745,7 +2749,7 @@ protected:
 /**
 @param[in,out] os The output stream.
 @param[in] cfg The empty configuration.
-@throw NameIsEmpty If configuration name is empty.
+@throw WriterT::NameIsEmpty If configuration name is empty.
 */
 	virtual void put_element(OStream &os, ItemT<String> const& cfg) const
 	{
@@ -2927,7 +2931,7 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Print configuration to output stream.
+/// @brief Print the configuration to the output stream.
 /** @relates ItemT
 
 		This operator prints the configuration to the output stream.
@@ -2937,6 +2941,7 @@ public:
 @param[in] os The output stream.
 @param[in] cfg The configuration.
 @return The output stream.
+@throw ItemT::WritingFailure if the input stream is invalid.
 */
 template<typename Ch, typename Tr, typename Str> inline
 	std::basic_ostream<Ch,Tr>& operator<<(

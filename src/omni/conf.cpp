@@ -172,4 +172,6 @@ bool CharConst<char>::is_delim(Char ch)
 @section omni_config_comment Comments
 
 		The line after the "#" char is ignored.
+
+@author Sergey Polichnoy
 */

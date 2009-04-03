@@ -32,24 +32,27 @@ namespace omni
 	in the @b private section and not to define them.
 
 @code
-	class X {
+	class X
+	{
 	public:
 		// ...
 
 	private: // copying not allowed
-		X& operator=(const X&); // (!) not defined
-		X(const X&);            // (!) not defined
+		X& operator=(X const&); // (!) not defined
+		X(X const&);            // (!) not defined
 	};
 @endcode
 
 		This practice is good, but too verbose. You should add these
-	@b private declarations for each appropriated class. Moreover,
+	@b private declarations for each appropriated classes. Moreover,
 	it is not so clear for users. A better practice is to derive your
 	class from the NonCopyable interface.
 
 @code
 	// default copying not allowed
-	class Y: private omni::NonCopyable {
+	class Y:
+		private omni::NonCopyable
+	{
 	public:
 		// ...
 	};
@@ -63,14 +66,21 @@ namespace omni
 	Derived classes may define their own copy constructor
 	and/or assignment operator.
 */
-class NonCopyable {
+class NonCopyable
+{
 protected:
-	NonCopyable() {}      ///< @brief Trivial constructor.
-	~NonCopyable() {}     ///< @brief Trivial destructor.
+
+	/// @brief Trivial constructor.
+	NonCopyable()
+	{}
+
+	/// @brief Trivial destructor.
+	~NonCopyable()
+	{}
 
 private: // copying not allowed
-	NonCopyable& operator=(const NonCopyable&);
-	NonCopyable(const NonCopyable&);
+	NonCopyable& operator=(NonCopyable const&);
+	NonCopyable(NonCopyable const&);
 };
 
 } // omni namespace

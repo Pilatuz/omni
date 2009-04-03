@@ -169,7 +169,7 @@ public:
 		Запоминает указатель на новый объект &*x, и если он не является нулевым,
 	то увеличивает у нового объекта количество ссылок.
 
-@param[in] x Smart pointer.
+@param[in] other Smart pointer.
 @return Self reference.
 */
 	ThisType& operator=(const ThisType &other)

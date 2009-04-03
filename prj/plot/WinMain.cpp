@@ -49,7 +49,7 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief The application entry point.
-int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int showCmd)
+int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE, LPTSTR, int showCmd)
 {
 	LPCTSTR mainWndClass = _T("omni::plot::test::MainWnd");
 	HWND hWnd = 0;
