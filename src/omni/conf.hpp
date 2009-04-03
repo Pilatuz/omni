@@ -2210,6 +2210,22 @@ public:
 			{
 				is.ignore(); // ignore '>' char
 				brace_close();
+
+				// check if section is closed
+				// <a ... a> or <? ... ?> notation
+				ItemT<String> &curr = top();
+				if (!curr.empty())
+				{
+					ItemT<String>::iterator child = curr.end();
+					--child; // (!) now it is back() element
+
+					if (child->val().empty()
+						&& curr.name() == child->name())
+					{
+						curr.erase(child); // (!) remove unused child
+						pop(); // (!) pop the configuration
+					}
+				}
 			}
 
 			// add new element

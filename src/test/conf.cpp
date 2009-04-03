@@ -171,6 +171,11 @@ bool test_conf(std::ostream &os)
 		s6_[_T("key2")];//.val() = _T("val2");
 		s6_[_T("key3")];
 		TEST(s6 == s6_);
+
+		Config s7; s7.parse(_T("<? key1=val1 ?>"));
+		Config s7_;
+		s7_[_T("?")][_T("key1")] = _T("val1");
+		TEST(s7 == s7_);
 	}
 
 	{ // merge

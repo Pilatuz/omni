@@ -134,96 +134,42 @@ bool CharConst<char>::is_delim(Char ch)
 //////////////////////////////////////////////////////////////////////////
 /** @page omni_config Configuration tools
 
-		omni::config::SectionT class предствляет собой упрощённую иерархическую
-	структуру данных. Используется в качестве универсального средства хранения
-	информации, например, для задания конфигурации симуляторов, для
-	сохранения результатов, для передачи произвольных параметров.
-	Секция конфигурации может содержать вложенные секции и параметры.
-	Каждый параметр omni::config::ElementT представляет собой пару "ключ=значение".
-	Здесь можно провести аналогию с файловой системой - где секция является
-	директорией, а параметр файлом.
+		omni::conf::ItemT class represents a very simple hierarchical data base.
+	It can be used as an universal data format for various simulator's configurations
+	or output results.
 
-		Секции и параметры можно создавать программно, т.е. добавлять, удалять
-	и изменять дочерние секции или параметры. Наиболее часто используется
-	текстовая форма для задания конфигурации. Например:
+		Each instance of omni::conf::ItemT (called as configuration) contains name,
+	value and optional any number of child configurations.
+
+		The configuration's text format is similar to the XML data format:
 
 @code
 	<data>
-		"time" = 1000 # [seconds]
+		time = "1000" # [seconds]
 	</data>
 @endcode
 
-		Соглашение об именах: все имена чувствительны к регистру. Если имя
-	секции или параметра содержит пробелы или другие служебные символы,
-	то оно должно быть заключено в кавычки. Допускается использование
-	двойных (") или одинарных (') кавычек.
+		If name or value contains spaces or any other special symbols, then
+	it should be quoted by " or '.
 
-@section omni_config_section Секции
-		Секции предназначены для группирования близких по смыслу параметров.
-	Кроме того, секция может содержать дочерние секции, образуя древовидную
-	структуру.
+
+@section omni_config_section Configurations
+
+	There are a few method to define configuration section:
 
 @code
 	<A>
-		a=b
-		<B>
-			b=c
-		</B>
+		name = "val"
 	</A>
+
+	<B name = "val" />
+
+	<C name = "val" C>
 @endcode
 
-		Для определения начала и окончания секции используются угловые скобки.
+		The last method is used to parse XML-like comments (<? ... ?>).
 
-@code
-	# начало секции
-	< "section name" >
-		# ...
-	</ "section name" >  # окончание секции
-@endcode
+@section omni_config_comment Comments
 
-		Каждая секция должна быть закрыта тем же именем! Допускается
-	использование следующей нотации:
-
-@code
-	# начало секции
-	< "section name"
-		# ...
-	/>                 # окончание секции
-@endcode
-
-@see omni::config::SectionT
-
-@section omni_config_element Параметры
-		Параметры являются членами какой либо секции: За именем
-	параметра после символа "=" расположено значение параметра.
-	@code a = 123 @endcode Если символа "=" нет, то считается, что параметр
-	имеет пустое значение. Например, @code a b @endcode определяет два
-	параметра с пустыми значениями. Секция также может содержать значение,
-	например:
-
-@code
-	<"section name" = "section value"
-		"element name" = "element value" />
-@endcode
-
-@see omni::config::ElementT
-
-@section omni_config_comment Комментарии
-		Всё что расположено за символом "#" считается комментарием.
-	Допускается использование трёх видов комментариев:
-		- простые: отдельная строка
-		- префиксные: комментарий добавляется к следующему параметру или секции
-		- суффиксные: коментарий добавляется к предыдущему параметру или секции
-
-	@code
-	# simple comment
-
-	# section's prefix comment
-	# section's prefix continue
-	<A>
-		# element's prefix comment
-		a = b # element's suffix comment
-	</A>    # section's suffix comment
-	        # section's suffix continue
-	@endcode
+		The line after the "#" char is ignored.
 */
