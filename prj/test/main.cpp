@@ -36,7 +36,7 @@ int main()
 
 	try
 	{
-		if (1) // explicit test
+		if (0) // explicit test
 		{
 			if (!test_conf(std::cout))
 				std::cout << "test FAILED\n";
