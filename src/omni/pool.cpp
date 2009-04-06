@@ -17,9 +17,6 @@
 @see @ref omni_pool
 */
 #include <omni/pool.hpp>
-#if OMNI_MT
-#	include <omni/sync.hpp>
-#endif
 
 namespace omni
 {
@@ -36,9 +33,65 @@ namespace omni
 		namespace details
 		{
 
+//////////////////////////////////////////////////////////////////////////
+/// @brief %RAW memory operations.
+/**
+		This class makes %RAW memory read/write operations easy.
+	To read the value at custom address, you should use read() method.
+	To write the value at custom address, you should use write() method.
+
+		For example:
+
+@code
+	void f(void *ptr)
+	{
+		int a = RAW<int>::read(ptr); // read integer
+		RAW<int>::write(ptr, a + 1); // write integer
+	}
+@endcode
+
+		Template argument @a T should be of POD type.
+*/
+template<typename T>
+class RAW {
+public:
+	typedef void* pointer; ///< @brief Pointer type.
+	typedef T value_type;  ///< @brief Value type.
+
+public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Write the value.
+/**
+	This method writes the value @a x at the custom address @a p.
+
+@param[in] p The custom address.
+@param[in] x The value.
+*/
+	static void write(pointer p, value_type x)
+	{
+		*static_cast<value_type*>(p) = x;
+	}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Read the value.
+/**
+	This method reads the value at the custom address @a p.
+
+@param[in] p The custom address.
+@return The value.
+*/
+	static value_type read(pointer p)
+	{
+		return *static_cast<value_type*>(p);
+	}
+};
+
+
 /// @brief Global pool manager type.
 typedef omni::pool::Manager<sizeof(void*),
-	4, 1024, DEFAULT_CHUNK_SIZE> GManager;
+	sizeof(void*), 1024, DEFAULT_CHUNK_SIZE> GManager;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -48,28 +101,11 @@ typedef omni::pool::Manager<sizeof(void*),
 
 @return The global pool manager.
 */
-	GManager& g_pool()
-	{
-		static GManager G;
-		return G;
-	}
-
-
-#if OMNI_MT
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the global synchronization object.
-/**
-		This global synchronization object is used to synchronize access
-	to the global pool manager in multi-thread environment.
-
-@return The global synchronization object.
-*/
-	sync::CriticalSection& g_lock()
-	{
-		static sync::CriticalSection G(4096); // (!) spin count
-		return G;
-	}
-#endif // OMNI_MT
+GManager& g_pool()
+{
+	static GManager G;
+	return G;
+}
 
 		} // details namespace
 	} // pool namespace
@@ -82,11 +118,6 @@ namespace omni
 	namespace pool
 	{
 		using details::g_pool;
-
-#if OMNI_MT
-		using details::g_lock;
-		using sync::AutoLock;
-#endif // OMNI_MT
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -111,10 +142,7 @@ void* mem_get(size_t buf_size)
 	void *buf;
 
 	if (buf_size <= details::GManager::MAX_SIZE)
-	{
-		OMNI_MT_CODE(AutoLock guard(g_lock()));
 		buf = g_pool().get(buf_size);
-	}
 	else
 		buf = ::operator new(buf_size);
 
@@ -144,10 +172,7 @@ void mem_put(void *buf, size_t buf_size)
 	OMNI_DEBUG_CODE(memset(buf, 0xAA, buf_size));
 
 	if (buf_size <= details::GManager::MAX_SIZE)
-	{
-		OMNI_MT_CODE(AutoLock guard(g_lock()));
 		g_pool().put(buf, buf_size);
-	}
 	else
 		::operator delete(buf);
 }
@@ -254,10 +279,14 @@ void* FastObj::operator new(size_t buf_size) // throw(std::bad_alloc)
 	@param[in] buf_size The memory block size.
 	@return The memory block or null.
 */
-void* FastObj::operator new(size_t buf_size, const std::nothrow_t&) // throw()
+void* FastObj::operator new(size_t buf_size, std::nothrow_t const&) // throw()
 {
-	try { return mem_get_sized(buf_size); }
-	catch (const std::bad_alloc&) {}
+	try
+	{
+		return mem_get_sized(buf_size);
+	}
+	catch (std::bad_alloc const&)
+	{}
 
 	return 0;
 }
@@ -301,7 +330,7 @@ void FastObj::operator delete(void *buf)
 
 @param[in] buf The memory block.
 */
-void FastObj::operator delete(void *buf, const std::nothrow_t&) // throw()
+void FastObj::operator delete(void *buf, std::nothrow_t const&) // throw()
 {
 	mem_put_sized(buf);
 }
@@ -330,9 +359,9 @@ void FastObj::operator delete(void *buf, void *p) // throw()
 //////////////////////////////////////////////////////////////////////////
 /** @page omni_pool Fast memory management.
 
-		The pool is useful if your program contains multiple small objects.
-	These objects (for example, data packets) are created dynamically and
-	destroyed. In this case the standard memory manager is not effective enough,
+		The pool is useful if your program contains many number of small objects.
+	These objects (for example, data packets) are created and destroyed dynamically.
+	In this case the standard memory manager is not effective enough,
 	because it is designed for various memory block sizes. The pool (also known
 	as "node allocator") in this case is more effective, because it doesn't use
 	real memory allocation/deallocation so often.

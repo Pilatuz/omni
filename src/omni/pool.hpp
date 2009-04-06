@@ -26,6 +26,9 @@
 
 #include <new>
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 namespace omni
 {
 	namespace pool
@@ -35,66 +38,55 @@ namespace omni
 		{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief %RAW memory operations.
-/**
-		This class makes %RAW memory read/write operations easy.
-	To read the value at custom address, you should use read() method.
-	To write the value at custom address, you should use write() method.
-
-		For example:
-
-@code
-	void f(void *ptr)
-	{
-		int a = RAW<int>::read(ptr); // read integer
-		RAW<int>::write(ptr, a + 1); // write integer
-	}
-@endcode
-
-		Template argument @a T should be of POD type.
-*/
-template<typename T>
-class RAW {
-public:
-	typedef void* pointer; ///< @brief Pointer type.
-	typedef T value_type;  ///< @brief Value type.
-
-public:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Write the value.
-/**
-	This method writes the value @a x at the custom address @a p.
-
-@param[in] p The custom address.
-@param[in] x The value.
-*/
-	static void write(pointer p, value_type x)
-	{
-		*static_cast<value_type*>(p) = x;
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Read the value.
-/**
-	This method reads the value at the custom address @a p.
-
-@param[in] p The custom address.
-@return The value.
-*/
-	static value_type read(pointer p)
-	{
-		return *static_cast<value_type*>(p);
-	}
+/// @brief Constants.
+enum
+{
+	/// @brief Default chunk size. @hideinitializer
+	DEFAULT_CHUNK_SIZE = 64*1024 // = 64Kb
 };
 
 
+
 //////////////////////////////////////////////////////////////////////////
-/// @brief Constants.
-enum {
-	/// @brief Default chunk size. @hideinitializer
-	DEFAULT_CHUNK_SIZE = 16*4096 // = 64Kb
+/// @brief Round-up to the next integer power of 2.
+/**
+		This function is compile-time equivalent of the utils::clp2() function.
+
+@tparam X The input, should be in range [0..2^32).
+*/
+template<size_t X>
+class CLP2
+{
+private: // see utils::clp2() function
+
+	enum
+	{
+		A1 = X - 1,
+		A2 = A1 | (A1>>1),
+		A3 = A2 | (A2>>2),
+		A4 = A3 | (A3>>4),
+		A5 = A4 | (A4>>8),
+		Y  = A5 | (A5>>16)
+	};
+
+public: // result
+
+	enum
+	{
+		/// @brief The result. @hideinitializer
+		RES = Y+1
+	};
+};
+
+// zero specialization
+template<>
+class CLP2<0>
+{
+public:
+	enum
+	{
+		RES = 1
+	};
 };
 
 		} // details namespace
@@ -131,7 +123,9 @@ enum {
 @see @ref omni_pool
 */
 template<size_t A> // A - alignment (for example: 1, 4, 16)
-class ObjPool: private omni::NonCopyable {
+class ObjPool:
+	private omni::NonCopyable
+{
 public:
 	typedef size_t size_type; ///< @brief Size type.
 	typedef void* pointer;    ///< @brief Pointer type.
@@ -139,37 +133,41 @@ public:
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Constants.
-	enum {
-		ALIGNMENT = A ///< @brief Alignment of memory blocks. @hideinitializer
+/// @brief The constants.
+	enum Const
+	{
+		///< @brief The base alignemnt. @hideinitializer
+		BASE_ALIGNMENT = details::CLP2<A>::RES,
+
+		/// @brief Alignment of memory blocks. @hideinitializer
+		ALIGNMENT = BASE_ALIGNMENT < MEMORY_ALLOCATION_ALIGNMENT
+			? MEMORY_ALLOCATION_ALIGNMENT : BASE_ALIGNMENT
 	};
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Construction.
+/// @brief The default constructor.
 /**
 		The constructor initializes an empty pool. The empty pool has no unused
 	memory blocks. So, before getting the memory block you should call
 	grow() method.
 
-@see empty()
 @see grow()
 */
 	ObjPool()
-		: m_unused(0),
-		  m_chunks(0)
 #if OMNI_DEBUG
-		, m_N_used(0)
+		: m_obj_size(0),
+		  m_N_used(0)
 #endif
 	{
-		assert(0!=ALIGNMENT && 0==(ALIGNMENT&(ALIGNMENT-1)) // see utils::is_ipow2()
-			&& "alignment must be integer power of two");
+		::InitializeSListHead(&m_chunks);
+		::InitializeSListHead(&m_unused);
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Destruction.
+/// @brief The destructor.
 /**
 		The destructor releases all (used and unused) memory blocks.
 
@@ -184,13 +182,8 @@ public:
 			&& "memory leak");
 #endif
 
-		while (m_chunks)
-		{
-			typedef details::RAW<pointer> xRAW;
-			pointer next = xRAW::read(m_chunks);
-			release_chunk(m_chunks);
-			m_chunks = next;
-		}
+		while (pointer p = ::InterlockedPopEntrySList(&m_chunks))
+			release_chunk(p);
 	}
 
 public:
@@ -211,62 +204,35 @@ public:
 
 @param[in] obj_size The memory block size in bytes.
 @param[in] chunk_size Approximate memory chunk size in bytes.
-
-@see empty()
 */
 	void grow(size_type obj_size, size_type chunk_size = details::DEFAULT_CHUNK_SIZE)
 	{
-		const size_type ptr_size = sizeof(pointer);
+		const size_type ptr_size = sizeof(SLIST_ENTRY);
 		const size_type aux_size = ptr_size + ALIGNMENT-1;
 		obj_size = align(obj_size ? obj_size : 1);
 
+#if OMNI_DEBUG
+		if (!m_obj_size)
+			m_obj_size = obj_size;
+		assert(m_obj_size == obj_size
+			&& "invalid block size");
+#endif
+
 		// number of blocks
 		size_type No = (chunk_size - aux_size) / obj_size;
-		if (!No) No = 1; // (?) minimum one block
+		if (!No) No = 1; // (!) one block minimum
 
-		char *chunk = static_cast<char*>(alloc_chunk(No*obj_size + aux_size));
+		char *chunk = static_cast<char*>(alloc_chunk(aux_size + No*obj_size));
 
 		// single-linked list of chunks
-		typedef details::RAW<pointer> xRAW;
-		xRAW::write(chunk, m_chunks);
-		m_chunks = chunk;
+		::InterlockedPushEntrySList(&m_chunks,
+			reinterpret_cast<PSLIST_ENTRY>(chunk));
 
 		// update list of unused elements
 		chunk = static_cast<char*>(align(chunk + ptr_size)); // "useful" memory
 		for (size_type i = 0; i < No; ++i)
 			put(chunk + (No-1-i)*obj_size); // (!) locality
-		OMNI_DEBUG_CODE(m_N_used += No);  // (!) put() make (--m_N_used);
-	}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is the pool empty?
-/**
-		This method checks the list of unused blocks. If the pool is empty,
-	then you should call grow() method before using get().
-
-		For example:
-
-@code
-	ObjPool<4> m_pool;
-	size_t m_block_size;
-
-	// ...
-
-	void* my_alloc()
-	{
-		if (m_pool.empty())
-			m_pool.grow(m_block_size);
-
-		return m_pool.get();
-	}
-@endcode
-
-@return @b true if the pool is empty, otherwise @b false.
-*/
-	bool empty() const
-	{
-		return (0 == m_unused);
+		OMNI_DEBUG_CODE(::InterlockedExchangeAdd(&m_N_used, LONG(No)));  // (!) put() makes (--m_N_used);
 	}
 
 public:
@@ -275,44 +241,50 @@ public:
 /// @brief Get the memory block from the pool.
 /**
 		This method returns the first unused memory block.
-	To ensure that the pool has unused memory block
-	call empty() and grow() if needed.
+	If the pool is empty the null pointer will be return.
+	In this case call the grow() method and then get() again.
 
-@return Pointer to the memory block.
+@return Pointer to the memory block or null.
 
-@see empty()
 @see grow()
 */
 	pointer get()
 	{
-		assert(0 != m_unused
-			&& "pool is empty");
+		// pop from the list
+		pointer pObj = ::InterlockedPopEntrySList(&m_unused);
 
-		pointer obj = m_unused;
-		typedef details::RAW<pointer> xRAW;
-		m_unused = xRAW::read(obj);
+#if OMNI_DEBUG
+		if (pObj)
+		{
+			::InterlockedIncrement(&m_N_used);
+		}
+#endif
 
-		OMNI_DEBUG_CODE(++m_N_used);
-		return obj;
+		return pObj;
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Put the memory block back into the pool.
 /**
-		This method puts the memory block @a obj back into the pool.
-	The memory block is inserted into the beginning of unused blocks list.
-	So, next call of the get() method will return memory block @a obj again.
+		This method puts the memory block @a pObj back into the pool.
+	The memory block is inserted into the beginning of the unused blocks list.
+	So, next call of the get() method will return memory block @a pObj again.
 
-@param[in] obj Pointer to the memory block.
+@param[in] pObj Pointer to the memory block.
 */
-	void put(pointer obj)
+	void put(pointer pObj)
 	{
-		OMNI_DEBUG_CODE(--m_N_used);
+		assert(pObj == align(pObj)
+			&& "invalid block alignemnt");
 
-		typedef details::RAW<pointer> xRAW;
-		xRAW::write(obj, m_unused);
-		m_unused = obj;
+		// push to the list
+		::InterlockedPushEntrySList(&m_unused,
+			reinterpret_cast<PSLIST_ENTRY>(pObj));
+
+#if OMNI_DEBUG
+		::InterlockedDecrement(&m_N_used);
+#endif
 	}
 
 public:
@@ -350,37 +322,36 @@ private:
 //////////////////////////////////////////////////////////////////////////
 /// @brief Allocate memory chunk.
 /**
-		This method allocates @a chunk_size bytes memory chunk using global
-	@b new operator.
+		This method allocates @a chunk_size bytes memory chunk.
 
 @param[in] chunk_size The chunk size in bytes.
 @return Pointer to allocated chunk.
 */
 	static pointer alloc_chunk(size_type chunk_size)
 	{
-		return ::operator new(chunk_size);
+		return _aligned_malloc(chunk_size, ALIGNMENT);
 	}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Release memory chunk.
 /**
-		This method releases memory chunk @a chunk using global
-	@b delete operator.
+		This method releases memory chunk @a pChunk.
 
-@param[in] chunk Pointer to chunk.
+@param[in] pChunk Pointer to the chunk.
 */
-	static void release_chunk(pointer chunk)
+	static void release_chunk(pointer pChunk)
 	{
-		::operator delete(chunk);
+		_aligned_free(pChunk);
 	}
 
 private:
-	pointer m_unused; ///< @brief List of unused memory blocks.
-	pointer m_chunks; ///< @brief List of memory chunks.
+	SLIST_HEADER m_unused; ///< @brief The list of unused memory blocks.
+	SLIST_HEADER m_chunks; ///< @brief The list of memory chunks.
 
 #if OMNI_DEBUG
-	size_type m_N_used; ///< @brief Total number of memory blocks used.
+	size_t m_obj_size; ///< @brief The object size.
+	LONG m_N_used; ///< @brief The total number of memory blocks used.
 #endif // OMNI_DEBUG
 };
 
@@ -403,16 +374,18 @@ private:
 		Since the pool object can manage only one memory block size,
 	the FastObjT class can't be used with polymorphic classes.
 
-@param T Object type. This object type is used to determine memory
+@tparam T Object type. This object type is used to determine memory
 	block size. The memory block size is equal to @b sizeof(T).
 
-@param A Alignment of pointers. Should be integer power of two.
-@param CS Approximate memory chunk size in bytes.
+@tparam A Alignment of pointers. Should be integer power of two.
+@tparam CS Approximate memory chunk size in bytes.
 
 	Example of using the FastObjT class:
 
 @code
-	class Packet: public omni::pool::FastObjT<Packet> {
+	class Packet:
+		public omni::pool::FastObjT<Packet>
+	{
 	public:
 		char data[188]; // 188 bytes data payload
 		int a, b;       // custom parameters
@@ -431,21 +404,22 @@ private:
 @endcode
 
 		Note: The Packet class is derived from FastObjT<Packet>.
-	The same technique is widely used in WTL library.
 
 @see @ref omni_pool
 */
 template<typename T, size_t A = sizeof(void*),
 	size_t CS = details::DEFAULT_CHUNK_SIZE>
-class FastObjT {
+class FastObjT
+{
 public:
 	typedef ObjPool<A> pool_type; ///< @brief The pool type.
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Constants.
-	enum {
-		CHUNK_SIZE = CS, ///< @brief Approximate chunk size. @hideinitializer
-		ALIGNMENT = A    ///< @brief Alignment of objects. @hideinitializer
+	enum
+	{
+		ALIGNMENT = pool_type::ALIGNMENT, ///< @brief The objects alignment. @hideinitializer
+		CHUNK_SIZE = CS ///< @brief Approximate chunk size. @hideinitializer
 	};
 
 protected:
@@ -494,14 +468,18 @@ public:
 @param[in] buf_size The memory block size.
 @return The memory block or null.
 */
-	static void* operator new(size_t buf_size, const std::nothrow_t&) // throw();
+	static void* operator new(size_t buf_size, std::nothrow_t const&) // throw();
 	{
 		assert(buf_size <= sizeof(T)
 			&& "invalid object size");
 		buf_size; // argument not used
 
-		try { return alloc(); }
-		catch (const std::bad_alloc&) {}
+		try
+		{
+			return alloc();
+		}
+		catch (std::bad_alloc const&)
+		{}
 
 		return 0;
 	}
@@ -543,7 +521,7 @@ public:
 
 @param[in] buf The memory block.
 */
-	static void operator delete(void *buf, const std::nothrow_t&) // throw();
+	static void operator delete(void *buf, std::nothrow_t const&) // throw();
 	{
 		obj_pool().put(buf);
 	}
@@ -591,11 +569,15 @@ private:
 	{
 		pool_type &x = obj_pool();
 
-		if (x.empty())
+		void *p = x.get();
+		while (!p) // unlikely
+		{
 			x.grow(sizeof(T),
 				CHUNK_SIZE);
+			p = x.get();
+		}
 
-		return x.get();
+		return p;
 	}
 };
 
@@ -615,49 +597,53 @@ private:
 		The granularity argument is the difference between block sizes
 	of the two adjacent pool objects. For example, if granularity is 2,
 	then pools are 2, 4, 6, 8, ... bytes. If granularity is 4, then
-	pools are 4, 8, 12, 16, ... bytes.
+	pools are 4, 8, 12, 16, ... bytes. It is recommended to set granularity
+	to the alignment.
 
 @param A Alignment of pointers. Should be integer power of two.
-@param G Granularity of memory block sizes. Recommended 4 or 16.
+@param G Granularity of memory block sizes. Recommended as an alignment.
 @param PS Total number of managed pool objects.
 @param CS Approximate chunk size in bytes.
 
 @see @ref omni_pool
 */
 template<size_t A, size_t G, size_t PS = 1024, size_t CS = details::DEFAULT_CHUNK_SIZE> // A - alignment
-class Manager: private omni::NonCopyable {
+class Manager:
+	private omni::NonCopyable
+{
 public:
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Constants.
-	enum {
+	enum
+	{
 		MAX_SIZE = G*PS, ///< @brief Maximum available block size. @hideinitializer
 		GRANULARITY = G, ///< @brief Block size granularity. @hideinitializer
 		CHUNK_SIZE = CS, ///< @brief Approximate chunk size. @hideinitializer
 		POOL_SIZE = PS,  ///< @brief Total number of pools. @hideinitializer
-		ALIGNMENT = A    ///< @brief Alignment of pointers. @hideinitializer
+		ALIGNMENT = ObjPool<A>::ALIGNMENT  ///< @brief Alignment of pointers. @hideinitializer
 	};
 
 public:
-	typedef ObjPool<ALIGNMENT> pool_type;            ///< @brief The pool type.
+	typedef ObjPool<A> pool_type;            ///< @brief The pool type.
 	typedef typename pool_type::size_type size_type; ///< @brief Size type.
 	typedef typename pool_type::pointer   pointer;   ///< @brief Pointer type.
 
 public:
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Construction.
+/// @brief The default constructor.
 /**
-		The constructor initializes all managed pools.
+		Initializes all managed pools.
 */
 	Manager()
 	{}
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Destruction.
+/// @brief The destructor.
 /**
-		The destructor destroys all managed pools.
+		Releases all managed pools.
 */
 	~Manager()
 	{}
@@ -683,13 +669,16 @@ public:
 		assert(obj_size <= MAX_SIZE
 			&& "object size too big");
 
-		pool_type &obj_pool = find(obj_size);
+		pool_type &obj_pool = find(obj_size); // (!) obj_size changed due to granularity!
 
-		if (obj_pool.empty())
-			obj_pool.grow(obj_size,
-				CHUNK_SIZE);
+		pointer pObj = obj_pool.get();
+		while (!pObj) // unlikely
+		{
+			obj_pool.grow(obj_size, CHUNK_SIZE);
+			pObj = obj_pool.get();
+		}
 
-		return obj_pool.get();
+		return pObj;
 	}
 
 
@@ -724,13 +713,14 @@ private:
 		This method finds the managed pool object
 	by memory block size @a obj_size.
 
-@param[in] obj_size The memory block size in bytes.
+@param[in,out] obj_size The memory block size in bytes.
 @return The pool object.
 */
-	pool_type& find(size_type obj_size)
+	pool_type& find(size_type &obj_size)
 	{
 		const size_type x = !obj_size ? 0
 			: (obj_size - 1) / GRANULARITY;
+		obj_size = (x+1)*GRANULARITY;
 
 		assert(x < POOL_SIZE
 			&& "object size too big");
@@ -772,41 +762,46 @@ private:
 		To use fast memory management your class should be derived
 	from the FastObj class. See the example below.
 
-	@code
-		class MyClass: public omni::pool::FastObj {
-			// ...
-		};
+@code
+	class MyClass:
+		public omni::pool::FastObj
+	{
+		// ...
+	};
 
-		class Test: public MyClass {
-			// ...
-		};
+	class Test:
+		public MyClass
+	{
+		// ...
+	};
 
-		void f()
-		{
-			MyClass *p1 = new MyClass(); // mem_get_sized() used
-			// ...
-			delete p1; // mem_put_sized() used
+	void f()
+	{
+		MyClass *p1 = new MyClass(); // mem_get_sized() used
+		// ...
+		delete p1; // mem_put_sized() used
 
-			Test *p2 = new Test(); // mem_get_sized() used
-			// ...
-			delete p2; // mem_put_sized() used
-		}
-	@endcode
+		Test *p2 = new Test(); // mem_get_sized() used
+		// ...
+		delete p2; // mem_put_sized() used
+	}
+@endcode
 
 @see @ref omni_pool
 */
-class FastObj {
+class FastObj
+{
 protected:
 	FastObj();
 	virtual ~FastObj();
 
 public:
 	static void* operator new(size_t buf_size); // throw(std::bad_alloc);
-	static void* operator new(size_t buf_size, const std::nothrow_t&); // throw();
+	static void* operator new(size_t buf_size, std::nothrow_t const&); // throw();
 	static void* operator new(size_t buf_size, void *p); // throw();
 
 	static void operator delete(void *buf);
-	static void operator delete(void *buf, const std::nothrow_t&); // throw();
+	static void operator delete(void *buf, std::nothrow_t const&); // throw();
 	static void operator delete(void *buf, void *p); // throw();
 };
 
@@ -832,13 +827,14 @@ public:
 @endcode
 */
 template<typename T>
-class Allocator {
+class Allocator
+{
 public:
 	typedef T value_type; ///< @brief Value type.
 
-	typedef const T& const_reference; ///< @brief Constant reference type.
+	typedef T const& const_reference; ///< @brief Constant reference type.
 	typedef       T&       reference; ///< @brief Reference type.
-	typedef const T* const_pointer;   ///< @brief Constant pointer type.
+	typedef T const* const_pointer;   ///< @brief Constant pointer type.
 	typedef       T*       pointer;   ///< @brief Pointer type.
 
 	typedef ptrdiff_t difference_type;    ///< @brief Difference type.
@@ -852,9 +848,10 @@ public:
 		This structure is used to change current allocator's type.
 */
 	template<typename U>
-		struct rebind {
-			typedef Allocator<U> other; ///< @brief New allocator's type.
-		};
+	struct rebind
+	{
+		typedef Allocator<U> other; ///< @brief New allocator's type.
+	};
 
 public:
 
@@ -888,16 +885,18 @@ public:
 	Allocator()
 	{}
 
+
 //////////////////////////////////////////////////////////////////////////
 /// @brief Auxiliary copy-constructor.
 	template<typename U>
-		Allocator(const Allocator<U>&)
+	Allocator(Allocator<U> const&)
 	{}
+
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Auxiliary assignment operator.
 	template<typename U>
-		Allocator<T>& operator=(const Allocator<U>&)
+	Allocator<T>& operator=(Allocator<U> const&)
 	{
 		return (*this);
 	}
@@ -927,7 +926,7 @@ public:
 @param[in] n The number of adjacent objects.
 @return The memory block.
 */
-	pointer allocate(size_type n, const void*)
+	pointer allocate(size_type n, void const*)
 	{
 		return allocate(n);
 	}
@@ -1013,7 +1012,7 @@ public:
 @return @b true.
 */
 template<typename T, typename U> inline
-	bool operator==(const Allocator<T>&, const Allocator<U>&)
+bool operator==(Allocator<T> const&, Allocator<U> const&)
 {
 	return true;
 }
@@ -1027,7 +1026,7 @@ template<typename T, typename U> inline
 @return @b false.
 */
 template<typename T, typename U> inline
-	bool operator!=(const Allocator<T>&, const Allocator<U>&)
+bool operator!=(Allocator<T> const&, Allocator<U> const&)
 {
 	return false;
 }

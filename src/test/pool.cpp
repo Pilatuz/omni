@@ -45,7 +45,9 @@ template class std::list<int, omni::pool::Allocator<int> >;
 namespace
 {
 	// FastObjT test
-	class FTest: public omni::pool::FastObjT<FTest> {
+	class FTest:
+		public omni::pool::FastObjT<FTest>
+	{
 	public:
 		int v[1024];
 	};
@@ -122,7 +124,9 @@ bool test_pool(std::ostream &os)
 	//	return false;
 
 	{ // TestObj
-		struct TestObj: public FastObj {
+		struct TestObj:
+			public FastObj
+		{
 			TestObj(): value(0) {}
 			TestObj(int v): value(v) {}
 			int value;
@@ -147,9 +151,11 @@ bool test_pool(std::ostream &os)
 namespace
 {
 	// Test1 class
-	class Test1: public omni::test::UnitTest {
+	class Test1:
+		public omni::test::UnitTest
+	{
 		// test title
-		virtual const char* title() const
+		virtual char const* title() const
 		{
 			return "omni::pool";
 		}

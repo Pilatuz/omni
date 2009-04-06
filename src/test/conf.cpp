@@ -203,16 +203,19 @@ bool test_conf(std::ostream &os)
 		catch (const Config::NameIsAmbiguous&) { /*ok*/ }
 	}
 
-	return true;
 #undef TEST
+	return true;
 }
 
-namespace {
 
+namespace
+{
 	// Test1 class
-	class Test1: public omni::test::UnitTest {
+	class Test1:
+		public omni::test::UnitTest
+	{
 		// test title
-		virtual const char* title() const
+		virtual char const* title() const
 		{
 			return "omni::conf";
 		}
