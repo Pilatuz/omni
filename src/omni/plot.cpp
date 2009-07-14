@@ -1322,7 +1322,7 @@ public:
 	// convert HWND to Window*
 	static Window* get_Window(HWND hWnd)
 	{
-		LONG_PTR X = ::GetWindowLongPtr(hWnd, GWL_USERDATA);
+		LONG_PTR X = ::GetWindowLongPtr(hWnd, GWLP_USERDATA);
 		return reinterpret_cast<Window*>(X);
 	}
 
@@ -1330,7 +1330,7 @@ public:
 	static void set_Window(HWND hWnd, Window *wnd)
 	{
 		LONG_PTR X = reinterpret_cast<LONG_PTR>(wnd);
-		::SetWindowLongPtr(hWnd, GWL_USERDATA, X);
+		::SetWindowLongPtr(hWnd, GWLP_USERDATA, X);
 	}
 
 	// window procedure
