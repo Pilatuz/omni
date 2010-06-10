@@ -33,14 +33,23 @@ namespace omni
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Trellis class
-class Trellis {
+/// @brief The coding trellis.
+/**
+		The trellis class stores all coding information: constraint length, polynomials etc.
+
+@see omni_codec_trellis
+*/
+class Trellis
+{
 public:
-	typedef size_t state_type;
-	typedef size_t bits_type;
-	typedef size_t size_type;
+
+	typedef size_t state_type; ///< @brief The codec state type.
+	typedef size_t bits_type;  ///< @brief The uncoded and coded words type.
+	typedef size_t size_type;  ///< @brief The size type.
+
 
 public: // simple constructors
+
 	Trellis(const char *opolynomials,
 		size_type constraint_length,
 		size_type Ni = 1);
@@ -65,24 +74,24 @@ public: // advanced constructors
 			size_type constraint_length,
 			size_type Ni = 1)
 	{
-		poly_list opoly(std::distance(ofirst, olast));
+		PolyList opoly(std::distance(ofirst, olast));
 		std::copy(ofirst, olast, opoly.begin());
 		init(opoly, constraint_length, Ni);
 	}
 
-	// construct trellis
+	// construct recursive trellis
 	template<typename In1, typename In2, typename In3>
 		Trellis(In1 ofirst1, In1 olast1,
 			In2 ofirst2, In2 olast2, In3 ifirst, In3 ilast,
 			size_type constraint_length, bits_type feedback)
 	{
-		poly_list opoly1(std::distance(ofirst1, olast1));
+		PolyList opoly1(std::distance(ofirst1, olast1));
 		std::copy(ofirst1, olast1, opoly1.begin());
 
-		poly_list opoly2(std::distance(ofirst2, olast2));
+		PolyList opoly2(std::distance(ofirst2, olast2));
 		std::copy(ofirst2, olast2, opoly2.begin());
 
-		poly_list ipoly(std::distance(ifirst, ilast));
+		PolyList ipoly(std::distance(ifirst, ilast));
 		std::copy(ifirst, ilast, ipoly.begin());
 
 		init(ipoly, opoly1, opoly2,
@@ -152,24 +161,26 @@ public: // properties
 	size_type length() const;   // constraint length
 
 
-	// Forward (leaving branches)
+public: // trellis
+
+	/// @brief Forward state transition (leaving branches).
 	struct Fwd {
 		Fwd(state_type s,
 			bits_type o);
 		Fwd();
 
-		state_type state;
-		bits_type obits;
+		state_type state; ///< @brief The target (next or entering) state.
+		bits_type obits;  ///< @brief The corresponding output (encoded) bits.
 	};
 
-	// Backward (entering branches)
+	/// @brief Backward state transition (entering branches).
 	struct Bwd {
 		Bwd(state_type s,
 			bits_type i);
 		Bwd();
 
-		state_type state;
-		bits_type ibits;
+		state_type state; ///< @brief The source (previous or leaving) state.
+		bits_type ibits;  ///< @brief The corresponding input (uncoded) bits.
 	};
 
 	// forward and backward matrices
@@ -180,40 +191,40 @@ public: // properties
 public: // auxiliary functions
 
 	// pack (MSB-first)
-	template<typename In>
-		static bits_type bi2de(In first, size_t Nbits)
+	template<typename In> inline
+	static bits_type bi2de(In first, size_t Nbits)
 	{
 		return util::bi2de_msb(first, Nbits, bits_type(0));
 	}
 
 	// unpack (MSB-first)
-	template<typename Out>
-		static void de2bi(bits_type x, size_t Nbits, Out first)
+	template<typename Out> inline
+	static Out de2bi(bits_type x, size_t Nbits, Out first)
 	{
-		util::de2bi_msb(x, Nbits, first);
+		return util::de2bi_msb(x, Nbits, first);
 	}
 
 
 private: // initialization
 
-	typedef std::vector<bits_type> poly_list;
+	/// @brief The auxiliary list of polynomials.
+	typedef std::vector<bits_type> PolyList;
 
 	// construct convolutional trellis
-	void init(const poly_list &poly,
-		size_type constraint_length, size_type Ni);
+	void init(const PolyList &poly,
+		size_type constraint_length,
+			size_type Ni);
 
 	// construct recursive trellis
-	void init(const poly_list &ipoly,
-		const poly_list &opoly1, const poly_list &opoly2,
+	void init(const PolyList &ipoly,
+		const PolyList &opoly1, const PolyList &opoly2,
 		size_type constraint_length, bits_type feedback);
 
 	// construct Previous matrix
 	// calculate number of tails
 	void post_init();
 
-
 private: // properties
-
 	mx::Matrix<Fwd> m_fwd;  // forward matrix
 	mx::Matrix<Bwd> m_bwd;  // backward matrix
 
@@ -223,8 +234,7 @@ private: // properties
 	size_type m_N_Ztails;  // number of zero tails
 	size_type m_N_Rtails;  // number of tails for recursive trellis
 	size_type m_length;   // constraint length
-
-}; // class Trellis
+};
 
 	} // Trellis
 
@@ -237,9 +247,9 @@ private: // properties
 // ConvCodec
 class ConvCodec {
 public:
-	typedef Trellis::state_type state_type;
-	typedef Trellis::bits_type bits_type;
-	typedef Trellis::size_type size_type;
+	typedef Trellis::state_type state_type; ///< @brief The codec state type.
+	typedef Trellis::bits_type bits_type;   ///< @brief The uncoded and coded words type.
+	typedef Trellis::size_type size_type;   ///< @brief The size type.
 
 public:
 	explicit ConvCodec(const Trellis &tr);
@@ -251,43 +261,47 @@ public: // encoding
 
 	// encode tail
 	template<typename In, typename Out>
-		void encode_tail(In first, In last, Out out) const
+	Out encode_tail(In first, In last, Out out) const
 	{
-		const size_type Ni = trellis().N_ibits(); // number of uncoded bits
-		const size_type No = trellis().N_obits(); // number of encoded bits
+		const Trellis &tr = trellis();
+
+		const size_type Ni = tr.N_ibits(); // number of uncoded bits
+		const size_type No = tr.N_obits(); // number of encoded bits
 
 		const size_type i_size = std::distance(first, last);
-		assert(0 == i_size%Ni && "invalid input size"); i_size;
+		assert(0 == i_size%Ni && "invalid input size");
 
+		// encoding
 		state_type state = 0; // (!) start from zero state
 		while (first != last)
 		{
-			const bits_type ibits = Trellis::bi2de(first, Ni);
-			const Trellis::Fwd &fwd = trellis().fwd(state, ibits);
-
-			Trellis::de2bi(fwd.obits, No, out);
+			const bits_type ibits = tr.bi2de(first, Ni);
 			std::advance(first, Ni);
-			std::advance(out, No);
+
+			const Trellis::Fwd &fwd = tr.fwd(state, ibits);
+			out = tr.de2bi(fwd.obits, No, out);
 			state = fwd.state;
 		}
 
 		// add tail zeros
-		const size_type Nzeros = trellis().N_tails(false);
+		const size_type Nzeros = tr.N_tails(false);
 		for (size_type i = 0; i < Nzeros; ++i)
 		{
-			const Trellis::Fwd &fwd = trellis().fwd(state, 0);
+			const bits_type ibits = 0;
 
-			Trellis::de2bi(fwd.obits, No, out);
-			std::advance(out, No);
+			const Trellis::Fwd &fwd = tr.fwd(state, ibits);
+			out = tr.de2bi(fwd.obits, No, out);
 			state = fwd.state;
 		}
 
 		assert(0==state && "invalid final state");
+		return out;
 	}
+
 
 	// encode tailbite
 	template<typename In, typename Out>
-		void encode_bite(In first, In last, Out out) const
+	Out encode_bite(In first, In last, Out out) const
 	{
 		const size_type Ni = trellis().N_ibits(); // number of uncoded bits
 		const size_type No = trellis().N_obits(); // number of encoded bits
@@ -305,20 +319,23 @@ public: // encoding
 
 			for (size_type k = 0; k < Nticks; ++k)
 			{
-				bits_type ibits = Trellis::bi2de(tmp, Ni);
-				start_state = trellis().fwd(start_state, ibits).state;
+				const bits_type ibits = Trellis::bi2de(tmp, Ni);
 				std::advance(tmp, Ni);
+
+				const Trellis::Fwd &fwd = m_trellis.fwd(start_state, ibits);
+				start_state = fwd.state;
 			}
 		}
 
 		state_type state = start_state;
 		while (first != last)
 		{
-			bits_type ibits = Trellis::bi2de(first, Ni);
+			const bits_type ibits = Trellis::bi2de(first, Ni);
+			std::advance(first, Ni);
+
 			const Trellis::Fwd &fwd = trellis().fwd(state, ibits);
 
 			Trellis::de2bi(fwd.obits, No, out);
-			std::advance(first, Ni);
 			std::advance(out, No);
 			state = fwd.state;
 		}

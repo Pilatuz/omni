@@ -30,37 +30,10 @@ namespace omni
 	{
 
 // (!) Trellis is faster with column major matrix
-
-//////////////////////////////////////////////////////////////////////////
-/** @class Trellis
-	@brief Coding trellis.
-
-	Examples of the simple trellis, IS-95 trellis, 3GPP trellis, WiMAX trellis.
-
-	Simple and advanced constructors.
-
-	Trellis manipulation (Rep, Cut, Sys).
-
-	Trellis properties.
-
-	Auxiliary functions.
-*/
-
-
-//////////////////////////////////////////////////////////////////////////
-/** @typedef unsigned long Trellis::state_type
-	@brief State type.
-*/
-
-//////////////////////////////////////////////////////////////////////////
-/** @typedef unsigned long Trellis::bits_type
-	@brief Uncoded and coded words type.
-*/
-
-//////////////////////////////////////////////////////////////////////////
-/** @typedef unsigned int Trellis::size_type
-	@brief Size type.
-*/
+// TODO: auto adjust to the row or column major matrix!!!
+#if OMNI_MATRIX_ROW_MAJOR
+#	pragma message("Trellis is faster with column major matrix")
+#endif
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -76,7 +49,7 @@ namespace omni
 @endcode
 
 		The argument @a Ni determine the number of input bits
-	per one encoder's tick. By default this argument is 1.
+	per one encoder's tick. By default it is equal to 1.
 
 @param opolynomials String with encoder's polynomials.
 		You can use octal (0 first), hexadecimal (0x first) or decimal numbers.
@@ -88,7 +61,7 @@ Trellis::Trellis(const char *opolynomials,
 {
 	calc::Calculator<int> ev;
 
-	poly_list opoly;
+	PolyList opoly;
 	{ // parse polynomials
 		std::istrstream is(opolynomials);
 		while (is && !is.eof())
@@ -121,16 +94,16 @@ Trellis::Trellis(const char *opolynomials, const char *ipolynomials,
 {
 	calc::Calculator<int> ev;
 
-	poly_list opoly2;
+	PolyList opoly2;
 	{ // parse polynomials
 		std::istrstream is(opolynomials);
 		while (is && !is.eof())
 			opoly2.push_back(ev(is));
 	}
 
-	poly_list opoly1(opoly2.size(), 0U);
+	PolyList opoly1(opoly2.size(), 0U);
 
-	poly_list ipoly;
+	PolyList ipoly;
 	{ // parse polynomials
 		std::istrstream is(ipolynomials);
 		while (is && !is.eof())
@@ -168,21 +141,21 @@ Trellis::Trellis(const char *pre_opolynomials,
 {
 	calc::Calculator<int> ev;
 
-	poly_list ipoly;
+	PolyList ipoly;
 	{ // parse polynomials
 		std::istrstream is(ipolynomials);
 		while (is && !is.eof())
 			ipoly.push_back(ev(is));
 	}
 
-	poly_list opoly1;
+	PolyList opoly1;
 	{ // parse polynomials
 		std::istrstream is(pre_opolynomials);
 		while (is && !is.eof())
 			opoly1.push_back(ev(is));
 	}
 
-	poly_list opoly2;
+	PolyList opoly2;
 	{ // parse polynomials
 		std::istrstream is(opolynomials);
 		while (is && !is.eof())
@@ -231,7 +204,7 @@ Trellis::Trellis(const char *pre_opolynomials,
 @param constraint_length Constraint length of the code.
 @param Ni Number of input bits per one encoder's tick.
 */
-void Trellis::init(const poly_list &poly,
+void Trellis::init(const PolyList &poly,
 	size_type constraint_length, size_type Ni)
 {
 	// check input arguments...
@@ -282,8 +255,8 @@ void Trellis::init(const poly_list &poly,
 @param constraint_length Constraint length of the code.
 @param feedback Feedback polynomial.
 */
-void Trellis::init(const poly_list &ipoly,
-	const poly_list &opoly1, const poly_list &opoly2,
+void Trellis::init(const PolyList &ipoly,
+	const PolyList &opoly1, const PolyList &opoly2,
 	size_type constraint_length, bits_type feedback)
 {
 	// check input arguments...
@@ -1051,25 +1024,6 @@ Trellis::size_type Trellis::length() const
 
 
 //////////////////////////////////////////////////////////////////////////
-/** @class Trellis::Fwd
-	@brief Forward state transition.
-
-		This structure contains properties of the forward state transition:
-	target (next or entering) state and corresponding output (encoded) bits.
-*/
-
-//////////////////////////////////////////////////////////////////////////
-/** @var Trellis::Fwd::state
-	@brief Target (next or entering) state.
-*/
-
-//////////////////////////////////////////////////////////////////////////
-/** @var Trellis::Fwd::obits
-	@brief Output (encoded) bits.
-*/
-
-
-//////////////////////////////////////////////////////////////////////////
 /// @brief Create forward state transition.
 /**
 		This constructor creates forward state
@@ -1092,25 +1046,6 @@ Trellis::Fwd::Fwd(state_type s, bits_type o)
 Trellis::Fwd::Fwd()
 	: state(0), obits(0)
 {}
-
-
-//////////////////////////////////////////////////////////////////////////
-/** @class Trellis::Bwd
-	@brief Backward state transition.
-
-		This structure contains properties of the backward state transition:
-	source (previous or leaving) state and corresponding input (uncoded) bits.
-*/
-
-//////////////////////////////////////////////////////////////////////////
-/** @var Trellis::Bwd::state
-	@brief Source (previous or leaving) state.
-*/
-
-//////////////////////////////////////////////////////////////////////////
-/** @var Trellis::Bwd::ibits
-	@brief Input (uncoded) bits.
-*/
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -1968,4 +1903,13 @@ const Interleaver::rule_type& Interleaver::rule() const
 		Classes omni::dsp::Trellis omni::dsp::ConvCodec
 	omni::dsp::ConvEncoder omni::dsp::ConvDecoder
 	omni::dsp::Interleaver.
+
+@section omni_codec_trellis Trellis
+	TODO: Trellis description
+
+	TODO: Codec description
+
+	TODO: Encoder description
+
+	TODO: Decoder description
 */
