@@ -12,20 +12,22 @@
 //////////////////////////////////////////////////////////////////////////
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_DEPRECATE
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+
+#define _USE_MATH_DEFINES
 
 #include <omni/plot.hpp>
 #include <omni/util.hpp>
 
 #include <algorithm>
+#include <utility>
 
+#include <float.h>
 #include <math.h>
-
 
 #include <WindowsX.h>
 #include <tchar.h>
 
+#pragma comment(lib, "Gdiplus.lib")
 
 namespace omni
 {
@@ -40,19 +42,19 @@ namespace omni
 		This constructor initializes the X and the Y sizes by zero.
 */
 Size::Size()
-	: m_Xsize(0.0),
-	  m_Ysize(0.0)
+	: m_dx(0.0),
+	  m_dy(0.0)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief The main constructor.
 /**
-@param x_size The X size.
-@param y_size The Y size.
+@param[in] dx The X size.
+@param[in] dy The Y size.
 */
-Size::Size(double x_size, double y_size)
-	: m_Xsize(x_size), m_Ysize(y_size)
+Size::Size(Real dx, Real dy)
+	: m_dx(dx), m_dy(dy)
 {}
 
 
@@ -61,9 +63,9 @@ Size::Size(double x_size, double y_size)
 /**
 @return The X size.
 */
-double Size::Xsize() const
+Real Size::X() const
 {
-	return m_Xsize;
+	return m_dx;
 }
 
 
@@ -72,9 +74,9 @@ double Size::Xsize() const
 /**
 @return The Y size.
 */
-double Size::Ysize() const
+Real Size::Y() const
 {
-	return m_Ysize;
+	return m_dy;
 }
 
 
@@ -83,13 +85,13 @@ double Size::Ysize() const
 /**
 		This operator increases the current size.
 
-@param sz The increasing size.
+@param[in] sz The increasing size.
 @return The self reference.
 */
 Size& Size::operator+=(const Size &sz)
 {
-	m_Xsize += sz.Xsize();
-	m_Ysize += sz.Ysize();
+	m_dx += sz.X();
+	m_dy += sz.Y();
 
 	return *this;
 }
@@ -100,13 +102,13 @@ Size& Size::operator+=(const Size &sz)
 /**
 		This operator decreases the current size.
 
-@param sz The decreasing size.
+@param[in] sz The decreasing size.
 @return The self reference.
 */
 Size& Size::operator-=(const Size &sz)
 {
-	m_Xsize -= sz.Xsize();
-	m_Ysize -= sz.Ysize();
+	m_dx -= sz.X();
+	m_dy -= sz.Y();
 
 	return *this;
 }
@@ -115,43 +117,43 @@ Size& Size::operator-=(const Size &sz)
 //////////////////////////////////////////////////////////////////////////
 /// @brief Addition.
 /**
-@param a The first size.
-@param b The second size.
+@param[in] a The first size.
+@param[in] b The second size.
 @return The sum of two sizes.
 @relates Size
 */
-Size operator+(const Size &a, const Size &b)
+const Size operator+(const Size &a, const Size &b)
 {
-	return Size(a.Xsize() + b.Xsize(),
-		a.Ysize() + b.Ysize());
+	return Size(a.X() + b.X(),
+		a.Y() + b.Y());
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Subtraction.
 /**
-@param a The first size.
-@param b The second size.
+@param[in] a The first size.
+@param[in] b The second size.
 @return The difference between two sizes.
 @relates Size
 */
-Size operator-(const Size &a, const Size &b)
+const Size operator-(const Size &a, const Size &b)
 {
-	return Size(a.Xsize() - b.Xsize(),
-		a.Ysize() - b.Ysize());
+	return Size(a.X() - b.X(),
+		a.Y() - b.Y());
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Negation.
 /**
-@param sz The size.
-@param The negated size.
+@param[in] sz The size.
+@return The negated size.
 @relates Size
 */
-Size operator-(const Size &sz)
+const Size operator-(const Size &sz)
 {
-	return Size(-sz.Xsize(), -sz.Ysize());
+	return Size(-sz.X(), -sz.Y());
 }
 
 	} // Size
@@ -167,19 +169,19 @@ Size operator-(const Size &sz)
 		This constructor initializes the point coordinates by zero.
 */
 Point::Point()
-	: m_X(0.0),
-	  m_Y(0.0)
+	: m_x(0.0),
+	  m_y(0.0)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief The main constructor.
 /**
-@param x The X coordinate.
-@param y The Y coordinate.
+@param[in] x The X coordinate.
+@param[in] y The Y coordinate.
 */
-Point::Point(double x, double y)
-	: m_X(x), m_Y(y)
+Point::Point(Real x, Real y)
+	: m_x(x), m_y(y)
 {}
 
 
@@ -188,9 +190,9 @@ Point::Point(double x, double y)
 /**
 @return The X coordinate.
 */
-double Point::X() const
+Real Point::X() const
 {
-	return m_X;
+	return m_x;
 }
 
 
@@ -199,47 +201,48 @@ double Point::X() const
 /**
 @return The Y coordinate.
 */
-double Point::Y() const
+Real Point::Y() const
 {
-	return m_Y;
+	return m_y;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Offset the point.
 /**
-@param dx The X offset size.
-@param dy The Y offset size.
+@param[in] dx The X offset size.
+@param[in] dy The Y offset size.
 */
-void Point::offset(double dx, double dy)
+void Point::offset(Real dx, Real dy)
 {
-	m_X += dx;
-	m_Y += dy;
+	m_x += dx;
+	m_y += dy;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Offset the point.
 /**
-@param sz The offset size.
+@param[in] sz The offset size.
 */
 void Point::offset(const Size &sz)
 {
-	m_X += sz.Xsize();
-	m_Y += sz.Ysize();
+	m_x += sz.X();
+	m_y += sz.Y();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Increase.
 /**
-@param sz The increasing size.
+@param[in] sz The increasing size.
 @return The self reference.
+@see offset()
 */
 Point& Point::operator+=(const Size &sz)
 {
-	m_X += sz.Xsize();
-	m_Y += sz.Ysize();
+	m_x += sz.X();
+	m_y += sz.Y();
 
 	return *this;
 }
@@ -248,13 +251,14 @@ Point& Point::operator+=(const Size &sz)
 //////////////////////////////////////////////////////////////////////////
 /// @brief Decrease.
 /**
-@param sz The decreasing size.
+@param[in] sz The decreasing size.
 @return The self reference.
+@see offset()
 */
 Point& Point::operator-=(const Size &sz)
 {
-	m_X -= sz.Xsize();
-	m_Y -= sz.Ysize();
+	m_x -= sz.X();
+	m_y -= sz.Y();
 
 	return *this;
 }
@@ -263,15 +267,16 @@ Point& Point::operator-=(const Size &sz)
 //////////////////////////////////////////////////////////////////////////
 /// @brief Increase.
 /**
-@param pt The point.
-@param sz The increasing size.
+@param[in] pt The point.
+@param[in] sz The increasing size.
 @return The new point.
+@relates Point
 */
-Point operator+(const Point &pt, const Size &sz)
+const Point operator+(const Point &pt, const Size &sz)
 {
 	return Point(
-		pt.X() + sz.Xsize(),
-		pt.Y() + sz.Ysize()
+		pt.X() + sz.X(),
+		pt.Y() + sz.Y()
 	);
 }
 
@@ -279,15 +284,16 @@ Point operator+(const Point &pt, const Size &sz)
 //////////////////////////////////////////////////////////////////////////
 /// @brief Decrease.
 /**
-@param pt The point.
-@param sz The decreasing size.
+@param[in] pt The point.
+@param[in] sz The decreasing size.
 @return The new point.
+@relates Point
 */
-Point operator-(const Point &pt, const Size &sz)
+const Point operator-(const Point &pt, const Size &sz)
 {
 	return Point(
-		pt.X() - sz.Xsize(),
-		pt.Y() - sz.Ysize()
+		pt.X() - sz.X(),
+		pt.Y() - sz.Y()
 	);
 }
 
@@ -295,15 +301,16 @@ Point operator-(const Point &pt, const Size &sz)
 //////////////////////////////////////////////////////////////////////////
 /// @brief Distance.
 /**
-@param A The first point.
-@param B The second point.
+@param[in] a The first point.
+@param[in] b The second point.
 @return The distance.
+@relates Point
 */
-Size operator-(const Point &A, const Point &B)
+const Size operator-(const Point &a, const Point &b)
 {
 	return Size(
-		B.X() - A.X(),
-		B.Y() - A.Y()
+		b.X() - a.X(),
+		b.Y() - a.Y()
 	);
 }
 
@@ -328,22 +335,22 @@ Rect::Rect()
 //////////////////////////////////////////////////////////////////////////
 /// @brief The main constructor (point and size).
 /**
-@param pt The reference point.
-@param sz The rectangle size.
+@param[in] pt_min The reference point.
+@param[in] rc_size The rectangle size.
 */
-Rect::Rect(const Point &pt, const Size &sz)
-	: m_Xmin(pt.X()),
-	  m_Xmax(pt.X() + sz.Xsize()),
-	  m_Ymin(pt.Y()),
-	  m_Ymax(pt.Y() + sz.Ysize())
+Rect::Rect(const Point &pt_min, const Size &rc_size)
+	: m_Xmin(pt_min.X()),
+	  m_Xmax(pt_min.X() + rc_size.X()),
+	  m_Ymin(pt_min.Y()),
+	  m_Ymax(pt_min.Y() + rc_size.Y())
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief The main constructor (two points).
 /**
-@param pt_min The first reference point.
-@param pt_max The second reference point.
+@param[in] pt_min The first reference point.
+@param[in] pt_max The second reference point.
 */
 Rect::Rect(const Point &pt_min, const Point &pt_max)
 	: m_Xmin(pt_min.X()),
@@ -358,7 +365,7 @@ Rect::Rect(const Point &pt_min, const Point &pt_max)
 /**
 @return The minimum X coordinate.
 */
-double Rect::Xmin() const
+Real Rect::Xmin() const
 {
 	return m_Xmin;
 }
@@ -369,7 +376,7 @@ double Rect::Xmin() const
 /**
 @return The maximum X coordinate.
 */
-double Rect::Xmax() const
+Real Rect::Xmax() const
 {
 	return m_Xmax;
 }
@@ -380,7 +387,7 @@ double Rect::Xmax() const
 /**
 @return The X size (i.e. the rectangle's width).
 */
-double Rect::Xsize() const
+Real Rect::Xsize() const
 {
 	return m_Xmax - m_Xmin;
 }
@@ -391,7 +398,7 @@ double Rect::Xsize() const
 /**
 @return The minimum Y coordinate.
 */
-double Rect::Ymin() const
+Real Rect::Ymin() const
 {
 	return m_Ymin;
 }
@@ -402,7 +409,7 @@ double Rect::Ymin() const
 /**
 @return The maximum Y coordinate.
 */
-double Rect::Ymax() const
+Real Rect::Ymax() const
 {
 	return m_Ymax;
 }
@@ -413,7 +420,7 @@ double Rect::Ymax() const
 /**
 @return The Y size (i.e. the rectangle's height).
 */
-double Rect::Ysize() const
+Real Rect::Ysize() const
 {
 	return m_Ymax - m_Ymin;
 }
@@ -424,7 +431,7 @@ double Rect::Ysize() const
 /**
 @return The center point.
 */
-Point Rect::center() const
+const Point Rect::center() const
 {
 	return Point(
 		(m_Xmin + m_Xmax) / 2,
@@ -437,30 +444,22 @@ Point Rect::center() const
 /// @brief Normalize rectangle.
 /**
 		This method normalizes the rectangle:
-	the Xsize() and Ysize() methods will return positive values.
+	the X() and Y() methods will return positive values.
 */
 void Rect::normalize()
 {
 	if (m_Xmax < m_Xmin)
-	{
-		double t = m_Xmin; // (!) std::swap
-		m_Xmin = m_Xmax;
-		m_Xmax = t;
-	}
+		std::swap(m_Xmin, m_Xmax);
 
 	if (m_Ymax < m_Ymin)
-	{
-		double t = m_Ymin; // (!) std::swap
-		m_Ymin = m_Ymax;
-		m_Ymax = t;
-	}
+		std::swap(m_Ymin, m_Ymax);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Is rectangle empty?
 /**
-		The rectangle is empty if the Xsize() and Ysize() returns zero.
+		The rectangle is empty if the Xsize() or Ysize() returns zero or negative value.
 
 @return @b true if rectangle is empty, @b false otherwise.
 */
@@ -491,7 +490,7 @@ bool Rect::is_null() const
 //////////////////////////////////////////////////////////////////////////
 /// @brief Is the point inside?
 /**
-@param pt The point of interest.
+@param[in] pt The point of interest.
 @return @b true if the point is inside, @b false otherwise.
 */
 bool Rect::contains(const Point &pt) const
@@ -504,7 +503,7 @@ bool Rect::contains(const Point &pt) const
 //////////////////////////////////////////////////////////////////////////
 /// @brief Is the rectangle inside?
 /**
-@param rc The rectangle of interest.
+@param[in] rc The rectangle of interest.
 @return @b true if the rectangle is inside, @b false otherwise.
 */
 bool Rect::contains(const Rect &rc) const
@@ -514,8 +513,16 @@ bool Rect::contains(const Rect &rc) const
 }
 
 
-// inflate rect
-void Rect::inflate(double dx, double dy)
+//////////////////////////////////////////////////////////////////////////
+/// @brief Inflate rect.
+/**
+		The minimum point will be shifted by (-dx,-dy)
+	and the maximum point will be shifted by (+dx,+dy).
+
+@param[in] dx The X increasing size.
+@param[in] dy The Y increasing size.
+*/
+void Rect::inflate(Real dx, Real dy)
 {
 	m_Xmin -= dx;
 	m_Xmax += dx;
@@ -523,17 +530,36 @@ void Rect::inflate(double dx, double dy)
 	m_Ymax += dy;
 }
 
-// inflate rect
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Inflate rect.
+/**
+		The minimum point will be shifted by (-sz.X(),-sz.Y())
+	and the maximum point will be shifted by (+sz.X(),+sz.Y()).
+
+@param[in] sz The increasing size.
+*/
 void Rect::inflate(const Size &sz)
 {
-	m_Xmin -= sz.Xsize();
-	m_Xmax += sz.Xsize();
-	m_Ymin -= sz.Ysize();
-	m_Ymax += sz.Ysize();
+	m_Xmin -= sz.X();
+	m_Xmax += sz.X();
+	m_Ymin -= sz.Y();
+	m_Ymax += sz.Y();
 }
 
-// inflate rect
-void Rect::inflate(double dx_min, double dy_min, double dx_max, double dy_max)
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Inflate rect.
+/**
+		The minimum point will be shifted by (-dx_min,-dy_min)
+	and the maximum point will be shifted by (+dx_max,+dy_max).
+
+@param[in] dx_min The minimum X increasing size.
+@param[in] dy_min The minimum Y increasing size.
+@param[in] dx_max The maximum X increasing size.
+@param[in] dy_max The maximum Y increasing size.
+*/
+void Rect::inflate(Real dx_min, Real dy_min, Real dx_max, Real dy_max)
 {
 	m_Xmin -= dx_min;
 	m_Xmax += dx_max;
@@ -541,7 +567,15 @@ void Rect::inflate(double dx_min, double dy_min, double dx_max, double dy_max)
 	m_Ymax += dy_max;
 }
 
-// inflate rect
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Inflate rect.
+/**
+		The minimum point will be shifted by (-rc.Xmin(),-rc.Ymin())
+	and the maximum point will be shifted by (+rc.Xmax(),+rc.Ymax()).
+
+@param[in] rc The increasing rectangular.
+*/
 void Rect::inflate(const Rect &rc)
 {
 	m_Xmin -= rc.Xmin();
@@ -550,8 +584,17 @@ void Rect::inflate(const Rect &rc)
 	m_Ymax += rc.Ymax();
 }
 
-// deflate rect
-void Rect::deflate(double dx, double dy)
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Deflate rect.
+/**
+		The minimum point will be shifted by (+dx,+dy)
+	and the maximum point will be shifted by (-dx,-dy).
+
+@param[in] dx The X increasing size.
+@param[in] dy The Y increasing size.
+*/
+void Rect::deflate(Real dx, Real dy)
 {
 	m_Xmin += dx;
 	m_Xmax -= dx;
@@ -559,17 +602,36 @@ void Rect::deflate(double dx, double dy)
 	m_Ymax -= dy;
 }
 
-// deflate rect
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Deflate rect.
+/**
+		The minimum point will be shifted by (+sz.X(),+sz.Y())
+	and the maximum point will be shifted by (-sz.X(),-sz.Y()).
+
+@param[in] sz The decreasing size.
+*/
 void Rect::deflate(const Size &sz)
 {
-	m_Xmin += sz.Xsize();
-	m_Xmax -= sz.Xsize();
-	m_Ymin += sz.Ysize();
-	m_Ymax -= sz.Ysize();
+	m_Xmin += sz.X();
+	m_Xmax -= sz.X();
+	m_Ymin += sz.Y();
+	m_Ymax -= sz.Y();
 }
 
-// deflate rect
-void Rect::deflate(double dx_min, double dy_min, double dx_max, double dy_max)
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Deflate rect.
+/**
+		The minimum point will be shifted by (+dx_min,+dy_min)
+	and the maximum point will be shifted by (-dx_max,-dy_max).
+
+@param[in] dx_min The minimum X decreasing size.
+@param[in] dy_min The minimum Y decreasing size.
+@param[in] dx_max The maximum X decreasing size.
+@param[in] dy_max The maximum Y decreasing size.
+*/
+void Rect::deflate(Real dx_min, Real dy_min, Real dx_max, Real dy_max)
 {
 	m_Xmin += dx_min;
 	m_Xmax -= dx_max;
@@ -577,7 +639,15 @@ void Rect::deflate(double dx_min, double dy_min, double dx_max, double dy_max)
 	m_Ymax -= dy_max;
 }
 
-// deflate rect
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Deflate rect.
+/**
+		The minimum point will be shifted by (+rc.Xmin(),+rc.Ymin())
+	and the maximum point will be shifted by (-rc.Xmax(),-rc.Ymax()).
+
+@param[in] rc The decreasing rectangular.
+*/
 void Rect::deflate(const Rect &rc)
 {
 	m_Xmin += rc.Xmin();
@@ -586,8 +656,16 @@ void Rect::deflate(const Rect &rc)
 	m_Ymax -= rc.Ymax();
 }
 
-// offset rect
-void Rect::offset(double dx, double dy)
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Offset rect.
+/**
+		The minimum and the maximum points will be shifted by (+dx,+dy).
+
+@param[in] dx The X increasing size.
+@param[in] dy The Y increasing size.
+*/
+void Rect::offset(Real dx, Real dy)
 {
 	m_Xmin += dx;
 	m_Xmax += dx;
@@ -596,17 +674,28 @@ void Rect::offset(double dx, double dy)
 }
 
 
-// offset rect
+//////////////////////////////////////////////////////////////////////////
+/// @brief Offset rect.
+/**
+		The minimum and the maximum points will be shifted by (+sz.X(),+sz.Y()).
+
+@param[in] sz The increasing size.
+*/
 void Rect::offset(const Size &sz)
 {
-	m_Xmin += sz.Xsize();
-	m_Xmax += sz.Xsize();
-	m_Ymin += sz.Ysize();
-	m_Ymax += sz.Ysize();
+	m_Xmin += sz.X();
+	m_Xmax += sz.X();
+	m_Ymin += sz.Y();
+	m_Ymax += sz.Y();
 }
 
 
-// Rect's union
+//////////////////////////////////////////////////////////////////////////
+/// @brief Union.
+/**
+@param[in] rc The second rectangle.
+@return The self reference.
+*/
 Rect& Rect::operator|=(const Rect &rc)
 {
 	if (rc.Xmin() < m_Xmin) // min
@@ -621,7 +710,13 @@ Rect& Rect::operator|=(const Rect &rc)
 	return *this;
 }
 
-// Rect's union
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Union.
+/**
+@param[in] pt The point.
+@return The self reference.
+*/
 Rect& Rect::operator|=(const Point &pt)
 {
 	if (pt.X() < m_Xmin) // min
@@ -636,7 +731,13 @@ Rect& Rect::operator|=(const Point &pt)
 	return *this;
 }
 
-// Rect's intersection
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Intersection.
+/**
+@param[in] rc The second rectangle.
+@return The self reference.
+*/
 Rect& Rect::operator&=(const Rect &rc)
 {
 	if (m_Xmin < rc.Xmin()) // max
@@ -651,31 +752,29 @@ Rect& Rect::operator&=(const Rect &rc)
 	return *this;
 }
 
-// offset
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Positive offset.
+/**
+@param[in] sz The offset size.
+@return The self reference.
+*/
 Rect& Rect::operator+=(const Size &sz)
 {
-	offset(sz.Xsize(), sz.Ysize());
+	offset(sz.X(), sz.Y());
 	return *this;
 }
 
-// offset
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Negative offset.
+/**
+@param[in] sz The offset size.
+@return The self reference.
+*/
 Rect& Rect::operator-=(const Size &sz)
 {
-	offset(-sz.Xsize(), -sz.Ysize());
-	return *this;
-}
-
-// inflate
-Rect& Rect::operator+=(const Rect &rc)
-{
-	inflate(rc);
-	return *this;
-}
-
-// deflate
-Rect& Rect::operator-=(const Rect &rc)
-{
-	deflate(rc);
+	offset(-sz.X(), -sz.Y());
 	return *this;
 }
 
@@ -687,56 +786,83 @@ Rect& Rect::operator-=(const Rect &rc)
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Object construction
+/// @brief The default constructor.
 Object::Object()
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// Object destruction
+/// @brief The destructor.
+/**
+		Detaches from the all plotters.
+*/
 Object::~Object()
 {
-	// detach all Plotters
+	// detach all plotters
 	while (!m_plotters.empty())
 		detach(*m_plotters.back());
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// attach to the Plotter
-void Object::attach(Plotter &plotter, size_t level)
+/// @brief Attach to the plotter.
+/**
+@param[in] plotter The plotter.
+@param[in] level The draw level.
+	Should be in range [0..64).
+@return @b true if plotter is attached,
+	@b false if plotter is already attached.
+*/
+bool Object::attach(Plotter &plotter, size_t level)
 {
-	plotter.attach(*this, level);
+	return plotter.attach(*this, level);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// detach from the Plotter
-void Object::detach(Plotter &plotter)
+/// @brief Detach from the plotter.
+/**
+@param[in] plotter The plotter.
+@return @b true if object is detached,
+	@b false if object not found.
+*/
+bool Object::detach(Plotter &plotter)
 {
-	plotter.detach(*this);
+	return plotter.detach(*this);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// draw the object
-void Object::draw(const Plotter &plotter, const GL::Font &font) const
+/// @brief Draw the object.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void Object::draw(const Plotter &plotter, Canvas &canvas) const
 {
 	// DO NOTHING
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// hit testing
-bool Object::hit_test(const Point &pt, double eps) const
+/// @brief Hit test.
+/**
+@param[in] pt The hit point.
+@param[in] eps The epsilon.
+@return @b true if point inside object, otherwise @b false.
+*/
+bool Object::hit_test(const Point &pt, Real eps) const
 {
 	return false;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// there is no full rectangle
-Rect Object::full() const
+/// @brief Get the "full" rectangle.
+/**
+@return The "full" rectangle.
+*/
+const Rect Object::full() const
 {
 	return Rect();
 }
@@ -749,55 +875,100 @@ Rect Object::full() const
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Plotter construction
+/// @brief The default constructor.
 Plotter::Plotter()
 	: m_fixed_aspect_ratio(true),
-	  m_color(0.0f, 0.0f, 0.0f, 1.0f)
+	  m_color(Color::Black)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// Plotter destruction
+/// @brief The destructor.
+/**
+	Detaches all graphic objects.
+*/
 Plotter::~Plotter()
 {
-	// detach all objects
-	LayerList::iterator i = m_layers.begin();
-	LayerList::iterator ie = m_layers.end();
+	{ // detach all objects
+		LayerList::iterator i = m_layers.begin();
+		LayerList::iterator ie = m_layers.end();
 
-	for (; i != ie; ++i)
-	{
-		Layer &layer = *i;
+		for (; i != ie; ++i)
+		{
+			Layer &layer = *i;
 
-		while (!layer.empty())
-			detach(*layer.back());
+			while (!layer.empty())
+				detach(*layer.back());
+		}
 	}
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// attach the object
-void Plotter::attach(Object &obj, size_t level)
-{
-	if (m_layers.size() <= level)
-		m_layers.resize(level+1); // ensure that level is valid
-	Layer &layer = m_layers[level];
+/// @brief Attach the graphic object.
+/**
+@note If graphic object is attached at different draw level
+	the draw level will not be changed!
 
-	Layer::iterator found = std::find(
-		layer.begin(), layer.end(), &obj);
-	if (layer.end() == found)
+@param[in] obj The graphic object.
+@param[in] level The draw level.
+	Should be in range [0..64).
+@return @b true if object is attached,
+	@b false if object is already attached.
+*/
+bool Plotter::attach(Object &obj, size_t level)
+{
+	// saturate draw level
+	if (63 < level)
+		level = 63;
+
+	bool is_attached = false;
+	{ // find the object at each layer
+		LayerList::iterator i = m_layers.begin();
+		LayerList::iterator ie = m_layers.end();
+
+		for (; i != ie; ++i)
+		{
+			Layer &layer = *i;
+
+			Layer::iterator found = std::find(
+				layer.begin(), layer.end(), &obj);
+			if (layer.end() != found)
+			{
+				is_attached = true;
+				break;
+			}
+		}
+	}
+
+	if (!is_attached)
 	{
+		if (m_layers.size() <= level)
+			m_layers.resize(level+1); // ensure level is valid
+		Layer &layer = m_layers[level];
+
 		obj.m_plotters.push_back(this);
 		layer.push_back(&obj);
+
+		return true;
 	}
+
+	return false; // already attached
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// detach the object
-void Plotter::detach(Object &obj)
+/// @brief Detach the graphic object.
+/**
+@param[in] obj The graphic object.
+@return @b true if object is detached,
+	@b false if object not found.
+*/
+bool Plotter::detach(Object &obj)
 {
 	LayerList::reverse_iterator i = m_layers.rbegin();
 	LayerList::reverse_iterator ie = m_layers.rend();
+	int N = 0;
 
 	for (; i != ie; ++i)
 	{
@@ -813,14 +984,23 @@ void Plotter::detach(Object &obj)
 				obj.m_plotters.begin(), obj.m_plotters.end(), this);
 			if (obj.m_plotters.end() != found)
 				obj.m_plotters.erase(found);
+
+			N += 1;
 		}
 	}
+
+	return (0 < N);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// hit test
-Object* Plotter::hit_test(const Point &pt, double eps)
+/// @brief Find the object at point.
+/**
+@param[in] pt The point of interest.
+@param[in] eps The epsilon.
+@return The graphic object at that point or null.
+*/
+Object* Plotter::hit_test(const Point &pt, Real eps)
 {
 	LayerList::reverse_iterator i = m_layers.rbegin();
 	LayerList::reverse_iterator ie = m_layers.rend();
@@ -844,7 +1024,10 @@ Object* Plotter::hit_test(const Point &pt, double eps)
 
 
 //////////////////////////////////////////////////////////////////////////
-// get current world rect
+/// @brief Get the current "world" rectangle.
+/**
+@return The current "world" rectangle.
+*/
 const Rect& Plotter::world() const
 {
 	return m_world;
@@ -852,7 +1035,10 @@ const Rect& Plotter::world() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// get current wish world rect
+/// @brief Get the current "wish" rectangle.
+/**
+@return The current "wish" rectangle.
+*/
 const Rect& Plotter::wish() const
 {
 	return m_wish;
@@ -860,7 +1046,10 @@ const Rect& Plotter::wish() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// get current full rect
+/// @brief Get the current "full" rectangle.
+/**
+@return The current "full" rectangle.
+*/
 const Rect& Plotter::full() const
 {
 	return m_full;
@@ -868,7 +1057,10 @@ const Rect& Plotter::full() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// get current viewport
+/// @brief Get the current "view" rectangle.
+/**
+@return The current "view" rectangle.
+*/
 const Rect& Plotter::view() const
 {
 	return m_view;
@@ -876,20 +1068,25 @@ const Rect& Plotter::view() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// convert point from view to world
-Point Plotter::v2w(const Point &pt) const
+/// @brief Convert point from "view" to "world".
+/**
+@param[in] pt The point in "view" co-system.
+@return The same point in "world" co-system.
+*/
+const Point Plotter::v2w(const Point &pt) const
 {
 	const Rect &W = world();
 	const Rect &V = view();
 
 	if (!V.empty())
 	{
-		const double x = (pt.X() - V.Xmin()) / V.Xsize();
-		const double y = (V.Ymax() - pt.Y()) / V.Ysize();
+		const Real x = (pt.X() - V.Xmin()) / V.Xsize();
+		const Real y = (V.Ymax() - pt.Y()) / V.Ysize();
 
 		return Point(
 			x*W.Xsize() + W.Xmin(),
-			y*W.Ysize() + W.Ymin());
+			y*W.Ysize() + W.Ymin()
+		);
 	}
 	else
 		return Point();
@@ -897,16 +1094,20 @@ Point Plotter::v2w(const Point &pt) const
 
 
 //////////////////////////////////////////////////////////////////////////
-// convert point from world to view
-Point Plotter::w2v(const Point &pt) const
+/// @brief Convert point from "world" to "view".
+/**
+@param[in] pt The point in "world" co-system.
+@return The same point in "view" co-system.
+*/
+const Point Plotter::w2v(const Point &pt) const
 {
 	const Rect &W = world();
 	const Rect &V = view();
 
 	if (!W.empty())
 	{
-		const double x = (pt.X() - W.Xmin()) / W.Xsize();
-		const double y = (W.Ymax() - pt.Y()) / W.Ysize();
+		const Real x = (pt.X() - W.Xmin()) / W.Xsize();
+		const Real y = (W.Ymax() - pt.Y()) / W.Ysize();
 
 		return Point(
 			x*V.Xsize() + V.Xmin(),
@@ -918,8 +1119,12 @@ Point Plotter::w2v(const Point &pt) const
 
 
 //////////////////////////////////////////////////////////////////////////
-// convert size from view to world
-Size Plotter::v2w(const Size &sz) const
+/// @brief Convert size from "view" to "world".
+/**
+@param[in] sz The size in "view" co-system.
+@return The same size in "world" co-system.
+*/
+const Size Plotter::v2w(const Size &sz) const
 {
 	const Rect &W = world();
 	const Rect &V = view();
@@ -927,8 +1132,8 @@ Size Plotter::v2w(const Size &sz) const
 	if (!V.empty())
 	{
 		return Size(
-			sz.Xsize() * W.Xsize() / V.Xsize(),
-			sz.Ysize() * W.Ysize() / V.Ysize());
+			sz.X() * W.Xsize() / V.Xsize(),
+			sz.Y() * W.Ysize() / V.Ysize());
 	}
 	else
 		return Size();
@@ -936,8 +1141,12 @@ Size Plotter::v2w(const Size &sz) const
 
 
 //////////////////////////////////////////////////////////////////////////
-// convert size from world to view
-Size Plotter::w2v(const Size &sz) const
+/// @brief Convert size from "world" to "view".
+/**
+@param[in] sz The size in "world" co-system.
+@return The same size in "view" co-system.
+*/
+const Size Plotter::w2v(const Size &sz) const
 {
 	const Rect &W = world();
 	const Rect &V = view();
@@ -945,8 +1154,8 @@ Size Plotter::w2v(const Size &sz) const
 	if (!W.empty())
 	{
 		return Size(
-			sz.Xsize() * V.Xsize() / W.Xsize(),
-			sz.Ysize() * V.Ysize() / W.Ysize());
+			sz.X() * V.Xsize() / W.Xsize(),
+			sz.Y() * V.Ysize() / W.Ysize());
 	}
 	else
 		return Size();
@@ -954,18 +1163,22 @@ Size Plotter::w2v(const Size &sz) const
 
 
 //////////////////////////////////////////////////////////////////////////
-// convert rect from view to world
-Rect Plotter::v2w(const Rect &rc) const
+/// @brief Convert rectangle from "view" to "world".
+/**
+@param[in] rc The rectangle in "view" co-system.
+@return The same rectangle in "world" co-system.
+*/
+const Rect Plotter::v2w(const Rect &rc) const
 {
 	const Rect &W = world();
 	const Rect &V = view();
 
 	if (!V.empty())
 	{
-		const double x_min = (rc.Xmin() - V.Xmin()) / V.Xsize();
-		const double y_min = (V.Ymax() - rc.Ymax()) / V.Ysize();
-		const double x_max = (rc.Xmax() - V.Xmin()) / V.Xsize();
-		const double y_max = (V.Ymax() - rc.Ymin()) / V.Ysize();
+		const Real x_min = (rc.Xmin() - V.Xmin()) / V.Xsize();
+		const Real y_min = (V.Ymax() - rc.Ymax()) / V.Ysize();
+		const Real x_max = (rc.Xmax() - V.Xmin()) / V.Xsize();
+		const Real y_max = (V.Ymax() - rc.Ymin()) / V.Ysize();
 
 		const Point pt_min(x_min*W.Xsize() + W.Xmin(),
 			y_min*W.Ysize() + W.Ymin());
@@ -980,18 +1193,22 @@ Rect Plotter::v2w(const Rect &rc) const
 
 
 //////////////////////////////////////////////////////////////////////////
-// convert rect from world to view
-Rect Plotter::w2v(const Rect &rc) const
+/// @brief Convert rectangle from "world" to "view".
+/**
+@param[in] rc The rectangle in "world" co-system.
+@return The same rectangle in "view" co-system.
+*/
+const Rect Plotter::w2v(const Rect &rc) const
 {
 	const Rect &W = world();
 	const Rect &V = view();
 
 	if (!W.empty())
 	{
-		const double x_min = (rc.Xmin() - W.Xmin()) / W.Xsize();
-		const double y_min = (W.Ymax() - rc.Ymax()) / W.Ysize();
-		const double x_max = (rc.Xmax() - W.Xmin()) / W.Xsize();
-		const double y_max = (W.Ymax() - rc.Ymin()) / W.Ysize();
+		const Real x_min = (rc.Xmin() - W.Xmin()) / W.Xsize();
+		const Real y_min = (W.Ymax() - rc.Ymax()) / W.Ysize();
+		const Real x_max = (rc.Xmax() - W.Xmin()) / W.Xsize();
+		const Real y_max = (W.Ymax() - rc.Ymin()) / W.Ysize();
 
 		const Point pt_min(x_min*V.Xsize() + V.Xmin(),
 			y_min*V.Ysize() + V.Ymin());
@@ -1006,39 +1223,56 @@ Rect Plotter::w2v(const Rect &rc) const
 
 
 //////////////////////////////////////////////////////////////////////////
-// get background color
-const GL::Color& Plotter::background() const
-{
-	return m_color;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// set background color
-void Plotter::set_background(const GL::Color &color)
+/// @brief Set the main color.
+/**
+@param[in] color The main color.
+*/
+void Plotter::setColor(const Color &color)
 {
 	m_color = color;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get fixed aspect ratio flag
-bool Plotter::fixedAspectRatio() const
+/// @brief Get the main color.
+/**
+@return The main color.
+*/
+const Color& Plotter::getColor() const
 {
-	return m_fixed_aspect_ratio;
+	return m_color;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set fixed aspect ratio flag
-void Plotter::set_fixedAspectRatio(bool fixed_AR)
+/// @brief Set the "fixed aspect ratio" flag.
+/**
+@param[in] fixed_AR The "fixed aspect ratio" flag.
+*/
+void Plotter::setFixedAspectRatio(bool fixed_AR)
 {
 	m_fixed_aspect_ratio = fixed_AR;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set the new world rect
+/// @brief Get the "fixed aspect ratio" flag.
+/**
+@return The "fixed aspect ratio" flag.
+*/
+bool Plotter::getFixedAspectRatio() const
+{
+	return m_fixed_aspect_ratio;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Set the new "world" rectangle.
+/**
+		This method updates the "wish" and "world" rectangles.
+
+@param[in] wr The new "world" rectangle.
+*/
 void Plotter::show(const Rect &wr)
 {
 	m_wish = wr;
@@ -1047,49 +1281,40 @@ void Plotter::show(const Rect &wr)
 
 
 //////////////////////////////////////////////////////////////////////////
-// set the new viewport rect
-void Plotter::set_viewport(int x, int y, int w, int h)
+/// @brief Set the new "view" rectangle.
+/**
+		This method updates the "view" rectangle.
+
+@param[in] x The X coordinate.
+@param[in] y The Y coordinate.
+@param[in] w The width.
+@param[in] h The height.
+*/
+void Plotter::setViewport(Real x, Real y, Real w, Real h)
 {
+	on_view_changing(x, y, w, h);
+
 	m_view = Rect(Point(x, y), Size(w, h));
 	update_world();
+
+	on_view_changed();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// draw plotter to the current GL context
-void Plotter::draw(const GL::Font &font) const
+/// @brief Draw the plotter content to the canvas.
+/**
+@param[in] canvas The canvas.
+*/
+void Plotter::draw(Canvas &canvas) const
 {
 	// clear background
-	GL::clearColor(m_color);
-	GL::clear(GL::Buffer::COLOR);
+	canvas.Clear(m_color);
 
 	if (!m_world.empty() && !m_view.empty())
 	{
-		// set viewport
-		::glViewport(
-			GLint(m_view.Xmin()),
-			GLint(m_view.Ymin()),
-			GLint(m_view.Xsize()),
-			GLint(m_view.Ysize())
-		);
-
-		// set Projection matrix
-		GL::matrixMode(GL::MatrixMode::PROJECTION);
-		GL::load_identity();
-		::glOrtho(
-			m_world.Xmin(),
-			m_world.Xmax(),
-			m_world.Ymin(),
-			m_world.Ymax(),
-			-1.0, +1.0
-		);
-
-		// reset ModelView matrix
-		GL::matrixMode(GL::MatrixMode::MODELVIEW);
-		GL::load_identity();
-
 		// start drawing
-		on_draw_start();
+		on_draw_start(canvas);
 
 		{ // draw all objects on all layers
 			LayerList::const_iterator i = m_layers.begin();
@@ -1103,18 +1328,36 @@ void Plotter::draw(const GL::Font &font) const
 				Layer::const_iterator ie = layer.end();
 
 				for (; i != ie; ++i)
-					(*i)->draw(*this, font);
+					(*i)->draw(*this, canvas);
 			}
 		}
 
+		if (0)
+		{ // test draw
+			Gdiplus::SolidBrush brush(Color::Red);
+			Gdiplus::Pen pen(Color::White, 1.0f);
+
+			Rect r1 = w2v(Rect(Point(-0.4f, -0.4f), Point(-0.6f, -0.6f)));
+			Rect r2 = w2v(Rect(Point(-0.9f, -0.9f), Point(+0.9f, +0.9f)));
+
+			canvas.FillEllipse(&brush, r1.Xmin(), r1.Ymin(), r1.Xsize(), r1.Ysize());
+			canvas.DrawEllipse(&pen, r1.Xmin(), r1.Ymin(), r1.Xsize(), r1.Ysize());
+
+			pen.SetWidth(5.0f);
+			canvas.DrawRectangle(&pen, r2.Xmin(), r2.Ymin(), r2.Xsize(), r2.Ysize());
+		}
+
 		// stop drawing
-		on_draw_stop();
+		on_draw_stop(canvas);
 	}
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// update Plotter's world rect
+/// @brief Update plotter.
+/**
+	This method updates the "full" rectangle.
+*/
 void Plotter::update()
 {
 	LayerList::const_iterator i = m_layers.begin();
@@ -1162,7 +1405,7 @@ void Plotter::update()
 
 
 //////////////////////////////////////////////////////////////////////////
-// world changed event
+/// @brief The "world changed" event.
 void Plotter::on_world_changed()
 {
 	// DO NOTHING
@@ -1170,7 +1413,7 @@ void Plotter::on_world_changed()
 
 
 //////////////////////////////////////////////////////////////////////////
-// full changed event
+/// @brief The "full changed" event.
 void Plotter::on_full_changed()
 {
 	// DO NOTHING
@@ -1178,48 +1421,55 @@ void Plotter::on_full_changed()
 
 
 //////////////////////////////////////////////////////////////////////////
-// prepare drawing
-void Plotter::on_draw_start() const
-{
-	// DO NOTHING
-
-	::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	GL::enable(GL::Capability::BLEND);
-
-	::glShadeModel(GL_SMOOTH);
-	GL::enable(GL::Capability::POLYGON_SMOOTH);
-	GL::enable(GL::Capability::POINT_SMOOTH);
-	GL::enable(GL::Capability::LINE_SMOOTH);
-
-	::glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	::glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-	::glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// stop drawing
-void Plotter::on_draw_stop() const
+/// @brief The "view changing" event.
+void Plotter::on_view_changing(Real &x, Real &y, Real &w, Real &h)
 {
 	// DO NOTHING
 }
 
 
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "view changed" event.
+void Plotter::on_view_changed()
+{
+	// DO NOTHING
+}
+
 
 //////////////////////////////////////////////////////////////////////////
-// update world rect
+/// @brief The "before drawing" event.
+void Plotter::on_draw_start(Canvas &canvas) const
+{
+	canvas.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "after drawing" event.
+void Plotter::on_draw_stop(Canvas &canvas) const
+{
+	// DO NOTHING
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Update the "world" rectangle.
+/**
+		This method updates "world" rectangle based on current
+	"wish" and "view" rectangles and the "fixed aspect ratio" flag.
+*/
 void Plotter::update_world()
 {
 	m_world = m_wish;
 
 	if (m_fixed_aspect_ratio && !m_view.empty())
 	{
-		const double X_ratio = m_wish.Xsize() / m_view.Xsize();
-		const double Y_ratio = m_wish.Ysize() / m_view.Ysize();
+		const Real X_ratio = m_wish.Xsize() / m_view.Xsize();
+		const Real Y_ratio = m_wish.Ysize() / m_view.Ysize();
 
 		m_world.inflate(
-			(X_ratio < Y_ratio) ? (m_view.Xsize()*Y_ratio - m_world.Xsize())/2 : 0.0,
-			(X_ratio > Y_ratio) ? (m_view.Ysize()*X_ratio - m_world.Ysize())/2 : 0.0
+			(X_ratio < Y_ratio) ? (m_view.Xsize()*Y_ratio - m_world.Xsize())/2 : 0,
+			(X_ratio > Y_ratio) ? (m_view.Ysize()*X_ratio - m_world.Ysize())/2 : 0
 		);
 	}
 
@@ -1234,52 +1484,17 @@ void Plotter::update_world()
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Window::Class implementation
-class Window::Class {
+/// @brief The window class.
+class Window::Class
+{
 public:
-	//static INT_PTR CALLBACK dialog_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-	//{
-	//	switch (uMsg)
-	//	{
-	//		case WM_COMMAND:
-	//		{
-	//			int id = GET_WM_COMMAND_ID(wParam, lParam);
-	//			if (id == IDCANCEL)
-	//			{
-	//				::EndDialog(hDlg, id);
-	//				return TRUE;
-	//			}
-	//		} break;
-	//	}
 
-	//	return FALSE;
-	//}
-
-	//void showDlg()
-	//{
-	//	HGLOBAL global = ::GlobalAlloc(GMEM_ZEROINIT,
-	//		sizeof(DLGITEMTEMPLATE) + 3*sizeof(WORD));
-
-	//	LPDLGTEMPLATE dlg_temp = (LPDLGTEMPLATE)::GlobalLock(global);
-
-	//	// Define a dialog box template
-	//	dlg_temp->style = WS_POPUP|WS_BORDER|WS_SYSMENU
-	//		|WS_CAPTION|DS_MODALFRAME|DS_CENTER;
-	//	dlg_temp->cx = 100;
-	//	dlg_temp->cy = 100;
-
-	//	::GlobalUnlock(global);
-	//	int ret = DialogBoxIndirectParam(::GetModuleHandle(NULL),
-	//		(LPCDLGTEMPLATE)global, m_handle, dialog_proc, 0);
-	//	GlobalFree(global);
-	//}
-
-public:
-	// register window class
+	/// @brief Register window class.
 	static void attach_class()
 	{
-		if (N_windows++ == 0)
+		if (1 == ::InterlockedIncrement(&N_windows))
 		{
+			// initialize window class
 			wnd_class.cbSize = sizeof(wnd_class);
 			wnd_class.style = CS_DBLCLKS|CS_HREDRAW|CS_VREDRAW|CS_OWNDC;
 			wnd_class.lpfnWndProc = wnd_proc;
@@ -1288,52 +1503,74 @@ public:
 			wnd_class.lpszClassName = _T("omni::plot::Window");
 
 			ATOM atom = ::RegisterClassEx(&wnd_class);
-			if (NULL == atom) throw std::runtime_error("Can't register Plotter's window class");
+			if (NULL == atom)
+				throw std::runtime_error("Can't register plotter's window class");
 		}
 	}
 
-	// unregister window class
+	/// @brief Unregister window class.
 	static void detach_class()
 	{
-		if (--N_windows == 0)
+		if (0 == ::InterlockedDecrement(&N_windows))
 		{
 			BOOL ret = ::UnregisterClass(
 				wnd_class.lpszClassName,
 				wnd_class.hInstance);
 			assert(ret != FALSE
-				&& "Can't unregister Plotter's window class");
+				&& "Can't unregister plotter's window class");
 		}
 	}
 
-	// create window
-	static HWND create_window(HWND parent, Window *wnd, DWORD style)
+	/// @brief Create window instance.
+	/**
+	@param[in] parent The parent window handle.
+	@param[in] wnd The corresponding Window.
+	@param[in] style The window style.
+	@param[in] ex_style The extended window style.
+	*/
+	static HWND create_window(HWND parent, Window *wnd, DWORD style, DWORD ex_style)
 	{
-		HWND hWnd = ::CreateWindowEx(0,
+		return ::CreateWindowEx(ex_style,
 			wnd_class.lpszClassName, NULL, style,
 			CW_USEDEFAULT, CW_USEDEFAULT,
 			CW_USEDEFAULT, CW_USEDEFAULT,
 			parent, NULL, wnd_class.hInstance, wnd);
-		if (NULL == hWnd)
-			throw std::runtime_error("Can't create Plotter's window");
-
-		return hWnd;
 	}
 
-	// convert HWND to Window*
+public:
+
+	/// @brief Convert HWND to Window pointer.
+	/**
+	@param[in] hWnd The window handle.
+	@return The corresponding Window pointer.
+	*/
 	static Window* get_Window(HWND hWnd)
 	{
 		LONG_PTR X = ::GetWindowLongPtr(hWnd, GWLP_USERDATA);
 		return reinterpret_cast<Window*>(X);
 	}
 
-	// set Window* to HWND
+	/// @brief Set Window pointer to HWND.
+	/**
+	@param[in] hWnd The window handle.
+	@param[in] wnd The corresponding window pointer.
+	*/
 	static void set_Window(HWND hWnd, Window *wnd)
 	{
 		LONG_PTR X = reinterpret_cast<LONG_PTR>(wnd);
 		::SetWindowLongPtr(hWnd, GWLP_USERDATA, X);
 	}
 
-	// window procedure
+public:
+
+	/// @brief The window procedure.
+	/**
+	@param[in] hWnd The window handle.
+	@param[in] uMsg The message type.
+	@param[in] wParam The first parameter.
+	@param[in] lParam The second parameter.
+	@return The result code.
+	*/
 	static LRESULT CALLBACK wnd_proc(HWND hWnd,
 		UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
@@ -1369,20 +1606,28 @@ public:
 
 private:
 	static WNDCLASSEX wnd_class;
-	static int N_windows;
+	static volatile long N_windows;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-// static members
+/// @brief The window class info.
 WNDCLASSEX Window::Class::wnd_class = {0};
-int Window::Class::N_windows = 0;
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The number of active windows.
+volatile long Window::Class::N_windows = 0;
 
 
 //////////////////////////////////////////////////////////////////////////
-// Window construction
-Window::Window(DWORD style, HWND parent)
-	: m_handle(0), m_context(0), m_font(0)
+/// @brief The main constructor.
+/**
+@param[in] parent The parent window handle.
+@param[in] style The window style.
+@param[in] ex_style The extended window style.
+*/
+Window::Window(HWND parent, DWORD style, DWORD ex_style)
+	: m_handle(0)
 {
 	Class::attach_class();
 
@@ -1392,12 +1637,14 @@ Window::Window(DWORD style, HWND parent)
 	));
 
 	m_handle = Class::create_window(
-		parent, this, style);
+		parent, this, style, ex_style);
+	if (NULL == m_handle)
+		throw std::runtime_error("Can't create plotter's window");
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// Window destruction
+/// @brief The destructor.
 Window::~Window()
 {
 	if (m_handle)
@@ -1412,7 +1659,10 @@ Window::~Window()
 
 
 //////////////////////////////////////////////////////////////////////////
-// get window handle
+/// @brief Get the window handle.
+/**
+@return The window handle.
+*/
 HWND Window::handle() const
 {
 	return m_handle;
@@ -1420,7 +1670,11 @@ HWND Window::handle() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// invalidate and repaint whole window
+/// @brief Invalidate and repaint the whole window.
+/**
+@param[in] force The "force" flag. If set to true the window will be repainted now,
+	otherwise the window will be repainted as soon as possible.
+*/
 void Window::redraw(bool force) const
 {
 	::InvalidateRect(handle(), NULL, FALSE);
@@ -1429,41 +1683,25 @@ void Window::redraw(bool force) const
 
 
 //////////////////////////////////////////////////////////////////////////
-// show specified World Rect
-void Window::show(const Rect &W)
-{
-	inherited::show(W);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// automatic update World Rect
-void Window::update()
-{
-	inherited::update();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// world changed event
+/// @brief The "world changed" event.
 void Window::on_world_changed()
 {
-	update_HScroll();
-	update_VScroll();
+	update_hscroll();
+	update_vscroll();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// full changed event
+/// @brief The "full changed" event.
 void Window::on_full_changed()
 {
-	update_HScroll();
-	update_VScroll();
+	update_hscroll();
+	update_vscroll();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get full and wish Rect
+/// @brief Get the full and wish rectangle.
 Rect Window::full_and_wish() const
 {
 	const Rect &F = full();
@@ -1484,10 +1722,10 @@ Rect Window::full_and_wish() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// update HSCROLL info
-void Window::update_HScroll()
+/// @brief Update horizontal scrolling.
+void Window::update_hscroll()
 {
-	if (is_Hscroll())
+	if (isHScroll())
 	{
 		SCROLLINFO info = { 0 };
 		info.cbSize = sizeof(info);
@@ -1497,7 +1735,7 @@ void Window::update_HScroll()
 		const Rect FW = full_and_wish();
 		if (0.0 < FW.Xsize())
 		{
-			const double SCALE = (info.nMax - info.nMin) / FW.Xsize();
+			const Real SCALE = (info.nMax - info.nMin) / FW.Xsize();
 			info.nPos = (int)floor((wish().Xmin() - FW.Xmin())*SCALE + 0.5) + info.nMin;
 
 			int page = (int)floor(wish().Xsize()*SCALE + 0.5);
@@ -1514,10 +1752,10 @@ void Window::update_HScroll()
 
 
 //////////////////////////////////////////////////////////////////////////
-// update VSCROLL info
-void Window::update_VScroll()
+/// @brief Update vertical scrolling.
+void Window::update_vscroll()
 {
-	if (is_Vscroll())
+	if (isVScroll())
 	{
 		SCROLLINFO info = { 0 };
 		info.cbSize = sizeof(info);
@@ -1527,7 +1765,7 @@ void Window::update_VScroll()
 		const Rect FW = full_and_wish();
 		if (0.0 < FW.Ysize())
 		{
-			double SCALE = (info.nMax - info.nMin) / FW.Ysize();
+			Real SCALE = (info.nMax - info.nMin) / FW.Ysize();
 			info.nPos = (int)floor((FW.Ymax() - wish().Ymax())*SCALE + 0.5) + info.nMin;
 
 			int page = (int)floor(wish().Ysize()*SCALE + 0.5);
@@ -1544,26 +1782,12 @@ void Window::update_VScroll()
 
 
 //////////////////////////////////////////////////////////////////////////
-// is HSCROLL visible?
-bool Window::is_Hscroll() const
-{
-	LONG style = ::GetWindowLong(handle(), GWL_STYLE);
-	return (style & WS_HSCROLL) != 0;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// is VSCROLL visible?
-bool Window::is_Vscroll() const
-{
-	LONG style = ::GetWindowLong(handle(), GWL_STYLE);
-	return (style & WS_VSCROLL) != 0;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// set HSCROLL and VSCROLL visible
-void Window::set_scroll(bool horz, bool vert)
+/// @brief Enable/disable horizontal and/or vertical scrolling.
+/**
+@param[in] horz Enable the horizontal scrolling flag.
+@param[in] vert Enable the vertical scrolling flag.
+*/
+void Window::setScroll(bool horz, bool vert)
 {
 	LONG style = ::GetWindowLong(handle(), GWL_STYLE);
 
@@ -1585,14 +1809,32 @@ void Window::set_scroll(bool horz, bool vert)
 
 
 //////////////////////////////////////////////////////////////////////////
-// custom message
+/// @brief Is horizontal scrolling enabled?
+bool Window::isHScroll() const
+{
+	LONG style = ::GetWindowLong(handle(), GWL_STYLE);
+	return (style & WS_HSCROLL) != 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is vertical scrolling enabled?
+bool Window::isVScroll() const
+{
+	LONG style = ::GetWindowLong(handle(), GWL_STYLE);
+	return (style & WS_VSCROLL) != 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Window message processing.
 bool Window::on_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT &result)
 {
 	switch (msg)
 	{
 		case WM_SIZE:
 			on_size(GET_X_LPARAM(lparam),
-					GET_Y_LPARAM(lparam));
+			        GET_Y_LPARAM(lparam));
 			return true;
 
 		case WM_PAINT:
@@ -1600,11 +1842,11 @@ bool Window::on_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT &result)
 			return true;
 
 		case WM_HSCROLL:
-			on_Hscroll(GET_WM_HSCROLL_CODE(wparam, lparam));
+			on_hscroll(GET_WM_HSCROLL_CODE(wparam, lparam));
 			return true;
 
 		case WM_VSCROLL:
-			on_Vscroll(GET_WM_VSCROLL_CODE(wparam, lparam));
+			on_vscroll(GET_WM_VSCROLL_CODE(wparam, lparam));
 			return true;
 	}
 
@@ -1613,76 +1855,73 @@ bool Window::on_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT &result)
 
 
 //////////////////////////////////////////////////////////////////////////
-// WM_CREATE
+/// @brief The "WM_CREATE" message handler.
+/**
+@param[in] hWnd The window handle.
+*/
 void Window::on_create(HWND hWnd)
 {
 	m_handle = hWnd;
-	m_context = new GL::Context(hWnd);
-
-	m_context->start();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// WM_DESTROY
+/// @brief The "WM_DESTROY" message handler.
 void Window::on_destroy()
 {
-	// TODO: m_context->start();
-	delete m_font;
-	m_font = 0;
-
-	delete m_context;
-	m_context = 0;
-
+	m_pbmp.reset(0); // destroy bitmap
 	m_handle = NULL;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// WM_SIZE
+/// @brief The "WM_SIZE" message handler.
+/**
+@param[in] cx The window width.
+@param[in] cy The window height.
+*/
 void Window::on_size(int cx, int cy)
 {
-	inherited::set_viewport(0, 0, cx, cy);
+	inherited::setViewport(0, 0,
+		(Real)cx, (Real)cy);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// WM_PAINT
+/// @brief The "WM_PAINT" message handler.
 void Window::on_paint()
 {
-	m_context->start();
-	if (!m_font)
-		m_font = new GL::Font();
+	RECT rc = {0};
+	::GetClientRect(handle(), &rc);
+	const int w = rc.right - rc.left;
+	const int h = rc.bottom - rc.top;
 
-	inherited::draw(*m_font);
+	PAINTSTRUCT ps = {0};
+	HDC dc = ::BeginPaint(handle(), &ps);
+	Gdiplus::Graphics g(ps.hdc);
 
-	//{ // draw test text
-	//	m_font->select();
+	// update bitmap
+	if (!m_pbmp.get() || (int)m_pbmp->GetWidth() < w || (int)m_pbmp->GetHeight() < h)
+	{
+		m_pbmp.reset(new Gdiplus::Bitmap(w, h, &g));
+	}
 
-	//	const double textSize = 20.0;
-	//	const double fontSize = m_font->max_height();
-	//	const double X_v2w = world().Xsize() / view().Xsize();
-	//	const double Y_v2w = world().Ysize() / view().Ysize();
-	//	double W_textSize = textSize * Y_v2w;
+	// draw to "back" buffer
+	Gdiplus::Graphics gg(&*m_pbmp);
+	inherited::draw(gg);
 
-	//	GL::matrixMode(GL::MatrixMode::MODELVIEW);
-	//	GL::load_identity();
-
-	//	GL::Canvas::color(1.0f, 0.0f, 0.0f, 1.0f);
-	//	GL::drawText(*m_font, "[|QMg|]", 0.0, 0.0,
-	//		textSize/fontSize * X_v2w, textSize/fontSize * Y_v2w,
-	//		45.0, GL::TextAlign::HCENTER | GL::TextAlign::VCENTER);
-	//}
-
-	m_context->flush();
-
-	::ValidateRect(m_handle, NULL);
+	// copy "back" buffer to the screen
+	g.DrawImage(&*m_pbmp, 0, 0);
+	::EndPaint(handle(), &ps);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// WM_HSCROLL
-void Window::on_Hscroll(int request)
+/// @brief The "WM_HSCROLL" message handler.
+/**
+@param[in] request The request type.
+*/
+void Window::on_hscroll(int request)
 {
 	SCROLLINFO info = { 0 };
 	info.cbSize = sizeof(info);
@@ -1695,18 +1934,18 @@ void Window::on_Hscroll(int request)
 	const Rect FW = full_and_wish();
 	if (0.0 < FW.Xsize())
 	{
-		double SCALE = FW.Xsize() / (info.nMax - info.nMin);
-		double pagew = wish().Xsize();
+		Real SCALE = FW.Xsize() / (info.nMax - info.nMin);
+		Real pagew = wish().Xsize();
 
-		double WX = wish().Xmin();
+		Real WX = wish().Xmin();
 		switch (request)
 		{
 			case SB_LEFT:      WX = FW.Xmin(); break;
 			case SB_RIGHT:     WX = FW.Xmax()-pagew; break;
-			case SB_LINELEFT:  WX -= 0.1*pagew; break;
-			case SB_PAGELEFT:  WX -= 0.9*pagew; break;
-			case SB_LINERIGHT: WX += 0.1*pagew; break;
-			case SB_PAGERIGHT: WX += 0.9*pagew; break;
+			case SB_LINELEFT:  WX -= 0.1f*pagew; break;
+			case SB_PAGELEFT:  WX -= 0.9f*pagew; break;
+			case SB_LINERIGHT: WX += 0.1f*pagew; break;
+			case SB_PAGERIGHT: WX += 0.9f*pagew; break;
 			case SB_THUMBPOSITION:
 			case SB_THUMBTRACK:
 				WX = FW.Xmin() + info.nTrackPos*SCALE;
@@ -1722,8 +1961,11 @@ void Window::on_Hscroll(int request)
 
 
 //////////////////////////////////////////////////////////////////////////
-// WM_VSCROLL
-void Window::on_Vscroll(int request)
+/// @brief The "WM_VSCROLL" message handler.
+/**
+@param[in] request The request type.
+*/
+void Window::on_vscroll(int request)
 {
 	SCROLLINFO info = { 0 };
 	info.cbSize = sizeof(info);
@@ -1736,18 +1978,18 @@ void Window::on_Vscroll(int request)
 	const Rect FW = full_and_wish();
 	if (0.0 < FW.Ysize())
 	{
-		double SCALE = FW.Ysize() / (info.nMax - info.nMin);
-		double pageh = wish().Ysize();
+		Real SCALE = FW.Ysize() / (info.nMax - info.nMin);
+		Real pageh = wish().Ysize();
 
-		double WY = wish().Ymin();
+		Real WY = wish().Ymin();
 		switch (request)
 		{
 			case SB_TOP:       WY = FW.Ymax()-pageh; break;
 			case SB_BOTTOM:    WY = FW.Ymin(); break;
-			case SB_LINEUP:    WY += 0.1*pageh; break;
-			case SB_PAGEUP:    WY += 0.9*pageh; break;
-			case SB_LINEDOWN:  WY -= 0.1*pageh; break;
-			case SB_PAGEDOWN:  WY -= 0.9*pageh; break;
+			case SB_LINEUP:    WY += 0.1f*pageh; break;
+			case SB_PAGEUP:    WY += 0.9f*pageh; break;
+			case SB_LINEDOWN:  WY -= 0.1f*pageh; break;
+			case SB_PAGEDOWN:  WY -= 0.9f*pageh; break;
 			case SB_THUMBPOSITION:
 			case SB_THUMBTRACK:
 				WY = FW.Ymax() - info.nTrackPos*SCALE - pageh;
@@ -1827,10 +2069,10 @@ void Window::on_Vscroll(int request)
 //		if (!zoomIn)
 //		{
 //			Rect W = wnd.wish(); // TODO: upgrade this algorithm
-//			double x_min = m_world.Xmin() - wnd.world().Xmin();
-//			double x_max = wnd.world().Xmax() - m_world.Xmax();
-//			double y_min = m_world.Ymin() - wnd.world().Ymin();
-//			double y_max = wnd.world().Ymax() - m_world.Ymax();
+//			Real x_min = m_world.Xmin() - wnd.world().Xmin();
+//			Real x_max = wnd.world().Xmax() - m_world.Xmax();
+//			Real y_min = m_world.Ymin() - wnd.world().Ymin();
+//			Real y_max = wnd.world().Ymax() - m_world.Ymax();
 //			W.inflate(x_min, y_min, x_max, y_max);
 //
 //			wnd.Plotter::show(W); // (!)
@@ -2005,288 +2247,410 @@ void Window::on_Vscroll(int request)
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Axis construction
+/// @brief The default constructor.
 Axis::Axis()
-	: m_majorLine(GL::Color(0.5f, 0.5f, 0.5f), 2.0f, GL::Pen::STYLE_SOLID),
-	  m_minorLine(GL::Color(0.2f, 0.2f, 0.2f), 1.0f, GL::Pen::STYLE_DOT),
-	  m_majorStep(0.0), m_minorStep(0.0),
-	  m_majorAutoStep(true), m_majorAutoStepHint(70.0),
-	  m_minorAutoStep(true), m_minorAutoStepHint(0.2),
-	  m_backColor(0.3f, 0.3f, 0.3f, 0.9f),
-	  m_textColor(1.0f, 1.0f, 1.0f),
-	  m_axisName(), m_textSize(14.0),
-	  m_textFormat("%+g"),
-	  m_textOffset(0.0),
-	  m_textScale(1.0)
-{}
+	: m_majorLine(new Gdiplus::Pen(Color::DarkGray, 1.0f)),
+	  m_minorLine(new Gdiplus::Pen(Color::Gray, 1.0f)),
+	  m_majorStep(0), m_minorStep(0),
+	  m_majorAutoStep(true), m_majorAutoStepHint(70),
+	  m_minorAutoStep(true), m_minorAutoStepHint(0.2f),
+	  m_backColor(Color::DarkGreen),
+	  m_textColor(Color::WhiteSmoke),
+	  m_axisName(L""), m_textSize(14),
+	  m_textFormat(L"%+g"),
+	  m_textOffset(0),
+	  m_textScale(1)
+{
+	m_majorLine->SetDashStyle(Gdiplus::DashStyleSolid);
+	m_minorLine->SetDashStyle(Gdiplus::DashStyleDash);
+}
 
 
 //////////////////////////////////////////////////////////////////////////
-// Axis destruction
+/// @brief The destructor.
 Axis::~Axis()
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// get minor Pen Attributes
-const GL::Pen& Axis::minorLine() const
+/// @brief Set the minor line's pen.
+/**
+@param[in] pen The minor line's pen.
+*/
+void Axis::setMinorLine(const Gdiplus::Pen &pen)
 {
-	return m_minorLine;
+	m_minorLine.reset(pen.Clone());
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set minor Pen Attributes
-void Axis::set_minorLine(const GL::Pen &pen)
+/// @brief Get the minor line's pen.
+/**
+@return The minor line's pen.
+*/
+const Gdiplus::Pen* Axis::getMinorLine() const
 {
-	m_minorLine = pen;
+	return m_minorLine.get();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get minor step
-double Axis::minorStep() const
+/// @brief Get the minor line's pen.
+/**
+@return The minor line's pen.
+*/
+Gdiplus::Pen* Axis::getMinorLine()
+{
+	return m_minorLine.get();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Set the minor line step.
+/**
+@param[in] step The minor line step.
+*/
+void Axis::setMinorStep(Real step)
+{
+	setMinorAutoStep(false); // (!)
+	m_minorStep = step;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the minor line step.
+/**
+@return The minor line step.
+*/
+Real Axis::getMinorStep() const
 {
 	return m_minorStep;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set minor step
-void Axis::set_minorStep(double step)
-{
-	set_minorAutoStep(false); // (!)
-	m_minorStep = step;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// get minor auto step flag
-bool Axis::minorAutoStep() const
-{
-	return m_minorAutoStep;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// set minor auto step flag
-void Axis::set_minorAutoStep(bool enabled)
+/// @brief Set the minor "auto step" flag.
+/**
+@param[in] enabled The minor "auto step" flag.
+*/
+void Axis::setMinorAutoStep(bool enabled)
 {
 	m_minorAutoStep = enabled;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get major auto step hint
-double Axis::minorAutoStepHint() const
+/// @brief Get the minor "auto step" flag.
+/**
+@return The minor "auto step" flag.
+*/
+bool Axis::getMinorAutoStep() const
+{
+	return m_minorAutoStep;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Set the minor auto step hint.
+/**
+	This hint is the fractional part of the major step.
+
+@param[in] hint The minor auto step hint.
+*/
+void Axis::setMinorAutoStepHint(Real hint)
+{
+	m_minorAutoStepHint = hint;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the minor auto step hint.
+Real Axis::getMinorAutoStepHint() const
 {
 	return m_minorAutoStepHint;
 }
 
 
-//////////////////////////////////////////////////////////////////////////
-// set major auto step hint
-void Axis::set_minorAutoStepHint(double step_hint)
+///////////////////////////////////////////////////////////////////////////
+/// @brief Set the major line's pen.
+/**
+@param[in] pen The major line's pen.
+*/
+void Axis::setMajorLine(const Gdiplus::Pen &pen)
 {
-	m_minorAutoStepHint = step_hint;
+	m_majorLine.reset(pen.Clone());
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
-// get major Pen attributes
-const GL::Pen& Axis::majorLine() const
+/// @brief Get the major line's pen.
+/**
+@return The major line's pen.
+*/
+const Gdiplus::Pen* Axis::getMajorLine() const
 {
-	return m_majorLine;
+	return m_majorLine.get();
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
-// set major Pen attributes
-void Axis::set_majorLine(const GL::Pen &pen)
+/// @brief Get the major line's pen.
+/**
+@return The major line's pen.
+*/
+Gdiplus::Pen* Axis::getMajorLine()
 {
-	m_majorLine = pen;
+	return m_majorLine.get();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get major step
-double Axis::majorStep() const
+/// @brief Set the major line step.
+/**
+@param[in] step The major line step.
+*/
+void Axis::setMajorStep(Real step)
+{
+	setMajorAutoStep(false); // (!)
+	m_majorStep = step;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the major line step.
+/**
+@return The major line step.
+*/
+Real Axis::getMajorStep() const
 {
 	return m_majorStep;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set major step
-void Axis::set_majorStep(double step)
-{
-	set_majorAutoStep(false); // (!)
-	m_majorStep = step;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// get major auto step flag
-bool Axis::majorAutoStep() const
-{
-	return m_majorAutoStep;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// set major auto step flag
-void Axis::set_majorAutoStep(bool enabled)
+/// @brief Set the major "auto step" flag.
+/**
+@param[in] The major "auto step" flag.
+*/
+void Axis::setMajorAutoStep(bool enabled)
 {
 	m_majorAutoStep = enabled;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get major auto step hint
-double Axis::majorAutoStepHint() const
+/// @brief Get the major "auto step" flag.
+/**
+@return The major "auto step" flag.
+*/
+bool Axis::getMajorAutoStep() const
 {
-	return m_majorAutoStepHint;
+	return m_majorAutoStep;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set major auto step hint
-void Axis::set_majorAutoStepHint(double step_hint)
+/// @brief Set the major auto step hint.
+/**
+@param[in] hint The auto step hint.
+*/
+void Axis::setMajorAutoStepHint(Real step_hint)
 {
 	m_majorAutoStepHint = step_hint;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get background color
-const GL::Color& Axis::backColor() const
+/// @brief Get the major auto step hint.
+/**
+@return The auto step hint.
+*/
+Real Axis::getMajorAutoStepHint() const
 {
-	return m_backColor;
+	return m_majorAutoStepHint;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set background color
-void Axis::set_backColor(const GL::Color &color)
+/// @brief Set the background color.
+/**
+@param[in] color The background color.
+*/
+void Axis::setBackColor(const Color &color)
 {
 	m_backColor = color;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get text color
-const GL::Color& Axis::textColor() const
+/// @brief Get the background color.
+/**
+@return The background color.
+*/
+const Color& Axis::getBackColor() const
 {
-	return m_textColor;
+	return m_backColor;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set text color
-void Axis::set_textColor(const GL::Color &color)
+/// @brief Set the text color.
+/**
+@param[in] color The text color.
+*/
+void Axis::setTextColor(const Color &color)
 {
 	m_textColor = color;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get axis name
-const std::string& Axis::axisName() const
+/// @brief Get the text color.
+/**
+@return The text color.
+*/
+const Color& Axis::getTextColor() const
 {
-	return m_axisName;
+	return m_textColor;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set axis name
-void Axis::set_axisName(const std::string &name)
+/// @brief Set the axis name.
+/**
+@param[in] name The axis name.
+*/
+void Axis::setAxisName(const wchar_t *name)
 {
 	m_axisName = name;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get text size in pixels
-double Axis::textSize() const
+/// @brief Get the axis name.
+/**
+@return The axis name.
+*/
+const wchar_t* Axis::getAxisName() const
 {
-	return m_textSize;
+	return m_axisName.c_str();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set text size in pixels
-void Axis::set_textSize(double size)
+/// @brief Set the text size.
+/**
+@param[in] size The text size in pixels.
+*/
+void Axis::setTextSize(Real size)
 {
 	m_textSize = size;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get text format string
-const std::string& Axis::textFormat() const
+/// @brief Get the text size.
+/**
+@return The text size in pixels.
+*/
+Real Axis::getTextSize() const
 {
-	return m_textFormat;
+	return m_textSize;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set text format string
-void Axis::set_textFormat(const std::string &format)
+/// @brief Set the text format string.
+/**
+@param[in] format The text format string.
+*/
+void Axis::setTextFormat(const wchar_t *format)
 {
 	m_textFormat = format;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get transformation offset
-double Axis::textOffset() const
+/// @brief Get the text format string.
+/**
+@return The text format string.
+*/
+const wchar_t* Axis::getTextFormat() const
 {
-	return m_textOffset;
+	return m_textFormat.c_str();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set transformation offset
-void Axis::set_textOffset(double offset)
+/// @brief Set the transformation offset.
+/**
+@param[in] offset The transformation offset.
+*/
+void Axis::setTextOffset(Real offset)
 {
 	m_textOffset = offset;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get transformation scale
-double Axis::textScale() const
+/// @brief Get the transformation offset.
+/**
+@return The transformation offset.
+*/
+Real Axis::getTextOffset() const
 {
-	return m_textScale;
+	return m_textOffset;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set transformation scale
-void Axis::set_textScale(double scale)
+/// @brief Set the transformation scale.
+/**
+@param[in] scale The transformation scale.
+*/
+void Axis::setTextScale(Real scale)
 {
 	m_textScale = scale;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get transformed value
-double Axis::transform(double x) const
+/// @brief Get the transformation scale.
+/**
+@return The transformation scale.
+*/
+Real Axis::getTextScale() const
 {
-	return x * m_textScale
+	return m_textScale;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get transformed value.
+/**
+@param[in] x The "world" value.
+@return The transformed value.
+*/
+Real Axis::transform(Real x) const
+{
+	return x*m_textScale
 		+ m_textOffset;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// update major and minor steps
-void Axis::update(double world_range, double viewport_range)
+/// @brief Update major and minor steps.
+/**
+@param[in] wrange The "world" range.
+@param[in] vrange The "view" range.
+*/
+void Axis::update(Real wrange, Real vrange)
 {
 	// major step
 	if (m_majorAutoStep)
 	{
-		m_majorStep = auto_step(world_range,
-			viewport_range, m_majorAutoStepHint);
+		m_majorStep = auto_step(wrange,
+			vrange, m_majorAutoStepHint);
 	}
 
 	// minor step
@@ -2299,23 +2663,28 @@ void Axis::update(double world_range, double viewport_range)
 
 
 //////////////////////////////////////////////////////////////////////////
-// calculate auto step
-double Axis::auto_step(double world_range, double viewport_range, double viewport_step)
+/// @brief Calculate auto step.
+/**
+@param[in] wrange The "world" range.
+@param[in] vrange The "view" range.
+@param[in] vstep The approximate "view" step.
+*/
+Real Axis::auto_step(Real wrange, Real vrange, Real vstep)
 {
-	int N_steps = int(viewport_range / viewport_step);
+	int N_steps = int(vrange / vstep);
 	if (N_steps <= 0) N_steps = 1;  // (?) min=1
 	if (10 < N_steps) N_steps = 10; // (?) max=10
 
-	double step = world_range / N_steps;
-	double order = pow(10.0, floor(log10(step)));
+	Real step = wrange / N_steps;
+	Real order = powf(10.0f, floorf(log10f(step)));
 
 	step /= order;
-	if (step < 1.00) step = 1.00;
-	else if (step < 1.25) step = 1.25;
-	else if (step < 2.00) step = 2.00;
-	else if (step < 2.50) step = 2.50;
-	else if (step < 5.00) step = 5.00;
-	else                  step = 10.0;
+	if (step < 1.00f) step = 1.00f;
+	else if (step < 1.25f) step = 1.25f;
+	else if (step < 2.00f) step = 2.00f;
+	else if (step < 2.50f) step = 2.50f;
+	else if (step < 5.00f) step = 5.00f;
+	else                   step = 10.0f;
 
 	return step * order;
 }
@@ -2323,339 +2692,505 @@ double Axis::auto_step(double world_range, double viewport_range, double viewpor
 	} // Axis
 
 
-	// XYPlotter::XAxis
+	// XYPlotter
 	namespace plot
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// XAxis class
-class XYPlotter::XAxis: public Axis {
+/// @brief The X axis.
+class XYPlotter::XAxis:
+	public Axis
+{
 	typedef Axis inherited;
-
 public:
+
+	/// @brief The default constructor.
 	XAxis()
 	{
 		m_minor_lines.set_axis(this);
 		m_major_lines.set_axis(this);
 		m_text.set_axis(this);
+		setAxisName(L"X");
 	}
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-// minor lines drawer
-	class MinorLines: public Object {
+	///////////////////////////////////////////////////////////////////////////
+	/// @brief The minor lines painter.
+	class MinorLines:
+		public Object
+	{
 	public:
-		MinorLines(): m_axis(0) {}
+
+		/// @brief The default constructor.
+		MinorLines()
+			: m_axis(0)
+		{}
+
+		/// @brief Set the axis object.
+		/**
+		@param[in] axis The axis.
+		*/
 		void set_axis(Axis *axis)
-			{ m_axis = axis; }
+		{
+			m_axis = axis;
+		}
 
 	public:
-		virtual void draw(const Plotter &plotter, const GL::Font&) const
+
+		/// @brief Draw the lines.
+		/**
+		@param[in] plotter The plotter.
+		@param[in] canvas The canvas.
+		*/
+		virtual void draw(const Plotter &plotter, Canvas &canvas) const
 		{
-			const double step = m_axis->minorStep();
+			const Real step = m_axis->getMinorStep();
 			const Rect &W = plotter.world();
 
 			// draw grid lines
 			if (0.0 < step)
 			{
-				m_axis->minorLine().select();
-				GL::GroupLines g;
+				const Gdiplus::Pen *ppen = m_axis->getMinorLine();
+				const Real Xstart = ceil(W.Xmin()/step) * step;
+				const Real Ymin = W.Ymin();
+				const Real Ymax = W.Ymax();
 
-				double Xstart = ceil(W.Xmin()/step) * step;
-				for (double x = Xstart; x <= W.Xmax(); x += step)
+				for (Real x = Xstart; x <= W.Xmax(); x += step)
 				{
-					g.vertex(x, W.Ymin());
-					g.vertex(x, W.Ymax());
+					const Point p1 = plotter.w2v(Point(x, Ymin));
+					const Point p2 = plotter.w2v(Point(x, Ymax));
+
+					canvas.DrawLine(ppen, p1, p2);
 				}
 			}
 		}
 
 	private:
-		Axis *m_axis;
+		Axis *m_axis; ///< @brief The corresponding axis.
 	};
 
 
-//////////////////////////////////////////////////////////////////////////
-// major lines drawer
-	class MajorLines: public Object {
+	///////////////////////////////////////////////////////////////////////////
+	/// @brief The major lines painter.
+	class MajorLines:
+		public Object
+	{
 	public:
-		MajorLines(): m_axis(0) {}
+
+		/// @brief The default constructor.
+		MajorLines()
+			: m_axis(0)
+		{}
+
+		/// @brief Set the axis object.
+		/**
+		@param[in] axis The axis.
+		*/
 		void set_axis(Axis *axis)
-			{ m_axis = axis; }
+		{
+			m_axis = axis;
+		}
 
 	public:
-		virtual void draw(const Plotter &plotter, const GL::Font&) const
+
+		/// @brief Draw the lines.
+		/**
+		@param[in] plotter The plotter.
+		@param[in] canvas The canvas.
+		*/
+		virtual void draw(const Plotter &plotter, Canvas &canvas) const
 		{
-			const double step = m_axis->majorStep();
+			const Real step = m_axis->getMajorStep();
 			const Rect &W = plotter.world();
 
 			// draw grid lines
 			if (0.0 < step)
 			{
-				m_axis->majorLine().select();
-				GL::GroupLines g;
+				const Gdiplus::Pen *ppen = m_axis->getMajorLine();
+				const Real Xstart = ceil(W.Xmin()/step) * step;
+				const Real Ymin = W.Ymin();
+				const Real Ymax = W.Ymax();
 
-				double Xstart = ceil(W.Xmin()/step) * step;
-				for (double x = Xstart; x <= W.Xmax(); x += step)
+				for (Real x = Xstart; x <= W.Xmax(); x += step)
 				{
-					g.vertex(x, W.Ymin());
-					g.vertex(x, W.Ymax());
+					const Point p1 = plotter.w2v(Point(x, Ymin));
+					const Point p2 = plotter.w2v(Point(x, Ymax));
+
+					canvas.DrawLine(ppen, p1, p2);
 				}
 			}
 		}
 
 	private:
-		Axis *m_axis;
+		Axis *m_axis; ///< @brief The corresponding axis.
 	};
 
 
-//////////////////////////////////////////////////////////////////////////
-// text drawer
-	class Text: public Object {
+	///////////////////////////////////////////////////////////////////////////
+	/// @brief Text painter.
+	class Text:
+		public Object
+	{
 	public:
-		Text(): m_axis(0) {}
+
+		/// @brief The default constructor.
+		Text()
+			: m_axis(0)
+		{}
+
+		/// @brief Set the axis object.
+		/**
+		@param[in] axis The axis.
+		*/
 		void set_axis(Axis *axis)
-			{ m_axis = axis; }
+		{
+			m_axis = axis;
+		}
 
 	public:
 		enum { MARGIN = 2 };
 
 	public:
-		virtual void draw(const Plotter &plotter, const GL::Font &font) const
+
+		/// @brief Draw the text.
+		/**
+		@param[in] plotter The plotter.
+		@param[in] canvas The canvas.
+		*/
+		virtual void draw(const Plotter &plotter, Canvas &canvas) const
 		{
+			const Real step = m_axis->getMajorStep();
 			const Rect &W = plotter.world();
 			const Rect &V = plotter.view();
 
-			// convert height from view to world
-			const double X_v2w = W.Xsize() / V.Xsize();
-			const double Y_v2w = W.Ysize() / V.Ysize();
-			const double S = (m_axis->textSize() + 2*MARGIN) * Y_v2w; // [world]
-			const double FONT_scale = m_axis->textSize() / font.max_height();
+			Gdiplus::Font font(L"Courier", m_axis->getTextSize(),
+				Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+			Gdiplus::SolidBrush brush(m_axis->getTextColor());
+			Gdiplus::StringFormat format;
 
-			// draw axis RECT
-			GL::Canvas::color(m_axis->backColor());
-			GL::Canvas::rect(W.Xmin(), W.Ymin(),
-				W.Xmax(), W.Ymin() + S);
+			Gdiplus::RectF name_rc;
+			{ // draw axis name
+				const Rect vrc(Point(V.Xmin(), V.Ymax()),
+					Size(V.Xsize(), m_axis->getTextSize() + 2*MARGIN));
 
-			GL::Canvas::color(m_axis->textColor());
-			font.select();
+				format.SetAlignment(Gdiplus::StringAlignmentFar);
+				format.SetLineAlignment(Gdiplus::StringAlignmentCenter);
 
-			// draw Axis name
-			GL::drawText(font, m_axis->axisName().c_str(),
-				W.Xmax() - MARGIN*X_v2w, W.Ymin() + MARGIN*Y_v2w,
-				FONT_scale * X_v2w, FONT_scale * Y_v2w, 0.0,
-				GL::TextAlign::RIGHT|GL::TextAlign::BOTTOM);
+				canvas.MeasureString(m_axis->getAxisName(),
+					-1, &font, vrc, &format, &name_rc);
+				canvas.DrawString(m_axis->getAxisName(),
+					-1, &font, vrc, &format, &brush);
+			}
 
 			// draw axis text
-			const double step = m_axis->majorStep();
 			if (0.0 < step)
 			{
-				enum { buf_sz = 1024 };
-				char buf[buf_sz];
+				const int BUF_SZ = 1024;
+				wchar_t buf[BUF_SZ];
 
-				const double Xstart = ceil(W.Xmin()/step) * step;
-				const double Xstop = W.Xmax() - 2*MARGIN*X_v2w
-					- font.text_width(m_axis->axisName().c_str())*FONT_scale*X_v2w;
-				for (double x = Xstart; x <= W.Xmax(); x += step)
+				const Real Xstart = ceil(W.Xmin()/step) * step;
+				for (Real x = Xstart; x <= W.Xmax(); x += step)
 				{
-					_snprintf(buf, buf_sz, m_axis->textFormat().c_str(), m_axis->transform(x));
-					const double buf_width = font.text_width(buf) * FONT_scale*X_v2w;
+					const Point vpt = plotter.w2v(Point(x, W.Ymin()));
 
-					if (x + buf_width/2 <= Xstop && W.Xmin() <= x - buf_width/2)
-						GL::drawText(font, buf, x, W.Ymin() + MARGIN*Y_v2w,
-							FONT_scale * X_v2w, FONT_scale * Y_v2w, 0.0,
-							GL::TextAlign::HCENTER|GL::TextAlign::BOTTOM);
+					format.SetAlignment(Gdiplus::StringAlignmentCenter);
+					format.SetLineAlignment(Gdiplus::StringAlignmentNear);
+
+					Gdiplus::RectF hint_rc;
+
+					_snwprintf(buf, BUF_SZ,
+						m_axis->getTextFormat(),
+						m_axis->transform(x));
+
+					canvas.MeasureString(buf, -1, &font,
+						vpt, &format, &hint_rc);
+
+					if (!hint_rc.IntersectsWith(name_rc))
+						canvas.DrawString(buf, -1, &font,
+							vpt, &format, &brush);
 				}
 			}
 		}
 
 	private:
-		Axis *m_axis;
+		Axis *m_axis; ///< @brief The corresponding axis.
 	};
 
 public:
+
+	/// @brief Update axis based on plotter.
+	/**
+	@param[in] plotter The plotter.
+	*/
 	void update(const Plotter &plotter)
 	{
 		inherited::update(
 			plotter.world().Xsize(),
-			plotter.view().Xsize());
+			plotter.view().Xsize()
+		);
 	}
 
+public:
 
-	Object& minorLines() { return m_minor_lines; }
-	Object& majorLines() { return m_major_lines; }
-	Object& text() { return m_text; }
+	/// @brief Get the minor lines painter.
+	Object& minorLines()
+	{
+		return m_minor_lines;
+	}
+
+	/// @brief Get the major lines painter.
+	Object& majorLines()
+	{
+		return m_major_lines;
+	}
+
+	/// @brief Get the text painter.
+	Object& text()
+	{
+		return m_text;
+	}
 
 private:
-	MinorLines m_minor_lines;
-	MajorLines m_major_lines;
-	Text m_text;
+	MinorLines m_minor_lines; ///< @brief The minor lines painter.
+	MajorLines m_major_lines; ///< @brief The major lines painter.
+	Text m_text;              ///< @brief The text painter.
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-// get margin
-//Rect XAxis::margin() const
-//{
-//	return Rect(Point(0.0, textSize()+2*MARGIN), Point());
-//}
-
-	} // XYPlotter::XAxis
-
-
-	// XYPlotter::YAxis
-	namespace plot
-	{
-
-//////////////////////////////////////////////////////////////////////////
-// YAxis class
-class XYPlotter::YAxis: public Axis {
+/// @brief The Y axis.
+class XYPlotter::YAxis:
+	public Axis
+{
 	typedef Axis inherited;
-
 public:
+
+	/// @brief The default constructor.
 	YAxis()
 	{
 		m_minor_lines.set_axis(this);
 		m_major_lines.set_axis(this);
 		m_text.set_axis(this);
+		setAxisName(L"Y");
 	}
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-// minor lines drawer
-	class MinorLines: public Object {
+	//////////////////////////////////////////////////////////////////////////
+	/// @brief The minor lines painter.
+	class MinorLines
+		: public Object
+	{
 	public:
-		MinorLines(): m_axis(0) {}
+
+		/// @brief The default constructor.
+		MinorLines()
+			: m_axis(0)
+		{}
+
+		/// @brief Set the axis object.
+		/**
+		@param[in] axis The axis.
+		*/
 		void set_axis(Axis *axis)
-			{ m_axis = axis; }
+		{
+			m_axis = axis;
+		}
 
 	public:
-		virtual void draw(const Plotter &plotter, const GL::Font&) const
+
+		/// @brief Draw the lines.
+		/**
+		@param[in] plotter The plotter.
+		@param[in] canvas The canvas.
+		*/
+		virtual void draw(const Plotter &plotter, Canvas &canvas) const
 		{
-			const double step = m_axis->minorStep();
-			const Rect W = plotter.world();
+			const Real step = m_axis->getMinorStep();
+			const Rect &W = plotter.world();
 
 			// draw grid lines
 			if (0.0 < step)
 			{
-				m_axis->minorLine().select();
-				GL::GroupLines g;
+				const Gdiplus::Pen *ppen = m_axis->getMinorLine();
+				const Real Ystart = ceil(W.Ymin()/step) * step;
+				const Real Xmin = W.Xmin();
+				const Real Xmax = W.Xmax();
 
-				double Ystart = ceil(W.Ymin()/step) * step;
-				for (double y = Ystart; y <= W.Ymax(); y += step)
+				for (Real y = Ystart; y <= W.Ymax(); y += step)
 				{
-					g.vertex(W.Xmin(), y);
-					g.vertex(W.Xmax(), y);
+					const Point p1 = plotter.w2v(Point(Xmin, y));
+					const Point p2 = plotter.w2v(Point(Xmax, y));
+
+					canvas.DrawLine(ppen, p1, p2);
 				}
 			}
 		}
 
 	private:
-		Axis *m_axis;
+		Axis *m_axis; ///< @brief The corresponding axis.
 	};
 
 
-//////////////////////////////////////////////////////////////////////////
-// major lines drawer
-	class MajorLines: public Object {
+	///////////////////////////////////////////////////////////////////////////
+	/// @brief The major lines painter.
+	class MajorLines:
+		public Object
+	{
 	public:
-		MajorLines(): m_axis(0) {}
+
+		/// @brief The default constructor.
+		MajorLines()
+			: m_axis(0)
+		{}
+
+		/// @brief Set the axis object.
+		/**
+		@param[in] axis The axis.
+		*/
 		void set_axis(Axis *axis)
-			{ m_axis = axis; }
+		{
+			m_axis = axis;
+		}
 
 	public:
-		virtual void draw(const Plotter &plotter, const GL::Font&) const
-		{
-			const double step = m_axis->majorStep();
-			const Rect W = plotter.world();
 
-			// draw major lines
+		/// @brief Draw the lines.
+		/**
+		@param[in] plotter The plotter.
+		@param[in] canvas The canvas.
+		*/
+		virtual void draw(const Plotter &plotter, Canvas &canvas) const
+		{
+			const Real step = m_axis->getMajorStep();
+			const Rect &W = plotter.world();
+
+			// draw grid lines
 			if (0.0 < step)
 			{
-				m_axis->majorLine().select();
-				GL::GroupLines g;
+				const Gdiplus::Pen *ppen = m_axis->getMajorLine();
+				const Real Ystart = ceil(W.Ymin()/step) * step;
+				const Real Xmin = W.Xmin();
+				const Real Xmax = W.Xmax();
 
-				double Ystart = ceil(W.Ymin()/step) * step;
-				for (double y = Ystart; y <= W.Ymax(); y += step)
+				for (Real y = Ystart; y <= W.Ymax(); y += step)
 				{
-					g.vertex(W.Xmin(), y);
-					g.vertex(W.Xmax(), y);
+					const Point p1 = plotter.w2v(Point(Xmin, y));
+					const Point p2 = plotter.w2v(Point(Xmax, y));
+
+					canvas.DrawLine(ppen, p1, p2);
 				}
 			}
 		}
 
 	private:
-		Axis *m_axis;
+		Axis *m_axis; ///< @brief The corresponding axis.
 	};
 
 
-//////////////////////////////////////////////////////////////////////////
-// text drawer
-	class Text: public Object {
+	///////////////////////////////////////////////////////////////////////////
+	/// @brief Text painter.
+	class Text:
+		public Object
+	{
 	public:
-		Text(): m_axis(0) {}
+
+		/// @brief The default constructor.
+		Text()
+			: m_axis(0)
+		{}
+
+		/// @brief Set the axis object.
+		/**
+		@param[in] axis The axis.
+		*/
 		void set_axis(Axis *axis)
-			{ m_axis = axis; }
+		{
+			m_axis = axis;
+		}
 
 	public:
 		enum { MARGIN = 2 };
 
 	public:
-		virtual void draw(const Plotter &plotter, const GL::Font &font) const
+
+		/// @brief Draw the text.
+		/**
+		@param[in] plotter The plotter.
+		@param[in] canvas The canvas.
+		*/
+		virtual void draw(const Plotter &plotter, Canvas &canvas) const
 		{
+			const Real step = m_axis->getMajorStep();
 			const Rect &W = plotter.world();
 			const Rect &V = plotter.view();
 
-			// convert height from view to world
-			const double X_v2w = W.Xsize() / V.Xsize();
-			const double Y_v2w = W.Ysize() / V.Ysize();
-			const double S = (m_axis->textSize() + 2*MARGIN) * X_v2w; // [world]
-			const double FONT_scale = m_axis->textSize() / font.max_height();
+			Gdiplus::Font font(L"Courier", m_axis->getTextSize(),
+				Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+			Gdiplus::SolidBrush brush(m_axis->getTextColor());
+			Gdiplus::StringFormat format;
 
-			// draw axis RECT
-			GL::Canvas::color(m_axis->backColor());
-			GL::Canvas::rect(W.Xmin(), W.Ymin(),
-				W.Xmin() + S, W.Ymax());
+			Gdiplus::GraphicsState state = canvas.Save();
+			canvas.TranslateTransform(0.0f, V.Ysize());
+			canvas.RotateTransform(-90.0f);
 
-			GL::Canvas::color(m_axis->textColor());
-			font.select();
+			Gdiplus::RectF name_rc;
+			{ // draw axis name
+				const Rect vrc(Point(0, 0),
+					Size(V.Ysize(), m_axis->getTextSize() + 2*MARGIN));
 
-			// draw Axis name
-			GL::drawText(font, m_axis->axisName().c_str(),
-				W.Xmin() + S - MARGIN*X_v2w, W.Ymax() - MARGIN*Y_v2w,
-				FONT_scale * X_v2w, FONT_scale * Y_v2w, 90.0,
-				GL::TextAlign::RIGHT|GL::TextAlign::BOTTOM);
+				format.SetAlignment(Gdiplus::StringAlignmentFar);
+				format.SetLineAlignment(Gdiplus::StringAlignmentCenter);
+
+				canvas.MeasureString(m_axis->getAxisName(),
+					-1, &font, vrc, &format, &name_rc);
+				canvas.DrawString(m_axis->getAxisName(),
+					-1, &font, vrc, &format, &brush);
+			}
 
 			// draw axis text
-			const double step = m_axis->majorStep();
 			if (0.0 < step)
 			{
-				enum { buf_sz = 1024 };
-				char buf[buf_sz];
+				const int BUF_SZ = 1024;
+				wchar_t buf[BUF_SZ];
 
-				const double Ystart = ceil(W.Ymin()/step) * step;
-				const double Ystop = W.Ymax() - 2*MARGIN*Y_v2w
-					- font.text_width(m_axis->axisName().c_str())*FONT_scale*Y_v2w;
-				for (double y = Ystart; y <= W.Ymax(); y += step)
+				const Real Ystart = ceil(W.Ymin()/step) * step;
+				for (Real y = Ystart; y <= W.Ymax(); y += step)
 				{
-					_snprintf(buf, buf_sz, m_axis->textFormat().c_str(), m_axis->transform(y));
-					const double buf_width = font.text_width(buf) * FONT_scale*Y_v2w;
+					const Point vpt = Point(V.Ymax() - plotter.w2v(Point(0, y)).Y(), (Real)MARGIN);
 
-					if (y + buf_width/2 <= Ystop && W.Ymin() <= y - buf_width/2)
-						GL::drawText(font, buf, W.Xmin() + S - MARGIN*X_v2w, y,
-						FONT_scale * X_v2w, FONT_scale * Y_v2w, 90.0,
-						GL::TextAlign::HCENTER|GL::TextAlign::BOTTOM);
+					format.SetAlignment(Gdiplus::StringAlignmentCenter);
+					format.SetLineAlignment(Gdiplus::StringAlignmentNear);
+
+					Gdiplus::RectF hint_rc;
+
+					_snwprintf(buf, BUF_SZ,
+						m_axis->getTextFormat(),
+						m_axis->transform(y));
+
+					canvas.MeasureString(buf, -1, &font,
+						vpt, &format, &hint_rc);
+
+					if (!hint_rc.IntersectsWith(name_rc))
+						canvas.DrawString(buf, -1, &font,
+							vpt, &format, &brush);
 				}
 			}
+
+			canvas.Restore(state);
 		}
 
 	private:
-		Axis *m_axis;
+		Axis *m_axis; ///< @brief The corresponding axis.
 	};
 
 public:
+
+	/// @brief Update axis based on plotter.
+	/**
+	@param[in] plotter The plotter.
+	*/
 	void update(const Plotter &plotter)
 	{
 		inherited::update(
@@ -2664,34 +3199,41 @@ public:
 	}
 
 
-	Object& minorLines() { return m_minor_lines; }
-	Object& majorLines() { return m_major_lines; }
-	Object& text() { return m_text; }
+	/// @brief Get the minor lines painter.
+	Object& minorLines()
+	{
+		return m_minor_lines;
+	}
+
+	/// @brief Get the major lines painter.
+	Object& majorLines()
+	{
+		return m_major_lines;
+	}
+
+	/// @brief Get the text painter.
+	Object& text()
+	{
+		return m_text;
+	}
 
 private:
-	MinorLines m_minor_lines;
-	MajorLines m_major_lines;
-	Text m_text;
+	MinorLines m_minor_lines; ///< @brief The minor lines painter.
+	MajorLines m_major_lines; ///< @brief The major lines painter.
+	Text m_text;              ///< @brief The text painter.
 };
 
-////////////////////////////////////////////////////////////////////////////
-//// get margin
-//Rect YAxis::margin() const
-//{
-//	return Rect(Point(textSize()+2*MARGIN, 0.0), Point());
-//}
 
-	} // XYPlotter::YAxis
-
-
-	// XYPlotter
-	namespace plot
-	{
 
 //////////////////////////////////////////////////////////////////////////
-// XYPlotter construction
-XYPlotter::XYPlotter(DWORD style, HWND parent)
-	: inherited(style, parent),
+/// @brief The main constructor.
+/**
+@param[in] parent The parent window handle.
+@param[in] style The window style.
+@param[in] ex_style The extended window style.
+*/
+XYPlotter::XYPlotter(HWND parent, DWORD style, DWORD ex_style)
+	: inherited(parent, style, ex_style),
 	  m_Xaxis(new XAxis()),
 	  m_Yaxis(new YAxis())
 {
@@ -2709,16 +3251,16 @@ XYPlotter::XYPlotter(DWORD style, HWND parent)
 
 
 //////////////////////////////////////////////////////////////////////////
-// XYPlotter destruction
+/// @brief The destructor.
 XYPlotter::~XYPlotter()
-{
-	delete m_Xaxis;
-	delete m_Yaxis;
-}
+{}
 
 
 //////////////////////////////////////////////////////////////////////////
-// attach the object
+/// @brief Attach the graphic object.
+/**
+@param[in] obj The graphic object.
+*/
 void XYPlotter::attach(Object &obj)
 {
 	inherited::attach(obj, LEVEL_GRAPH);
@@ -2726,15 +3268,22 @@ void XYPlotter::attach(Object &obj)
 
 
 //////////////////////////////////////////////////////////////////////////
-// attach the object
-void XYPlotter::attach(Object &obj, size_t level)
+/// @brief Attach the graphic object at specified level.
+/**
+@param[in] obj The graphic object.
+@param[in] level The draw level.
+*/
+void XYPlotter::attach(Object &obj, Level level)
 {
 	inherited::attach(obj, level);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// detach the object
+/// @brief Detach the graphic object.
+/**
+@param[in] obj The graphic object.
+*/
 void XYPlotter::detach(Object &obj)
 {
 	inherited::detach(obj);
@@ -2742,7 +3291,10 @@ void XYPlotter::detach(Object &obj)
 
 
 //////////////////////////////////////////////////////////////////////////
-// get the constant X axis
+/// @brief Get the X axis (read-only).
+/**
+@return The X axis.
+*/
 const Axis& XYPlotter::Xaxis() const
 {
 	return *m_Xaxis;
@@ -2750,14 +3302,21 @@ const Axis& XYPlotter::Xaxis() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// get the X axis
+/// @brief Get the X axis.
+/**
+@return The X axis.
+*/
 Axis& XYPlotter::Xaxis()
 {
 	return *m_Xaxis;
 }
 
+
 //////////////////////////////////////////////////////////////////////////
-// get the constant Y axis
+/// @brief Get the Y axis (read-only).
+/**
+@return The Y axis.
+*/
 const Axis& XYPlotter::Yaxis() const
 {
 	return *m_Yaxis;
@@ -2765,7 +3324,10 @@ const Axis& XYPlotter::Yaxis() const
 
 
 //////////////////////////////////////////////////////////////////////////
-// get the constant Y axis
+/// @brief Get the Y axis.
+/**
+@return The Y axis.
+*/
 Axis& XYPlotter::Yaxis()
 {
 	return *m_Yaxis;
@@ -2773,19 +3335,19 @@ Axis& XYPlotter::Yaxis()
 
 
 //////////////////////////////////////////////////////////////////////////
-// on World changed
+/// @brief The "world changed" event.
 void XYPlotter::on_world_changed()
 {
 	inherited::on_world_changed();
 
-	//const double dx = m_Xaxis->textSize() + 2*XAxis::Text::MARGIN;
-	//const double dy = m_Yaxis->textSize() + 2*YAxis::Text::MARGIN;
+	//const Real dx = m_Xaxis->textSize() + 2*XAxis::Text::MARGIN;
+	//const Real dy = m_Yaxis->textSize() + 2*YAxis::Text::MARGIN;
 
-	//const double Xscale = dx / view().Xsize();
-	//const double Yscale = dy / view().Ysize();
+	//const Real Xscale = dx / view().Xsize();
+	//const Real Yscale = dy / view().Ysize();
 
-	//const double Xmin = (W.Xmin() - W.Xmax()*Xscale) / (1.0 - Xscale);
-	//const double Ymin = (W.Ymin() - W.Ymax()*Yscale) / (1.0 - Yscale);
+	//const Real Xmin = (W.Xmin() - W.Xmax()*Xscale) / (1.0 - Xscale);
+	//const Real Ymin = (W.Ymin() - W.Ymax()*Yscale) / (1.0 - Yscale);
 
 	//inherited::show(Rect(Point(Xmin, Ymin),
 	//	Point(W.Xmax(), W.Ymax())));
@@ -2796,15 +3358,30 @@ void XYPlotter::on_world_changed()
 
 
 //////////////////////////////////////////////////////////////////////////
-// on FULL changed
+/// @brief The "full changed" event.
 void XYPlotter::on_full_changed()
 {
 	inherited::on_full_changed();
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "view changing" event.
+void XYPlotter::on_view_changing(Real &x, Real &y, Real &w, Real &h)
+{
+	const Real dx = m_Xaxis->getTextSize() + YAxis::Text::MARGIN*2;
+	const Real dy = m_Yaxis->getTextSize() + XAxis::Text::MARGIN*2;
+
+	// TODO: axis position?
+	x += dx;
+	w -= dx;
+	h -= dy;
+}
+
 	} // XYPlotter
 
 
+#if 0
 	// PolarPlotter::RadialAxis
 	namespace plot
 	{
@@ -2835,7 +3412,7 @@ public:
 	public:
 		virtual void draw(const Plotter &plotter, const GL::Font&) const
 		{
-			const double step = m_axis->minorStep();
+			const Real step = m_axis->minorStep();
 			const Rect &W = plotter.world();
 
 			// draw grid lines
@@ -2844,8 +3421,8 @@ public:
 				m_axis->minorLine().select();
 				GL::GroupLines g;
 
-				double Xstart = ceil(W.Xmin()/step) * step;
-				for (double x = Xstart; x <= W.Xmax(); x += step)
+				Real Xstart = ceil(W.Xmin()/step) * step;
+				for (Real x = Xstart; x <= W.Xmax(); x += step)
 				{
 					g.vertex(x, W.Ymin());
 					g.vertex(x, W.Ymax());
@@ -2869,7 +3446,7 @@ public:
 	public:
 		virtual void draw(const Plotter &plotter, const GL::Font&) const
 		{
-			const double step = m_axis->majorStep();
+			const Real step = m_axis->majorStep();
 			const Rect &W = plotter.world();
 
 			// draw grid lines
@@ -2878,8 +3455,8 @@ public:
 				m_axis->majorLine().select();
 				GL::GroupLines g;
 
-				double Xstart = ceil(W.Xmin()/step) * step;
-				for (double x = Xstart; x <= W.Xmax(); x += step)
+				Real Xstart = ceil(W.Xmin()/step) * step;
+				for (Real x = Xstart; x <= W.Xmax(); x += step)
 				{
 					g.vertex(x, W.Ymin());
 					g.vertex(x, W.Ymax());
@@ -2910,10 +3487,10 @@ public:
 			const Rect &V = plotter.view();
 
 			// convert height from view to world
-			const double X_v2w = W.Xsize() / V.Xsize();
-			const double Y_v2w = W.Ysize() / V.Ysize();
-			const double S = (m_axis->textSize() + 2*MARGIN) * Y_v2w; // [world]
-			const double FONT_scale = m_axis->textSize() / font.max_height();
+			const Real X_v2w = W.Xsize() / V.Xsize();
+			const Real Y_v2w = W.Ysize() / V.Ysize();
+			const Real S = (m_axis->textSize() + 2*MARGIN) * Y_v2w; // [world]
+			const Real FONT_scale = m_axis->textSize() / font.max_height();
 
 			// draw axis RECT
 			GL::Canvas::color(m_axis->backColor());
@@ -2930,19 +3507,19 @@ public:
 				GL::TextAlign::RIGHT|GL::TextAlign::BOTTOM);
 
 			// draw axis text
-			const double step = m_axis->majorStep();
+			const Real step = m_axis->majorStep();
 			if (0.0 < step)
 			{
 				enum { buf_sz = 1024 };
 				char buf[buf_sz];
 
-				const double Xstart = ceil(W.Xmin()/step) * step;
-				const double Xstop = W.Xmax() - 2*MARGIN*X_v2w
+				const Real Xstart = ceil(W.Xmin()/step) * step;
+				const Real Xstop = W.Xmax() - 2*MARGIN*X_v2w
 					- font.text_width(m_axis->axisName().c_str())*FONT_scale*X_v2w;
-				for (double x = Xstart; x <= W.Xmax(); x += step)
+				for (Real x = Xstart; x <= W.Xmax(); x += step)
 				{
 					_snprintf(buf, buf_sz, m_axis->textFormat().c_str(), m_axis->transform(x));
-					const double buf_width = font.text_width(buf) * FONT_scale*X_v2w;
+					const Real buf_width = font.text_width(buf) * FONT_scale*X_v2w;
 
 					if (x + buf_width/2 <= Xstop && W.Xmin() <= x - buf_width/2)
 						GL::drawText(font, buf, x, W.Ymin() + MARGIN*Y_v2w,
@@ -3016,7 +3593,7 @@ public:
 	public:
 		virtual void draw(const Plotter &plotter, const GL::Font&) const
 		{
-			const double step = m_axis->minorStep();
+			const Real step = m_axis->minorStep();
 			const Rect W = plotter.world();
 
 			// draw grid lines
@@ -3025,8 +3602,8 @@ public:
 				m_axis->minorLine().select();
 				GL::GroupLines g;
 
-				double Ystart = ceil(W.Ymin()/step) * step;
-				for (double y = Ystart; y <= W.Ymax(); y += step)
+				Real Ystart = ceil(W.Ymin()/step) * step;
+				for (Real y = Ystart; y <= W.Ymax(); y += step)
 				{
 					g.vertex(W.Xmin(), y);
 					g.vertex(W.Xmax(), y);
@@ -3050,7 +3627,7 @@ public:
 	public:
 		virtual void draw(const Plotter &plotter, const GL::Font&) const
 		{
-			const double step = m_axis->majorStep();
+			const Real step = m_axis->majorStep();
 			const Rect W = plotter.world();
 
 			// draw major lines
@@ -3059,8 +3636,8 @@ public:
 				m_axis->majorLine().select();
 				GL::GroupLines g;
 
-				double Ystart = ceil(W.Ymin()/step) * step;
-				for (double y = Ystart; y <= W.Ymax(); y += step)
+				Real Ystart = ceil(W.Ymin()/step) * step;
+				for (Real y = Ystart; y <= W.Ymax(); y += step)
 				{
 					g.vertex(W.Xmin(), y);
 					g.vertex(W.Xmax(), y);
@@ -3091,10 +3668,10 @@ public:
 			const Rect &V = plotter.view();
 
 			// convert height from view to world
-			const double X_v2w = W.Xsize() / V.Xsize();
-			const double Y_v2w = W.Ysize() / V.Ysize();
-			const double S = (m_axis->textSize() + 2*MARGIN) * X_v2w; // [world]
-			const double FONT_scale = m_axis->textSize() / font.max_height();
+			const Real X_v2w = W.Xsize() / V.Xsize();
+			const Real Y_v2w = W.Ysize() / V.Ysize();
+			const Real S = (m_axis->textSize() + 2*MARGIN) * X_v2w; // [world]
+			const Real FONT_scale = m_axis->textSize() / font.max_height();
 
 			// draw axis RECT
 			GL::Canvas::color(m_axis->backColor());
@@ -3111,19 +3688,19 @@ public:
 				GL::TextAlign::RIGHT|GL::TextAlign::BOTTOM);
 
 			// draw axis text
-			const double step = m_axis->majorStep();
+			const Real step = m_axis->majorStep();
 			if (0.0 < step)
 			{
 				enum { buf_sz = 1024 };
 				char buf[buf_sz];
 
-				const double Ystart = ceil(W.Ymin()/step) * step;
-				const double Ystop = W.Ymax() - 2*MARGIN*Y_v2w
+				const Real Ystart = ceil(W.Ymin()/step) * step;
+				const Real Ystop = W.Ymax() - 2*MARGIN*Y_v2w
 					- font.text_width(m_axis->axisName().c_str())*FONT_scale*Y_v2w;
-				for (double y = Ystart; y <= W.Ymax(); y += step)
+				for (Real y = Ystart; y <= W.Ymax(); y += step)
 				{
 					_snprintf(buf, buf_sz, m_axis->textFormat().c_str(), m_axis->transform(y));
-					const double buf_width = font.text_width(buf) * FONT_scale*Y_v2w;
+					const Real buf_width = font.text_width(buf) * FONT_scale*Y_v2w;
 
 					if (y + buf_width/2 <= Ystop && W.Ymin() <= y - buf_width/2)
 						GL::drawText(font, buf, W.Xmin() + S - MARGIN*X_v2w, y,
@@ -3260,14 +3837,14 @@ void PolarPlotter::on_world_changed()
 {
 	inherited::on_world_changed();
 
-	//const double dx = m_Xaxis->textSize() + 2*XAxis::Text::MARGIN;
-	//const double dy = m_Yaxis->textSize() + 2*YAxis::Text::MARGIN;
+	//const Real dx = m_Xaxis->textSize() + 2*XAxis::Text::MARGIN;
+	//const Real dy = m_Yaxis->textSize() + 2*YAxis::Text::MARGIN;
 
-	//const double Xscale = dx / view().Xsize();
-	//const double Yscale = dy / view().Ysize();
+	//const Real Xscale = dx / view().X();
+	//const Real Yscale = dy / view().Y();
 
-	//const double Xmin = (W.Xmin() - W.Xmax()*Xscale) / (1.0 - Xscale);
-	//const double Ymin = (W.Ymin() - W.Ymax()*Yscale) / (1.0 - Yscale);
+	//const Real Xmin = (W.Xmin() - W.Xmax()*Xscale) / (1.0 - Xscale);
+	//const Real Ymin = (W.Ymin() - W.Ymax()*Yscale) / (1.0 - Yscale);
 
 	//inherited::show(Rect(Point(Xmin, Ymin),
 	//	Point(W.Xmax(), W.Ymax())));
@@ -3285,88 +3862,170 @@ void PolarPlotter::on_full_changed()
 }
 
 	} // PolarPlotter
-
+#endif
 
 	// Marker
 	namespace plot
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Marker construction
-Marker::Marker(const GL::Color &c, const GL::Pen &pen, double s)
-	: m_color(c), m_line(pen), m_size(s)
+/// @brief The default constructor.
+/**
+	By default the size is 6.
+*/
+Marker::Marker()
+	: m_pen(new Gdiplus::Pen(Color::White)),
+	  m_brush(new Gdiplus::SolidBrush(Color::Black)),
+	  m_size(6.0f)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// get filling color
-const GL::Color& Marker::color() const
+/// @brief The copy constructor.
+/**
+@param[in] other The marker to copy.
+*/
+Marker::Marker(const Marker &other)
+	: m_pen(other.getPen()->Clone()),
+	  m_brush(other.getBrush()->Clone()),
+	  m_size(other.getSize())
+{}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Set the new pen.
+/**
+@param[in] pen The new pen.
+*/
+void Marker::setPen(const Gdiplus::Pen &pen)
 {
-	return m_color;
+	m_pen.reset(pen.Clone());
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get line properties
-const GL::Pen& Marker::line() const
+/// @brief Get the pen.
+/**
+@return The pen.
+*/
+const Gdiplus::Pen* Marker::getPen() const
 {
-	return m_line;
+	return m_pen.get();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get marker size (in pixels)
-double Marker::size() const
+/// @brief Get the pen.
+/**
+@return The pen.
+*/
+Gdiplus::Pen* Marker::getPen()
+{
+	return m_pen.get();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Set the new brush.
+/**
+@return The new brush.
+*/
+void Marker::setBrush(const Gdiplus::Brush &brush)
+{
+	m_brush.reset(brush.Clone());
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the brush.
+/**
+@return The brush.
+*/
+const Gdiplus::Brush* Marker::getBrush() const
+{
+	return m_brush.get();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the brush.
+/**
+@return The brush.
+*/
+Gdiplus::Brush* Marker::getBrush()
+{
+	return m_brush.get();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Set the new size.
+/**
+@return The new size.
+*/
+void Marker::setSize(Real size)
+{
+	m_size = size;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the size.
+/**
+@return The size.
+*/
+Real Marker::getSize() const
 {
 	return m_size;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set filling color
-void Marker::set_color(const GL::Color &c)
-{
-	m_color = c;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// set line properties
-void Marker::set_line(const GL::Pen &pen)
-{
-	m_line = pen;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// set marker size (in pixels)
-void Marker::set_size(double s)
-{
-	m_size = s;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// start drawing
-void Marker::start()
+/// @brief Start drawing.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void Marker::start(const Plotter &plotter, Canvas &canvas) const
 {
 	// DO NOTHING
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// draw marker
-void Marker::draw()
+/// @brief Draw the marker.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+@param[in] x The X coordinate.
+@param[in] y The Y coordinate.
+*/
+void Marker::draw(const Plotter &plotter, Canvas &canvas, Real x, Real y) const
 {
 	// DO NOTHING
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// stop drawing
-void Marker::finish()
+/// @brief Stop drawing.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void Marker::finish(const Plotter &plotter, Canvas &canvas) const
 {
 	// DO NOTHING
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Clone the marker.
+/**
+@return The marker's clone.
+*/
+Marker* Marker::clone() const
+{
+	return 0;
 }
 
 	} // Marker
@@ -3377,100 +4036,73 @@ void Marker::finish()
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// SquareMarker construction
-SquareMarker::SquareMarker(bool is_rhomb, const GL::Color &c)
-	: inherited(c, GL::Pen(c, 1.0f), 4.0),
-	  m_list_base(0), m_is_rhomb(is_rhomb)
+/// @brief The default constructor.
+SquareMarker::SquareMarker()
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// SquareMarker construction
-SquareMarker::SquareMarker(bool is_rhomb, const GL::Color &c, const GL::Pen &pen)
-	: inherited(c, pen, 4.0), m_list_base(0), m_is_rhomb(is_rhomb)
+/// @brief The copy constructor.
+/**
+@param[in] other The marker to copy.
+*/
+SquareMarker::SquareMarker(const SquareMarker &other)
+	: inherited(other)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// SquareMarker construction
-SquareMarker::SquareMarker(bool is_rhomb, const GL::Color &c, const GL::Pen &pen, double s)
-	: inherited(c, pen, s), m_list_base(0), m_is_rhomb(is_rhomb)
+/// @brief Start drawing.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void SquareMarker::start(const Plotter &plotter, Canvas &canvas) const
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// start drawing
-void SquareMarker::start()
+/// @brief Draw the marker.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+@param[in] x The X coordinate.
+@param[in] y The Y coordinate.
+*/
+void SquareMarker::draw(const Plotter &plotter, Canvas &canvas, Real x, Real y) const
 {
-	m_list_base = ::glGenLists(2);
+	const Real S = getSize();
+	Gdiplus::RectF rc(-S/2, -S/2, S, S);
 
-	// filling list
-	{ ::glNewList(m_list_base+0, GL_COMPILE);
+	Gdiplus::GraphicsState state = canvas.Save();
+	canvas.ResetTransform();
+	canvas.TranslateTransform(x, y);
 
-		::glBegin(GL_POLYGON);
-		if (m_is_rhomb)
-		{
-			GL::Canvas::vertex(0.0, -1.0);
-			GL::Canvas::vertex(+1.0, 0.0);
-			GL::Canvas::vertex(0.0, +1.0);
-			GL::Canvas::vertex(-1.0, 0.0);
-		}
-		else
-		{
-			GL::Canvas::vertex(-1.0, -1.0);
-			GL::Canvas::vertex(+1.0, -1.0);
-			GL::Canvas::vertex(+1.0, +1.0);
-			GL::Canvas::vertex(-1.0, +1.0);
-		}
-		::glEnd();
+	canvas.FillRectangle(getBrush(), rc);
+	canvas.DrawRectangle(getPen(), rc);
 
-		::glEndList();
-	}
-
-	// contour list
-	{ ::glNewList(m_list_base+1, GL_COMPILE);
-
-		::glBegin(GL_LINE_LOOP);
-		if (m_is_rhomb)
-		{
-			GL::Canvas::vertex(0.0, -1.0);
-			GL::Canvas::vertex(+1.0, 0.0);
-			GL::Canvas::vertex(0.0, +1.0);
-			GL::Canvas::vertex(-1.0, 0.0);
-		}
-		else
-		{
-			GL::Canvas::vertex(-1.0, -1.0);
-			GL::Canvas::vertex(+1.0, -1.0);
-			GL::Canvas::vertex(+1.0, +1.0);
-			GL::Canvas::vertex(-1.0, +1.0);
-		}
-		::glEnd();
-
-		::glEndList();
-	}
+	canvas.Restore(state);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// draw marker
-void SquareMarker::draw()
-{
-	// filling
-	GL::Canvas::color(color());
-	::glCallList(m_list_base+0);
-
-	// contour
-	line().select();
-	::glCallList(m_list_base+1);
-}
+/// @brief Stop drawing.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void SquareMarker::finish(const Plotter &plotter, Canvas &canvas) const
+{}
 
 
 //////////////////////////////////////////////////////////////////////////
-// stop drawing
-void SquareMarker::finish()
+/// @brief Clone the marker.
+/**
+@return The marker's clone.
+*/
+Marker* SquareMarker::clone() const
 {
-	::glDeleteLists(m_list_base, 2);
+	return new SquareMarker(*this);
 }
 
 	} // SquareMarker
@@ -3481,83 +4113,73 @@ void SquareMarker::finish()
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// CircleMarker construction
-CircleMarker::CircleMarker(const GL::Color &c)
-	: inherited(c, GL::Pen(c, 1.0f), 4.0),
-	  m_list_base(0)
+/// @brief The default constructor.
+CircleMarker::CircleMarker()
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// CircleMarker construction
-CircleMarker::CircleMarker(const GL::Color &c, const GL::Pen &pen)
-	: inherited(c, pen, 4.0), m_list_base(0)
+/// @brief The copy constructor.
+/**
+@param[in] other The marker to copy.
+*/
+CircleMarker::CircleMarker(const CircleMarker &other)
+	: inherited(other)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// CircleMarker construction
-CircleMarker::CircleMarker(const GL::Color &c, const GL::Pen &pen, double s)
-	: inherited(c, pen, s), m_list_base(0)
+/// @brief Start drawing.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void CircleMarker::start(const Plotter &plotter, Canvas &canvas) const
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// start drawing
-void CircleMarker::start()
+/// @brief Draw the marker.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+@param[in] x The X coordinate.
+@param[in] y The Y coordinate.
+*/
+void CircleMarker::draw(const Plotter &plotter, Canvas &canvas, Real x, Real y) const
 {
-	m_list_base = ::glGenLists(2);
-	enum { N_VERTEX = 16 };
+	const Real S = getSize();
+	Gdiplus::RectF rc(-S/2, -S/2, S, S);
 
-	// filling list
-	{ ::glNewList(m_list_base+0, GL_COMPILE);
+	Gdiplus::GraphicsState state = canvas.Save();
+	canvas.ResetTransform();
+	canvas.TranslateTransform(x, y);
 
-		::glBegin(GL_POLYGON);
-		for (size_t i = 0; i < N_VERTEX; ++i)
-		{
-			const double A = (2*util::PI*i)/N_VERTEX;
-			GL::Canvas::vertex(cos(A), sin(A));
-		}
-		::glEnd();
+	canvas.FillEllipse(getBrush(), rc);
+	canvas.DrawEllipse(getPen(), rc);
 
-		::glEndList();
-	}
-
-	// contour list
-	{ ::glNewList(m_list_base+1, GL_COMPILE);
-
-		::glBegin(GL_LINE_LOOP);
-		for (size_t i = 0; i < N_VERTEX; ++i)
-		{
-			const double A = (2*util::PI*i)/N_VERTEX;
-			GL::Canvas::vertex(cos(A), sin(A));
-		}
-		::glEnd();
-
-		::glEndList();
-	}
+	canvas.Restore(state);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// draw marker
-void CircleMarker::draw()
-{
-	// filling
-	GL::Canvas::color(color());
-	::glCallList(m_list_base+0);
-
-	// contour
-	line().select();
-	::glCallList(m_list_base+1);
-}
+/// @brief Stop drawing.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void CircleMarker::finish(const Plotter &plotter, Canvas &canvas) const
+{}
 
 
 //////////////////////////////////////////////////////////////////////////
-// stop drawing
-void CircleMarker::finish()
+/// @brief Clone the marker.
+/**
+@return The marker's clone.
+*/
+Marker* CircleMarker::clone() const
 {
-	::glDeleteLists(m_list_base, 2);
+	return new CircleMarker(*this);
 }
 
 	} // CircleMarker
@@ -3567,96 +4189,120 @@ void CircleMarker::finish()
 	namespace plot
 	{
 
-//////////////////////////////////////////////////////////////////////////
-// StarMarker construction
-StarMarker::StarMarker(size_t Nanlges, const GL::Color &c)
-	: inherited(c, GL::Pen(c, 1.0f), 4.0),
-	  m_Nangles(Nanlges), m_list_base(0)
-{}
-
 
 //////////////////////////////////////////////////////////////////////////
-// StarMarker construction
-StarMarker::StarMarker(size_t Nanlges, const GL::Color &c, const GL::Pen &pen)
-	: inherited(c, pen, 4.0), m_Nangles(Nanlges), m_list_base(0)
-{}
-
-
-//////////////////////////////////////////////////////////////////////////
-// StarMarker construction
-StarMarker::StarMarker(size_t Nanlges, const GL::Color &c, const GL::Pen &pen, double s)
-	: inherited(c, pen, s), m_Nangles(Nanlges), m_list_base(0)
-{}
-
-
-//////////////////////////////////////////////////////////////////////////
-// start drawing
-void StarMarker::start()
+/// @brief The main constructor.
+/**
+@param[in] Nangles The number of angles.
+	By default is 5.
+*/
+StarMarker::StarMarker(size_t Nanlges)
+	: m_Nangles(Nanlges),
+	  m_figureSize(0) // will be updated during first draw
 {
-	m_list_base = ::glGenLists(2);
-	const double step = 2*util::PI / m_Nangles;
-	const double Rmin = 0.5;
-	const double Rmax = 1.0;
-
-	// filling list
-	{ ::glNewList(m_list_base+0, GL_COMPILE);
-
-		::glBegin(GL_TRIANGLES);
-		for (size_t i = 0; i < m_Nangles; ++i)
-		{
-			const double A = i*step + util::PI/2;
-
-			GL::Canvas::vertex(0.0, 0.0);
-			GL::Canvas::vertex(Rmin*cos(A-step/2), Rmin*sin(A-step/2));
-			GL::Canvas::vertex(Rmax*cos(A), Rmax*sin(A));
-
-			GL::Canvas::vertex(0.0, 0.0);
-			GL::Canvas::vertex(Rmax*cos(A), Rmax*sin(A));
-			GL::Canvas::vertex(Rmin*cos(A+step/2), Rmin*sin(A+step/2));
-		}
-		::glEnd();
-
-		::glEndList();
-	}
-
-	// contour list
-	{ ::glNewList(m_list_base+1, GL_COMPILE);
-
-		::glBegin(GL_LINE_LOOP);
-		for (size_t i = 0; i < m_Nangles; ++i)
-		{
-			const double A = i*step + util::PI/2;
-
-			GL::Canvas::vertex(Rmin*cos(A-step/2), Rmin*sin(A-step/2));
-			GL::Canvas::vertex(Rmax*cos(A), Rmax*sin(A));
-			GL::Canvas::vertex(Rmin*cos(A+step/2), Rmin*sin(A+step/2));
-		}
-		::glEnd();
-
-		::glEndList();
-	}
+	assert(3 <= Nanlges && "number of angles is too small");
+	if (m_Nangles < 3)
+		m_Nangles = 3;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// draw marker
-void StarMarker::draw()
-{
-	// filling
-	GL::Canvas::color(color());
-	::glCallList(m_list_base+0);
+/// @brief The copy constructor.
+/**
+@param[in] other The marker to copy.
+*/
+StarMarker::StarMarker(const StarMarker &other)
+	: inherited(other),
+	  m_Nangles(other.m_Nangles),
+	  m_figureSize(0) // will be updated during first draw
+{}
 
-	// contour
-	line().select();
-	::glCallList(m_list_base+1);
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Start drawing.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void StarMarker::start(const Plotter &plotter, Canvas &canvas) const
+{}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Draw the marker.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+@param[in] x The X coordinate.
+@param[in] y The Y coordinate.
+*/
+void StarMarker::draw(const Plotter &plotter, Canvas &canvas, Real x, Real y) const
+{
+	const Real S = getSize();
+	if (fabsf(S - m_figureSize) > FLT_EPSILON)
+	{
+		m_figureSize = S;
+		updateFigure();
+	}
+
+	Gdiplus::GraphicsState state = canvas.Save();
+	canvas.ResetTransform();
+	canvas.TranslateTransform(x, y);
+
+	canvas.FillPath(getBrush(), &m_figure);
+	canvas.DrawPath(getPen(), &m_figure);
+
+	canvas.Restore(state);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// stop drawing
-void StarMarker::finish()
+/// @brief Stop drawing.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void StarMarker::finish(const Plotter &plotter, Canvas &canvas) const
+{}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Clone the marker.
+/**
+@return The marker's clone.
+*/
+Marker* StarMarker::clone() const
 {
-	::glDeleteLists(m_list_base, 2);
+	return new StarMarker(*this);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Update figure.
+void StarMarker::updateFigure() const
+{
+	const Real S = getSize();
+
+	m_figure.Reset();
+
+	const int N = m_Nangles;
+	const Real step = Real(2*M_PI / N);
+	const Real Rmin = 0.5f*S;
+	const Real Rmax = 1.0f*S;
+
+	m_figure.StartFigure();
+	for (int i = 0; i < N; ++i)
+	{
+		const Real A = Real(i*step - M_PI/2);
+
+		const Point p1(Rmin*cosf(A-step/2), Rmin*sinf(A-step/2));
+		const Point p2(Rmax*cosf(A), Rmax*sinf(A));
+		const Point p3(Rmin*cosf(A+step/2), Rmin*sinf(A+step/2));
+
+		m_figure.AddLine(p1, p2);
+		m_figure.AddLine(p2, p3);
+	}
+	m_figure.CloseFigure();
 }
 
 	} // StarMarker
@@ -3667,166 +4313,245 @@ void StarMarker::finish()
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// LineGraph default construction
+/// @brief The default constructor.
 LineGraph::LineGraph()
-	: m_pen(GL::Color(0.5f, 0.5f, 0.5f, 0.8f), 2.0f),
-	  m_marker(0)
+	: m_pen(new Gdiplus::Pen(Color::White, 3.0f)),
+	  m_smoothCurve(true)
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// LineGraph destruction
+/// @brief The destructor.
 LineGraph::~LineGraph()
 {}
 
 
 //////////////////////////////////////////////////////////////////////////
-// get pen
-const GL::Pen& LineGraph::line() const
+/// @brief Set the new pen.
+/**
+@param[in] pen The new pen.
+*/
+void LineGraph::setPen(const Gdiplus::Pen &pen)
 {
-	return m_pen;
+	m_pen.reset(pen.Clone());
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set new pen
-void LineGraph::set_line(const GL::Pen &pen)
+/// @brief Get the pen.
+/**
+@return The pen.
+*/
+const Gdiplus::Pen* LineGraph::getPen() const
 {
-	m_pen = pen;
+	return m_pen.get();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get current Marker (can be null)
-const Marker* LineGraph::marker() const
+/// @brief Get the pen.
+/**
+@return The pen.
+*/
+Gdiplus::Pen* LineGraph::getPen()
 {
-	return m_marker;
+	return m_pen.get();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// get current Marker (can be null)
-Marker* LineGraph::marker()
+/// @brief Set the new marker
+void LineGraph::setMarker(const Marker &marker)
 {
-	return m_marker;
+	m_marker.reset(marker.clone());
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// set new Marker object
-void LineGraph::set_marker(Marker *m)
+/// @brief Get the current marker.
+/**
+@return The current marker or null.
+*/
+const Marker* LineGraph::getMarker() const
 {
-	m_marker = m;
+	return m_marker.get();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// assign new points
-void LineGraph::assign(size_t N_points, const double *Ys, const double *Xs)
+/// @brief Get the current marker.
+/**
+@return The current marker or null.
+*/
+Marker* LineGraph::getMarker()
 {
-	m_points.resize(N_points);
-	for (size_t i = 0; i < N_points; ++i)
-	{
-		PointType &pt = m_points[i];
-		pt[0] = Xs[i];
-		pt[1] = Ys[i];
-	}
+	return m_marker.get();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Set the "smooth curve" flag.
+/**
+@param[in] smooth The "smooth curve" flag.
+*/
+void LineGraph::setSmoothCurve(bool smooth)
+{
+	m_smoothCurve = smooth;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Get the "smooth curve" flag.
+/**
+@return The "smooth curve" flag.
+*/
+bool LineGraph::isSmoothCurve() const
+{
+	return m_smoothCurve;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Assign new points.
+/**
+@param[in] Npoints The number of points.
+@param[in] XYs The points.
+*/
+void LineGraph::assign(size_t Npoints, const Point *XYs)
+{
+	m_wpoints.assign(XYs,
+		XYs + Npoints);
 
 	update();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// assign new points
-void LineGraph::assign(size_t N_points, const double *Ys, double X_start, double X_step)
+/// @brief Assign new points.
+/**
+@param[in] Npoints The number of points.
+@param[in] Ys The Y values.
+@param[in] Xs The X values.
+*/
+void LineGraph::assign(size_t Npoints, const Real *Ys, const Real *Xs)
 {
-	m_points.resize(N_points);
-	for (size_t i = 0; i < N_points; ++i)
-	{
-		PointType &pt = m_points[i];
-		pt[0] = X_start + i*X_step;
-		pt[1] = Ys[i];
-	}
+	m_wpoints.resize(Npoints);
+	for (size_t i = 0; i < Npoints; ++i)
+		m_wpoints[i] = Point(Xs[i], Ys[i]);
 
 	update();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// add one point
+/// @brief Assign new points.
+/**
+@param[in] Npoints The number of points.
+@param[in] Ys The Y values.
+@param[in] Xstart The first X value.
+@param[in] Xstep The X step.
+*/
+void LineGraph::assign(size_t Npoints, const Real *Ys, Real Xstart, Real Xstep)
+{
+	m_wpoints.resize(Npoints);
+	for (size_t i = 0; i < Npoints; ++i)
+		m_wpoints[i] = Point(Xstart + i*Xstep, Ys[i]);
+
+	update();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Add one point.
+/**
+@param[in] pt The point.
+*/
 void LineGraph::push_back(const Point &pt)
 {
-	// update full area
-	if (m_points.empty())
+	// update "full" area
+	if (m_wpoints.empty())
 		m_full = Rect(pt, Size());
 	else
 		m_full |= pt;
 
-	PointType new_pt;
-	new_pt[0] = pt.X();
-	new_pt[1] = pt.Y();
-
-	m_points.push_back(new_pt);
+	m_wpoints.push_back(pt);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// add one point
-void LineGraph::push_back(double x, double y)
+/// @brief Add one point.
+/**
+@param[in] x The X value.
+@param[in] y The Y value.
+*/
+void LineGraph::push_back(Real x, Real y)
 {
 	push_back(Point(x, y));
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// clear all points
+/// @brief Clear all points.
 void LineGraph::clear()
 {
-	m_points.clear();
+	m_wpoints.clear();
+	m_vpoints.clear();
 	m_full = Rect();
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// draw the LineGraph
-void LineGraph::draw(const Plotter &plotter, const omni::GL::Font&) const
+/// @brief Draw the line graph.
+/**
+@param[in] plotter The plotter.
+@param[in] canvas The canvas.
+*/
+void LineGraph::draw(const Plotter &plotter, Canvas &canvas) const
 {
-	const size_t Npoints = m_points.size();
+	const size_t Npoints = m_wpoints.size();
 
 	{ // draw line
-		m_pen.select();
-		GL::GroupLineStrip g;
-
+		m_vpoints.resize(Npoints);
 		for (size_t i = 0; i < Npoints; ++i)
-			g.vertex(m_points[i]);
+			m_vpoints[i] = plotter.w2v(m_wpoints[i]);
+
+		if (isSmoothCurve()) // smooth curve
+		{
+			canvas.DrawCurve(m_pen.get(),
+				&m_vpoints[0], Npoints);
+		}
+		else // lines
+		{
+			canvas.DrawLines(m_pen.get(),
+				&m_vpoints[0], Npoints);
+		}
 	}
 
 	// draw markers
-	if (marker())
+	if (const Marker *M = getMarker())
 	{
 		const Size SCALE = plotter.v2w(Size(1.0, 1.0));
 
-		m_marker->start();
+		M->start(plotter, canvas);
 		for (size_t i = 0; i < Npoints; ++i)
 		{
-			GL::MatrixBackup backup;
-
-			const PointType &pt = m_points[i];
-
-			GL::translate(pt[0], pt[1], 0.0);
-			GL::scale(m_marker->size()*SCALE.Xsize(),
-				m_marker->size()*SCALE.Ysize(), 1.0);
-
-			m_marker->draw();
+			const Gdiplus::PointF &pt = m_vpoints[i];
+			M->draw(plotter, canvas, pt.X, pt.Y);
 		}
-		m_marker->finish();
+		M->finish(plotter, canvas);
 	}
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// hit testing
-bool LineGraph::hit_test(const Point &pt, double eps) const
+/// @brief Hit testing.
+/**
+@param[in] pt The point of interest.
+@param[in] eps The epsilon.
+@return @b true if point is inside the line graph.
+*/
+bool LineGraph::hit_test(const Point &pt, Real eps) const
 {
 	// TODO: hit testing for LineGraph
 	return false;
@@ -3834,26 +4559,31 @@ bool LineGraph::hit_test(const Point &pt, double eps) const
 
 
 //////////////////////////////////////////////////////////////////////////
-// get full Rect
-Rect LineGraph::full() const
+/// @brief Get the "full" rectangle.
+/**
+@return The "full" rectangle.
+*/
+const Rect LineGraph::full() const
 {
 	return m_full;
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-// update full Rect
+/// @brief Update the "full" rectangle.
 void LineGraph::update()
 {
-	if (!m_points.empty())
-	{
-		const PointType &pt = m_points.front();
-		m_full = Rect(Point(pt[0], pt[1]), Size());
+	const size_t N = m_wpoints.size();
 
-		for (size_t i = 1; i < m_points.size(); ++i)
+	if (0 < N)
+	{
+		const Gdiplus::PointF &pt = m_wpoints.front();
+		m_full = Rect(Point(pt.X, pt.Y), Size());
+
+		for (size_t i = 1; i < N; ++i)
 		{
-			const PointType &pt = m_points[i];
-			m_full |= Point(pt[0], pt[1]);
+			const Gdiplus::PointF &pt = m_wpoints[i];
+			m_full |= Point(pt.X, pt.Y);
 		}
 	}
 	else
@@ -3862,7 +4592,7 @@ void LineGraph::update()
 
 	} // LineGraph
 
-
+#if 0
 	// HistGraph
 	namespace plot
 	{
@@ -3916,7 +4646,7 @@ void HistGraph::set_color(const GL::Color &c)
 
 //////////////////////////////////////////////////////////////////////////
 // assign new points
-void HistGraph::assign(size_t N_points, const double *Ys, const double *Xs)
+void HistGraph::assign(size_t N_points, const Real *Ys, const Real *Xs)
 {
 	m_points.resize(N_points);
 	for (size_t i = 0; i < N_points; ++i)
@@ -3932,7 +4662,7 @@ void HistGraph::assign(size_t N_points, const double *Ys, const double *Xs)
 
 //////////////////////////////////////////////////////////////////////////
 // assign new points
-void HistGraph::assign(size_t N_points, const double *Ys, double X_start, double X_step)
+void HistGraph::assign(size_t N_points, const Real *Ys, Real X_start, Real X_step)
 {
 	m_points.resize(N_points);
 	for (size_t i = 0; i < N_points; ++i)
@@ -3948,7 +4678,7 @@ void HistGraph::assign(size_t N_points, const double *Ys, double X_start, double
 
 //////////////////////////////////////////////////////////////////////////
 // set zero level
-void HistGraph::set_zeroLevel(double zero)
+void HistGraph::set_zeroLevel(Real zero)
 {
 	m_zero_level = zero;
 	update();
@@ -3957,7 +4687,7 @@ void HistGraph::set_zeroLevel(double zero)
 
 //////////////////////////////////////////////////////////////////////////
 // set bar width
-void HistGraph::set_barWidth(double width)
+void HistGraph::set_barWidth(Real width)
 {
 	m_bar_width = width;
 }
@@ -3986,7 +4716,7 @@ void HistGraph::push_back(const Point &pt)
 
 //////////////////////////////////////////////////////////////////////////
 // add one point
-void HistGraph::push_back(double x, double y)
+void HistGraph::push_back(Real x, Real y)
 {
 	push_back(Point(x, y));
 }
@@ -4012,12 +4742,12 @@ void HistGraph::draw(const Plotter &plotter, const omni::GL::Font&) const
 		//::glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		GL::Canvas::color(m_color);
 
-		const double L = m_zero_level;
-		const double W = m_bar_width;
+		const Real L = m_zero_level;
+		const Real W = m_bar_width;
 		for (size_t i = 0; i < Npoints; ++i)
 		{
-			const double x = m_points[i][0];
-			const double y = m_points[i][1];
+			const Real x = m_points[i][0];
+			const Real y = m_points[i][1];
 
 			GL::Canvas::rect(x-W/2, L, x+W/2, y);
 		}
@@ -4027,7 +4757,7 @@ void HistGraph::draw(const Plotter &plotter, const omni::GL::Font&) const
 
 //////////////////////////////////////////////////////////////////////////
 // hit testing
-bool HistGraph::hit_test(const Point &pt, double eps) const
+bool HistGraph::hit_test(const Point &pt, Real eps) const
 {
 	// TODO: hit testing for LineGraph
 	return false;
@@ -4064,5 +4794,6 @@ void HistGraph::update()
 }
 
 	} // HistGraph
+#endif
 
 } // omni namespace

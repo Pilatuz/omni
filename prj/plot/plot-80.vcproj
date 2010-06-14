@@ -205,14 +205,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\GL.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\omni\GL.hpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\omni\misc.cpp"
 				>
 			</File>

@@ -13,14 +13,10 @@
 #ifndef __OMNI_PLOT_H_
 #define __OMNI_PLOT_H_
 
-#if !defined(_WINDOWS_)
-#	error windows.h must be included first
-#endif // _WINDOWS_
-
-// TODO: method to set "fixed_aspect_ratio" flag
-
 #include <omni/defs.hpp>
-#include <omni/GL.hpp>
+
+#include <Windows.h>
+#include <GdiPlus.h>
 
 #include <memory>
 #include <string>
@@ -46,32 +42,46 @@ namespace omni
 	{
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief The real value type.
+typedef Gdiplus::REAL Real;
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief The size class.
 /**
-		This class stores the 2D size (X size and Y size).
+		This class stores the 2D size (X and Y).
 */
-class Size {
+class Size
+{
 public:
 	Size();
-	Size(double x_size,
-		double y_size);
+	Size(Real dx,
+		Real dy);
 
 public:
-	double Xsize() const;
-	double Ysize() const;
+	Real X() const;
+	Real Y() const;
 
 public:
 	Size& operator+=(const Size &sz);
 	Size& operator-=(const Size &sz);
 
+public:
+
+	/// @brief Convert to GDI+ size.
+	operator const Gdiplus::SizeF() const
+	{
+		return Gdiplus::SizeF(m_dx, m_dy);
+	}
+
 private:
-	double m_Xsize;
-	double m_Ysize;
+	Real m_dx; ///< @brief The X size.
+	Real m_dy; ///< @brief The Y size.
 };
 
-Size operator+(const Size &a, const Size &b);
-Size operator-(const Size &a, const Size &b);
-Size operator-(const Size &sz);
+const Size operator+(const Size &a, const Size &b);
+const Size operator-(const Size &a, const Size &b);
+const Size operator-(const Size &sz);
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -79,31 +89,40 @@ Size operator-(const Size &sz);
 /**
 		This class stores the 2D position (X and Y).
 */
-class Point {
+class Point
+{
 public:
 	Point();
-	Point(double x,
-		double y);
+	Point(Real x,
+		Real y);
 
 public:
-	double X() const;
-	double Y() const;
+	Real X() const;
+	Real Y() const;
 
 public:
-	void offset(double dx, double dy);
+	void offset(Real dx, Real dy);
 	void offset(const Size &sz);
 
 	Point& operator+=(const Size &sz);
 	Point& operator-=(const Size &sz);
 
+public:
+
+	/// @brief Convert to GDI+ point.
+	operator const Gdiplus::PointF() const
+	{
+		return Gdiplus::PointF(m_x, m_y);
+	}
+
 private:
-	double m_X;
-	double m_Y;
+	Real m_x; ///< @brief The X coordinate.
+	Real m_y; ///< @brief The Y coordinate.
 };
 
-Point operator+(const Point &pt, const Size &sz);
-Point operator-(const Point &pt, const Size &sz);
-Size operator-(const Point &A, const Point &B);
+const Point operator+(const Point &pt, const Size &sz);
+const Point operator-(const Point &pt, const Size &sz);
+const Size operator-(const Point &a, const Point &b);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,16 +137,16 @@ public:
 	Rect(const Point &pt_min, const Point &pt_max);
 
 public:
-	double Xmin() const;
-	double Xmax() const;
-	double Xsize() const;
+	Real Xmin() const;
+	Real Xmax() const;
+	Real Xsize() const;
 
-	double Ymin() const;
-	double Ymax() const;
-	double Ysize() const;
+	Real Ymin() const;
+	Real Ymax() const;
+	Real Ysize() const;
 
 public:
-	Point center() const;
+	const Point center() const;
 
 	void normalize();
 	bool empty() const;
@@ -135,19 +154,19 @@ public:
 	bool contains(const Point &pt) const;
 	bool contains(const Rect &rc) const;
 
-	void inflate(double dx, double dy);
+	void inflate(Real dx, Real dy);
 	void inflate(const Size &sz);
-	void inflate(double dx_min, double dy_min,
-		double dx_max, double dy_max);
+	void inflate(Real dx_min, Real dy_min,
+		Real dx_max, Real dy_max);
 	void inflate(const Rect &rc);
 
-	void deflate(double dx, double dy);
+	void deflate(Real dx, Real dy);
 	void deflate(const Size &sz);
-	void deflate(double dx_min, double dy_min,
-		double dx_max, double dy_max);
+	void deflate(Real dx_min, Real dy_min,
+		Real dx_max, Real dy_max);
 	void deflate(const Rect &rc);
 
-	void offset(double dx, double dy);
+	void offset(Real dx, Real dy);
 	void offset(const Size &sz);
 
 public:
@@ -157,15 +176,32 @@ public:
 
 	Rect& operator+=(const Size &sz);
 	Rect& operator-=(const Size &sz);
-	Rect& operator+=(const Rect &rc);
-	Rect& operator-=(const Rect &rc);
+
+public:
+
+	/// @brief Convert to GDI+ rectangle.
+	operator const Gdiplus::RectF() const
+	{
+		return Gdiplus::RectF(m_Xmin, m_Ymin,
+			m_Xmax-m_Xmin, m_Ymax-m_Ymin);
+	}
 
 private:
-	double m_Xmin;
-	double m_Ymin;
-	double m_Xmax;
-	double m_Ymax;
+	Real m_Xmin; ///< @brief The minimum X coordinate.
+	Real m_Ymin; ///< @brief The minimum Y coordinate.
+	Real m_Xmax; ///< @brief The maximum X coordinate.
+	Real m_Ymax; ///< @brief The maximum Y coordinate.
 };
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The color type.
+typedef Gdiplus::Color Color;
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The canvas type.
+typedef Gdiplus::Graphics Canvas;
 
 	} // misc
 
@@ -175,18 +211,57 @@ private:
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Plotter class
-class Plotter: private NonCopyable {
+/// @brief The graphics object.
+/**
+	TODO: Object description
+
+	The "full" rectangle is the minimum rectangle that contains object.
+*/
+class Object:
+	private NonCopyable
+{
+	friend class Plotter;
+public:
+	Object();
+	virtual ~Object();
+
+public:
+	bool attach(Plotter &plotter, size_t level);
+	bool detach(Plotter &plotter);
+
+public:
+	virtual void draw(const Plotter &plotter, Canvas &canvas) const;
+	virtual bool hit_test(const Point &pt, Real eps) const;
+	virtual const Rect full() const;
+
+private:
+	typedef std::vector<Plotter*> PlotterList;
+	PlotterList m_plotters;
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The Plotter base class.
+/**
+	TODO: Plotter description
+
+	TODO: draw levels description.
+
+	TODO: "world", "view" coordinate systems (co-systems).
+*/
+class Plotter:
+	private NonCopyable
+{
 public:
 	Plotter();
 	virtual ~Plotter();
 
 public:
-	void attach(Object &obj, size_t level);
-	void detach(Object &obj);
+	bool attach(Object &obj, size_t level);
+	bool detach(Object &obj);
 
 public:
-	Object* hit_test(const Point &pt, double eps);
+	Object* hit_test(const Point &pt, Real eps);
 
 public:
 	const Rect& world() const;
@@ -195,35 +270,45 @@ public:
 	const Rect& view() const;
 
 public:
-	Point v2w(const Point &pt) const;
-	Point w2v(const Point &pt) const;
-	Size v2w(const Size &sz) const;
-	Size w2v(const Size &sz) const;
-	Rect v2w(const Rect &rc) const;
-	Rect w2v(const Rect &rc) const;
+	//const Real v2w_x(const Real &x) const;
+	//const Real w2v_x(const Real &x) const;
+	//const Real v2w_y(const Real &y) const;
+	//const Real w2v_y(const Real &y) const;
+
+	const Point v2w(const Point &pt) const;
+	const Point w2v(const Point &pt) const;
+
+	const Size v2w(const Size &sz) const;
+	const Size w2v(const Size &sz) const;
+
+	const Rect v2w(const Rect &rc) const;
+	const Rect w2v(const Rect &rc) const;
 
 public:
-	const GL::Color& background() const;
-	void set_background(const GL::Color &color);
+	void setColor(const Color &color);
+	const Color& getColor() const;
 
 public:
-	bool fixedAspectRatio() const;
-	void set_fixedAspectRatio(bool fixed_AR);
+	void setFixedAspectRatio(bool fixed_AR);
+	bool getFixedAspectRatio() const;
 
 public:
 	void show(const Rect &wr);
-	void set_viewport(int x,
-		int y, int w, int h);
+	void setViewport(Real x,
+		Real y, Real w, Real h);
 
-	void draw(const GL::Font &font) const;
+	void draw(Canvas &canvas) const;
 	void update();
 
 protected:
 	virtual void on_world_changed();
 	virtual void on_full_changed();
+	virtual void on_view_changing(Real &x,
+		Real &y, Real &w, Real &h);
+	virtual void on_view_changed();
 
-	virtual void on_draw_start() const;
-	virtual void on_draw_stop() const;
+	virtual void on_draw_start(Canvas &canvas) const;
+	virtual void on_draw_stop(Canvas &canvas) const;
 
 private:
 	void update_world();
@@ -231,40 +316,17 @@ private:
 private:
 	typedef std::vector<Object*> Layer;
 	typedef std::vector<Layer> LayerList;
-	LayerList m_layers; // list of the layers
+	LayerList m_layers; ///< @brief The list of the layers.
 
 private:
-	Rect m_world;
-	Rect m_wish;
-	Rect m_full;
-	Rect m_view;
+	Rect m_world; ///< @brief The current "world" rectangle.
+	Rect m_wish;  ///< @brief The current "wish" rectangle.
+	Rect m_full;  ///< @brief The current "full" rectangle.
+	Rect m_view;  ///< @brief The current "view" rectangle.
 
 private:
-	bool m_fixed_aspect_ratio;
-	GL::Color m_color; // background color
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-// Object class
-class Object: private NonCopyable {
-	friend class Plotter;
-public:
-	Object();
-	virtual ~Object();
-
-public:
-	void attach(Plotter &plotter, size_t level);
-	void detach(Plotter &plotter);
-
-public:
-	virtual void draw(const Plotter &plotter, const GL::Font &font) const;
-	virtual bool hit_test(const Point &pt, double eps) const;
-	virtual Rect full() const;
-
-private:
-	typedef std::vector<Plotter*> PlotterList;
-	PlotterList m_plotters;
+	bool m_fixed_aspect_ratio; ///< @brief The "fixed aspect ratio" flag.
+	Color m_color; ///< @brief The main (background) color.
 };
 
 	} // Plotter & Object
@@ -275,13 +337,14 @@ private:
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Window class - Plotter's child window
-class Window: public Plotter {
+/// @brief The child window for the plotter.
+class Window
+	: public Plotter
+{
 	typedef Plotter inherited;
-
 public:
-	Window(DWORD style,
-		HWND parent);
+	Window(HWND parent, DWORD style,
+		DWORD ex_style);
 	~Window();
 
 public:
@@ -290,23 +353,19 @@ public:
 public:
 	void redraw(bool force) const;
 
-	void show(const Rect &W);
-	void update();
-
 protected:
 	virtual void on_world_changed();
 	virtual void on_full_changed();
 
 private:
 	Rect full_and_wish() const;
-	void update_HScroll();
-	void update_VScroll();
+	void update_hscroll();
+	void update_vscroll();
 
 public:
-	bool is_Hscroll() const;
-	bool is_Vscroll() const;
-
-	void set_scroll(bool horz, bool vert);
+	void setScroll(bool horz, bool vert);
+	bool isHScroll() const;
+	bool isVScroll() const;
 
 protected:
 	virtual bool on_message(UINT msg,
@@ -321,23 +380,22 @@ private:
 	void on_size(int cx, int cy);
 	void on_paint();
 
-	void on_Hscroll(int request);
-	void on_Vscroll(int request);
+	void on_hscroll(int request);
+	void on_vscroll(int request);
 
 private:
 	class Class;
 	friend class Class;
 
 private:
-	HWND m_handle;
-
-	GL::Context *m_context;
-	GL::Font *m_font;
+	HWND m_handle; ///< @brief The window handle.
+	std::auto_ptr<Gdiplus::Bitmap> m_pbmp; ///< @brief The back buffer for drawing.
 };
 
 	} // Window
 
 
+#if 0
 	// Tools
 	namespace plot
 	{
@@ -395,6 +453,7 @@ private:
 };
 */
 	} // Tools
+#endif
 
 
 	// Axis
@@ -402,95 +461,102 @@ private:
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Axis basic class
-class Axis {
+/// @brief The basic axis.
+/**
+	TODO: axis properties
+	TODO: text labels (offset and scale)
+*/
+class Axis
+{
 public:
 	Axis();
 	virtual ~Axis();
 
 public: // minor lines
-	const GL::Pen& minorLine() const;
-	void set_minorLine(const GL::Pen &pen);
+	void setMinorLine(const Gdiplus::Pen &pen);
+	const Gdiplus::Pen* getMinorLine() const;
+	      Gdiplus::Pen* getMinorLine();
 
-	double minorStep() const;
-	void set_minorStep(double step);
+	void setMinorStep(Real step);
+	Real getMinorStep() const;
 
-	bool minorAutoStep() const;
-	void set_minorAutoStep(bool enabled);
+	void setMinorAutoStep(bool enabled);
+	bool getMinorAutoStep() const;
 
-	double minorAutoStepHint() const;
-	void set_minorAutoStepHint(double step_hint);
+	void setMinorAutoStepHint(Real hint);
+	Real getMinorAutoStepHint() const;
 
 public: // major lines
-	const GL::Pen& majorLine() const;
-	void set_majorLine(const GL::Pen &pen);
+	void setMajorLine(const Gdiplus::Pen &pen);
+	const Gdiplus::Pen* getMajorLine() const;
+	      Gdiplus::Pen* getMajorLine();
 
-	double majorStep() const;
-	void set_majorStep(double step);
+	void setMajorStep(Real step);
+	Real getMajorStep() const;
 
-	bool majorAutoStep() const;
-	void set_majorAutoStep(bool enabled);
+	void setMajorAutoStep(bool enabled);
+	bool getMajorAutoStep() const;
 
-	double majorAutoStepHint() const;
-	void set_majorAutoStepHint(double step_hint);
+	void setMajorAutoStepHint(Real hint);
+	Real getMajorAutoStepHint() const;
 
 public: // colors
-	const GL::Color& backColor() const;
-	void set_backColor(const GL::Color &color);
+	void setBackColor(const Color &color);
+	const Color& getBackColor() const;
 
-	const GL::Color& textColor() const;
-	void set_textColor(const GL::Color &color);
+	void setTextColor(const Color &color);
+	const Color& getTextColor() const;
 
 public: // axis name and size
-	const std::string& axisName() const;
-	void set_axisName(const std::string &name);
+	void setAxisName(const wchar_t *name);
+	const wchar_t* getAxisName() const;
 
-	double textSize() const;
-	void set_textSize(double size);
+	void setTextSize(Real size);
+	Real getTextSize() const;
 
 public: // text format
-	const std::string& textFormat() const;
-	void set_textFormat(const std::string &format);
+	void setTextFormat(const wchar_t *format);
+	const wchar_t* getTextFormat() const;
 
-	double textOffset() const;
-	void set_textOffset(double offset);
+	void setTextOffset(Real offset);
+	Real getTextOffset() const;
 
-	double textScale() const;
-	void set_textScale(double scale);
+	void setTextScale(Real scale);
+	Real getTextScale() const;
 
-	double transform(double x) const;
+	Real transform(Real x) const;
 
 protected:
-	void update(double world_range,
-		double viewport_range);
+	void update(Real wrange,
+		Real vrange);
 
-	static double auto_step(double world_range,
-		double viewport_range, double viewport_step);
-
-private:
-	GL::Pen m_minorLine;
-	double  m_minorStep;
-	bool    m_minorAutoStep;
-	double  m_minorAutoStepHint;
+	static Real auto_step(Real wrange,
+		Real vrange, Real vstep);
 
 private:
-	GL::Pen m_majorLine;
-	double  m_majorStep;
-	bool    m_majorAutoStep;
-	double  m_majorAutoStepHint;
+	std::auto_ptr<Gdiplus::Pen> m_minorLine; ///< @brief The minor line pen.
+	Real m_minorStep;                     ///< @brief The minor line step.
+	bool m_minorAutoStep;                 ///< @brief The minor line "auto step" flag.
+	Real m_minorAutoStepHint;             ///< @brief The minor line auto step hint.
 
 private:
-	GL::Color m_backColor;
-	GL::Color m_textColor;
+	std::auto_ptr<Gdiplus::Pen> m_majorLine; ///< @brief The major line pen.
+	Real m_majorStep;                     ///< @brief The major line step.
+	bool m_majorAutoStep;                 ///< @brief The major line "auto step" flag.
+	Real m_majorAutoStepHint;             ///< @brief The major line auto step hint.
 
 private:
-	std::string m_axisName;
-	double      m_textSize;
+	Color m_backColor;   ///< @brief The background color.
+	Color m_textColor;   ///< @brief The text color.
 
 private:
-	std::string m_textFormat;
-	double m_textOffset;
-	double m_textScale;
+	std::wstring m_axisName; ///< @brief The axis name.
+	Real       m_textSize; ///< @brief The axis name text size.
+
+private:
+	std::wstring m_textFormat; ///< @brief The text printf()-like format.
+	Real m_textOffset;       ///< @brief The text values offset.
+	Real m_textScale;        ///< @brief The text values scale.
 };
 
 	} // Axis
@@ -501,24 +567,28 @@ private:
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// XYPlotter
-class XYPlotter: public Window {
+/// @brief The 2D plotter.
+class XYPlotter
+	: public Window
+{
 	typedef Window inherited;
 public:
-	XYPlotter(DWORD style,
-		HWND parent);
+	XYPlotter(HWND parent, DWORD style,
+		DWORD ex_style);
 	~XYPlotter();
 
 public:
-	void attach(Object &obj);
-	void attach(Object &obj, size_t level);
-	void detach(Object &obj);
-
-	enum Level {
+	/// @brief The draw levels.
+	enum Level
+	{
 		LEVEL_GRID,
 		LEVEL_GRAPH,
 		LEVEL_TEXT
 	};
+
+	void attach(Object &obj);
+	void attach(Object &obj, Level level);
+	void detach(Object &obj);
 
 public:
 	const Axis& Xaxis() const;
@@ -530,18 +600,21 @@ public:
 private:
 	virtual void on_world_changed();
 	virtual void on_full_changed();
+	virtual void on_view_changing(Real &x,
+		Real &y, Real &w, Real &h);
 
 private:
 	class XAxis;
 	class YAxis;
 
-	XAxis *m_Xaxis;
-	YAxis *m_Yaxis;
+	std::auto_ptr<XAxis> m_Xaxis;
+	std::auto_ptr<YAxis> m_Yaxis;
 };
 
 	} // XYPlotter
 
 
+#if 0
 	// PolarPlotter
 	namespace plot
 	{
@@ -586,6 +659,7 @@ private:
 };
 
 	} // PolarPlotter
+#endif
 
 
 	// Markers
@@ -593,97 +667,112 @@ private:
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Marker - the basic class
-class Marker {
+/// @brief The basic marker.
+class Marker:
+	private NonCopyable
+{
 public:
-	Marker(const GL::Color &c,
-		const GL::Pen &pen, double s);
+	Marker();
+
+protected:
+	Marker(const Marker &other);
 
 public:
-	const GL::Color& color() const;
-	const GL::Pen& line() const;
-	double size() const;
+	void setPen(const Gdiplus::Pen &pen);
+	const Gdiplus::Pen* getPen() const;
+	      Gdiplus::Pen* getPen();
 
-	void set_color(const GL::Color &c);
-	void set_line(const GL::Pen &pen);
-	void set_size(double s);
+	void setBrush(const Gdiplus::Brush &brush);
+	const Gdiplus::Brush* getBrush() const;
+	      Gdiplus::Brush* getBrush();
+
+	void setSize(Real size);
+	Real getSize() const;
 
 public:
-	virtual void start();
-	virtual void draw();
-	virtual void finish();
+	virtual void start(const Plotter &plotter, Canvas &canvas) const;
+	virtual void draw(const Plotter &plotter, Canvas &canvas, Real x, Real y) const;
+	virtual void finish(const Plotter &plotter, Canvas &canvas) const;
+
+	virtual Marker* clone() const = 0;
 
 private:
-	GL::Color m_color;
-	GL::Pen m_line;
-	double m_size;
+	std::auto_ptr<Gdiplus::Pen> m_pen;
+	std::auto_ptr<Gdiplus::Brush> m_brush;
+	Real m_size;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-// SquareMarker
-class SquareMarker: public Marker {
+/// @brief The "square" marker.
+class SquareMarker:
+	public Marker
+{
 	typedef Marker inherited;
 
 public:
-	SquareMarker(bool is_rhomb, const GL::Color &c);
-	SquareMarker(bool is_rhomb, const GL::Color &c,
-		const GL::Pen &pen);
-	SquareMarker(bool is_rhomb, const GL::Color &c,
-		const GL::Pen &pen, double s);
-
-public:
-	virtual void start();
-	virtual void draw();
-	virtual void finish();
+	SquareMarker();
 
 private:
-	GLuint m_list_base;
-	bool m_is_rhomb;
+	SquareMarker(const SquareMarker &other);
+
+public:
+	virtual void start(const Plotter &plotter, Canvas &canvas) const;
+	virtual void draw(const Plotter &plotter, Canvas &canvas, Real x, Real y) const;
+	virtual void finish(const Plotter &plotter, Canvas &canvas) const;
+
+	virtual Marker* clone() const;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-// CircleMarker
-class CircleMarker: public Marker {
+/// @brief The "circle" marker
+class CircleMarker:
+	public Marker
+{
 	typedef Marker inherited;
 
 public:
-	explicit CircleMarker(const GL::Color &c);
-	CircleMarker(const GL::Color &c,
-		const GL::Pen &pen);
-	CircleMarker(const GL::Color &c,
-		const GL::Pen &pen, double s);
-
-public:
-	virtual void start();
-	virtual void draw();
-	virtual void finish();
+	CircleMarker();
 
 private:
-	GLuint m_list_base;
+	CircleMarker(const CircleMarker &other);
+
+public:
+	virtual void start(const Plotter &plotter, Canvas &canvas) const;
+	virtual void draw(const Plotter &plotter, Canvas &canvas, Real x, Real y) const;
+	virtual void finish(const Plotter &plotter, Canvas &canvas) const;
+
+	virtual Marker* clone() const;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-// StarMarker
-class StarMarker: public Marker {
+/// @brief The "star" marker.
+class StarMarker:
+	public Marker
+{
 	typedef Marker inherited;
 
 public:
-	StarMarker(size_t Nanlges, const GL::Color &c);
-	StarMarker(size_t Nanlges, const GL::Color &c,
-		const GL::Pen &pen);
-	StarMarker(size_t Nanlges, const GL::Color &c,
-		const GL::Pen &pen, double s);
-
-public:
-	virtual void start();
-	virtual void draw();
-	virtual void finish();
+	explicit StarMarker(size_t Nanlges = 5);
 
 private:
-	GLuint m_list_base;
+	StarMarker(const StarMarker &other);
+
+public:
+	virtual void start(const Plotter &plotter, Canvas &canvas) const;
+	virtual void draw(const Plotter &plotter, Canvas &canvas, Real x, Real y) const;
+	virtual void finish(const Plotter &plotter, Canvas &canvas) const;
+
+	virtual Marker* clone() const;
+
+private:
+	void updateFigure() const;
+
+private:
+	mutable Gdiplus::GraphicsPath m_figure;
+	mutable Real m_figureSize;
 	size_t m_Nangles;
 };
 
@@ -696,51 +785,58 @@ private:
 
 //////////////////////////////////////////////////////////////////////////
 // Line Graph
-class LineGraph: public Object {
+class LineGraph:
+	public Object
+{
 	typedef Object inherited;
-
 public:
 	LineGraph();
 	virtual ~LineGraph();
 
 public:
-	const GL::Pen& line() const;
-	void set_line(const GL::Pen &pen);
+	void setPen(const Gdiplus::Pen &pen);
+	const Gdiplus::Pen* getPen() const;
+	      Gdiplus::Pen* getPen();
 
-	const Marker* marker() const;
-	      Marker* marker();
-	void set_marker(Marker *m);
+	void setMarker(const Marker &marker);
+	const Marker* getMarker() const;
+	      Marker* getMarker();
+
+	void setSmoothCurve(bool smooth);
+	bool isSmoothCurve() const;
 
 public:
-	void assign(size_t N_points, const double *Ys, const double *Xs);
-	void assign(size_t N_points, const double *Ys,
-		double X_start = 0.0, double X_step = 1.0);
+	void assign(size_t Npoints, const Point *XYs);
+	void assign(size_t Npoints, const Real *Ys, const Real *Xs);
+	void assign(size_t Npoints, const Real *Ys,
+		Real Xstart = 0, Real Xstep = 1);
 
+public:
 	void push_back(const Point &pt);
-	void push_back(double x, double y);
+	void push_back(Real x, Real y);
 	void clear();
 
 public:
-	virtual void draw(const Plotter &plotter, const omni::GL::Font&) const;
-	virtual bool hit_test(const Point &pt, double eps) const;
-	virtual Rect full() const;
+	virtual void draw(const Plotter &plotter, Canvas &canvas) const;
+	virtual bool hit_test(const Point &pt, Real eps) const;
+	virtual const Rect full() const;
 
 private:
 	void update();
 
 private:
-	typedef GL::Array<GLdouble, 2> PointType;
-	typedef std::vector<PointType> PointList;
-	PointList m_points;
+	std::vector<Point> m_wpoints; ///< @brief The "world" points.
+	mutable std::vector<Gdiplus::PointF> m_vpoints; ///< @brief The "view" points.
 
-	Marker *m_marker;
-	GL::Pen m_pen;
-	Rect m_full;
+	std::auto_ptr<Marker> m_marker; ///< @brief The marker.
+	std::auto_ptr<Gdiplus::Pen> m_pen; ///< @brief The pen.
+	bool m_smoothCurve; ///< @brief Draw smooth curve.
+	Rect m_full; ///< @brief The "full" rectangle.
 };
 
 	} // LineGraph
 
-
+#if 0
 	// HistGraph
 	namespace plot
 	{
@@ -762,20 +858,20 @@ public:
 	void set_color(const GL::Color &c);
 
 public:
-	void assign(size_t N_points, const double *Ys, const double *Xs);
-	void assign(size_t N_points, const double *Ys,
-		double X_start = 0.0, double X_step = 1.0);
+	void assign(size_t N_points, const Real *Ys, const Real *Xs);
+	void assign(size_t N_points, const Real *Ys,
+		Real X_start = 0.0, Real X_step = 1.0);
 
-	void set_zeroLevel(double zero);
-	void set_barWidth(double width);
+	void set_zeroLevel(Real zero);
+	void set_barWidth(Real width);
 
 	void push_back(const Point &pt);
-	void push_back(double x, double y);
+	void push_back(Real x, Real y);
 	void clear();
 
 public:
 	virtual void draw(const Plotter &plotter, const omni::GL::Font&) const;
-	virtual bool hit_test(const Point &pt, double eps) const;
+	virtual bool hit_test(const Point &pt, Real eps) const;
 	virtual Rect full() const;
 
 private:
@@ -785,8 +881,8 @@ private:
 	typedef GL::Array<GLdouble, 2> PointType;
 	typedef std::vector<PointType> PointList;
 	PointList m_points;
-	double m_zero_level;
-	double m_bar_width;
+	Real m_zero_level;
+	Real m_bar_width;
 
 	GL::Color m_color;
 	GL::Pen m_pen;
@@ -794,6 +890,7 @@ private:
 };
 
 	} // HistGraph
+#endif
 
 } // omni namespace
 
