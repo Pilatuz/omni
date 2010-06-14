@@ -1627,13 +1627,15 @@ volatile long Window::Class::N_windows = 0;
 @param[in] ex_style The extended window style.
 */
 Window::Window(HWND parent, DWORD style, DWORD ex_style)
-	: m_handle(0)
+	: m_handle(0),
+	  m_moveEnabled(false), m_moveActive(false),
+	  m_zoomEnabled(false), m_zoomActive(false)
 {
 	Class::attach_class();
 
 	show(Rect( // by default
-		Point(-1.0, -1.0),
-		Point(+1.0, +1.0)
+		Point(-1, -1),
+		Point(+1, +1)
 	));
 
 	m_handle = Class::create_window(
@@ -1827,6 +1829,50 @@ bool Window::isVScroll() const
 
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief Enable moving tool.
+/**
+@param[in] enabled The enabled flag.
+*/
+void Window::enableMoving(bool enabled)
+{
+	m_moveEnabled = enabled;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is moving tool enabled?
+/**
+@return The mooving enabled flag.
+*/
+bool Window::isMovingEnabled() const
+{
+	return m_moveEnabled;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Enable zooming tool.
+/**
+@param[in] enabled The enabled flag.
+*/
+void Window::enableZooming(bool enabled)
+{
+	m_zoomEnabled = enabled;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Is zooming tool enabled?
+/**
+@return The zooming enabled flag.
+*/
+bool Window::isZoomingEnabled() const
+{
+	return m_zoomEnabled;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief Window message processing.
 bool Window::on_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT &result)
 {
@@ -1848,6 +1894,58 @@ bool Window::on_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT &result)
 		case WM_VSCROLL:
 			on_vscroll(GET_WM_VSCROLL_CODE(wparam, lparam));
 			return true;
+
+		case WM_MOUSEMOVE:
+			return on_mouse_move(
+				GET_KEYSTATE_WPARAM(wparam),
+				GET_X_LPARAM(lparam),
+				GET_Y_LPARAM(lparam));
+
+		case WM_MOUSEWHEEL:
+		{
+			result = TRUE;
+			return on_mouse_wheel(
+				GET_WHEEL_DELTA_WPARAM(wparam),
+				GET_KEYSTATE_WPARAM(wparam),
+				GET_X_LPARAM(lparam),
+				GET_Y_LPARAM(lparam));
+		}
+
+		case WM_LBUTTONDOWN:
+			return on_Lbtn_down(
+				GET_KEYSTATE_WPARAM(wparam),
+				GET_X_LPARAM(lparam),
+				GET_Y_LPARAM(lparam));
+
+		case WM_LBUTTONUP:
+			return on_Lbtn_up(
+				GET_KEYSTATE_WPARAM(wparam),
+				GET_X_LPARAM(lparam),
+				GET_Y_LPARAM(lparam));
+
+		case WM_LBUTTONDBLCLK:
+			return on_Lbtn_2click(
+				GET_KEYSTATE_WPARAM(wparam),
+				GET_X_LPARAM(lparam),
+				GET_Y_LPARAM(lparam));
+
+		case WM_RBUTTONDOWN:
+			return on_Rbtn_down(
+				GET_KEYSTATE_WPARAM(wparam),
+				GET_X_LPARAM(lparam),
+				GET_Y_LPARAM(lparam));
+
+		case WM_RBUTTONUP:
+			return on_Rbtn_up(
+				GET_KEYSTATE_WPARAM(wparam),
+				GET_X_LPARAM(lparam),
+				GET_Y_LPARAM(lparam));
+
+		case WM_RBUTTONDBLCLK:
+			return on_Rbtn_2click(
+				GET_KEYSTATE_WPARAM(wparam),
+				GET_X_LPARAM(lparam),
+				GET_Y_LPARAM(lparam));
 	}
 
 	return false;
@@ -2003,6 +2101,175 @@ void Window::on_vscroll(int request)
 	}
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "WM_MOUSEMOVE" message handler.
+/**
+@param[in] vkeys The virtual keys that are down.
+@param[in] x The cursor's X coordinate.
+@param[in] y The cursor's Y coordinate.
+@return @b true if message is handled.
+*/
+bool Window::on_mouse_move(int vkeys, int x, int y)
+{
+	if (m_moveEnabled && m_moveActive)
+	{
+		Rect W = m_moveWish;
+		Size sz = v2w(Point(Real(x), Real(y)) - m_movePoint);
+		W.offset(+sz.X(), -sz.Y());
+
+		show(W); // (!)
+
+		redraw(false);
+		return true;
+	}
+
+	return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "WM_MOUSEWHEEL" message handler.
+/**
+@param[in] delta The wheel delta.
+@param[in] vkeys The virtual keys that are down.
+@param[in] x The cursor's X coordinate.
+@param[in] y The cursor's Y coordinate.
+@return @b true if message is handled.
+*/
+bool Window::on_mouse_wheel(int delta, int vkeys, int x, int y)
+{
+	if (m_zoomEnabled)
+	{
+		const Point pt = v2w(Point(Real(x), Real(y)));
+		const Real scale = Real(delta) / WHEEL_DELTA;
+
+		Rect W = wish();
+		//if (0 < scale)
+		{
+			const Real xmin = pt.X() - W.Xmin();
+			const Real ymin = pt.Y() - W.Ymin();
+			const Real xmax = W.Xmax() - pt.X();
+			const Real ymax = W.Ymax() - pt.Y();
+
+			W.inflate(xmin, ymin, xmax, ymax);
+		}
+		//else
+		//	W.inflate();
+
+		show(W); // (!)
+
+		redraw(true);
+		return true;
+	}
+
+	return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "WM_LBUTTONDOWN" message handler.
+/**
+@param[in] vkeys The virtual keys that are down.
+@param[in] x The cursor's X coordinate.
+@param[in] y The cursor's Y coordinate.
+@return @b true if message is handled.
+*/
+bool Window::on_Lbtn_down(int vkeys, int x, int y)
+{
+	if (m_moveEnabled)
+	{
+		m_moveActive = true;
+		m_movePoint = Point(Real(x), Real(y));
+		m_moveWish = wish();
+
+		::SetCapture(handle());
+		return true;
+	}
+
+	return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "WM_LBUTTONUP" message handler.
+/**
+@param[in] vkeys The virtual keys that are down.
+@param[in] x The cursor's X coordinate.
+@param[in] y The cursor's Y coordinate.
+@return @b true if message is handled.
+*/
+bool Window::on_Lbtn_up(int vkeys, int x, int y)
+{
+	if (m_moveEnabled && m_moveActive)
+	{
+		m_moveActive = false;
+		::ReleaseCapture();
+
+		redraw(true);
+		return true;
+	}
+
+	return false;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "WM_LBUTTONDBLCLK" message handler.
+/**
+@param[in] vkeys The virtual keys that are down.
+@param[in] x The cursor's X coordinate.
+@param[in] y The cursor's Y coordinate.
+@return @b true if message is handled.
+*/
+bool Window::on_Lbtn_2click(int vkeys, int x, int y)
+{
+	return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "WM_RBUTTONDOWN" message handler.
+/**
+@param[in] vkeys The virtual keys that are down.
+@param[in] x The cursor's X coordinate.
+@param[in] y The cursor's Y coordinate.
+@return @b true if message is handled.
+*/
+bool Window::on_Rbtn_down(int vkeys, int x, int y)
+{
+	return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "WM_RBUTTONUP" message handler.
+/**
+@param[in] vkeys The virtual keys that are down.
+@param[in] x The cursor's X coordinate.
+@param[in] y The cursor's Y coordinate.
+@return @b true if message is handled.
+*/
+bool Window::on_Rbtn_up(int vkeys, int x, int y)
+{
+	return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief The "WM_RBUTTONDBLCLK" message handler.
+/**
+@param[in] vkeys The virtual keys that are down.
+@param[in] x The cursor's X coordinate.
+@param[in] y The cursor's Y coordinate.
+@return @b true if message is handled.
+*/
+bool Window::on_Rbtn_2click(int vkeys, int x, int y)
+{
+	return false;
+}
+
 	} // Window
 
 
@@ -2142,104 +2409,7 @@ void Window::on_vscroll(int request)
 //		g.vertex(m_world.Xmax(), m_world.Ymin());
 //}
 //
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// Move Tool construction
-//Window::MoveTool::MoveTool()
-//	: m_active(false)
-//{}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// is move tool active?
-//bool Window::MoveTool::active() const
-//{
-//	return m_active;
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// start move tool
-//void Window::MoveTool::start(Window &wnd, int x, int y)
-//{
-//	m_active = true;
-//	m_ref_pt = Point(x, y);
-//	m_world = wnd.wish();
-//
-//	wnd.push_world();
-//	::SetCapture(wnd.handle());
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// update move tool
-//bool Window::MoveTool::update(Window &wnd, int x, int y)
-//{
-//	bool ret = false;
-//
-//	//const int CX = ::GetSystemMetrics(SM_CXDOUBLECLK);
-//	//const int CY = ::GetSystemMetrics(SM_CYDOUBLECLK);
-//
-//	//if (CX < fabs(m_ref_pt.X() - x)
-//	//	&& CY < fabs(m_ref_pt.Y() - y))
-//	//{
-//		Rect W = m_world;
-//		Size sz = wnd.v2w(Point(x, y) - m_ref_pt);
-//		W.offset(+sz.Xsize(), -sz.Ysize());
-//
-//		wnd.Plotter::show(W); // (!)
-//		ret = true;
-//	//}
-//
-//	wnd.redraw(false);
-//	return ret;
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// stop move tool
-//void Window::MoveTool::stop(Window &wnd, int x, int y)
-//{
-//	m_active = false;
-//
-//	if (!update(wnd, x, y))
-//		wnd.pop_world();
-//
-//	::ReleaseCapture();
-//	wnd.redraw(true);
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// center tool
-//void Window::MoveTool::center(Window &wnd, int x, int y)
-//{
-//	Rect W = wnd.wish();
-//
-//	// center point
-//	Point pt = wnd.v2w(Point(x, y));
-//	W.offset(W.center() - pt);
-//
-//	wnd.push_world();
-//	wnd.Plotter::show(W); // (!)
-//
-//	wnd.redraw(true);
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// cancel tool
-//void Window::MoveTool::cancel(Window &wnd)
-//{
-//	m_active = false;
-//
-//	::ReleaseCapture();
-//	wnd.pop_world();
-//	wnd.redraw(true);
-//}
 	} // Tools
-
 
 
 	// Axis

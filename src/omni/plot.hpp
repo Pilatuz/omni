@@ -367,6 +367,12 @@ public:
 	bool isHScroll() const;
 	bool isVScroll() const;
 
+	void enableMoving(bool enabled);
+	bool isMovingEnabled() const;
+
+	void enableZooming(bool enabled);
+	bool isZoomingEnabled() const;
+
 protected:
 	virtual bool on_message(UINT msg,
 		WPARAM wparam, LPARAM lparam,
@@ -384,8 +390,28 @@ private:
 	void on_vscroll(int request);
 
 private:
+	bool on_mouse_move(int vkeys, int x, int y);
+	bool on_mouse_wheel(int delta, int vkeys, int x, int y);
+	bool on_Lbtn_down(int vkeys, int x, int y);
+	bool on_Lbtn_up(int vkeys, int x, int y);
+	bool on_Lbtn_2click(int vkeys, int x, int y);
+	bool on_Rbtn_down(int vkeys, int x, int y);
+	bool on_Rbtn_up(int vkeys, int x, int y);
+	bool on_Rbtn_2click(int vkeys, int x, int y);
+
+private:
 	class Class;
 	friend class Class;
+
+private: // move tool
+	bool m_moveEnabled;
+	bool m_moveActive;
+	Point m_movePoint;
+	Rect m_moveWish;
+
+private: // zoom tool
+	bool m_zoomEnabled;
+	bool m_zoomActive;
 
 private:
 	HWND m_handle; ///< @brief The window handle.
@@ -393,67 +419,6 @@ private:
 };
 
 	} // Window
-
-
-#if 0
-	// Tools
-	namespace plot
-	{
-/*
-//////////////////////////////////////////////////////////////////////////
-// Zoom Tool
-class ZoomTool {
-public:
-	ZoomTool();
-
-public:
-	bool active() const;
-
-public:
-	void start(Window &wnd, int x, int y);
-	void update(Window &wnd, int x, int y);
-	void stop(Window &wnd, int x, int y, bool zoomIn);
-
-	void zoom(Window &wnd, int x, int y, bool zoomIn);
-	void cancel(Window &wnd);
-
-	void draw();
-
-private:
-	bool m_active;
-	Point m_ref_pt;
-	Rect m_world;
-
-	GL::Color m_color; // background color
-	GL::Pen m_line;    // selection line
-};
-
-
-//////////////////////////////////////////////////////////////////////////
-// Move Tool
-class MoveTool {
-public:
-	MoveTool();
-
-public:
-	bool active() const;
-
-public:
-	void start(Window &wnd, int x, int y);
-	bool update(Window &wnd, int x, int y);
-	void stop(Window &wnd, int x, int y);
-
-	void center(Window &wnd, int x, int y);
-	void cancel(Window &wnd);
-
-private:
-	bool m_active;
-	Point m_ref_pt;
-	Rect m_world;
-};
-*/
-	} // Tools
-#endif
 
 
 	// Axis
