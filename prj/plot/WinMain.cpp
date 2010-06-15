@@ -13,6 +13,7 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	if (WM_CREATE == uMsg)
 	{
 		plot_wnd = new omni::plot::XYPlotter(hWnd, WS_CHILD|WS_VISIBLE, WS_EX_CLIENTEDGE);
+		plot_wnd->setFixedAspectRatio(true);
 		plot_wnd->setScroll(true, true);
 		plot_wnd->enableMoving(true);
 		plot_wnd->enableZooming(true);
@@ -24,6 +25,8 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		line->getMarker()->getPen()->SetColor(Gdiplus::Color::Lime);
 		line->getMarker()->setBrush(Gdiplus::SolidBrush(Gdiplus::Color::Blue));
 		line->getMarker()->setSize(10.0f);
+		//line->setBrush(Gdiplus::SolidBrush(Gdiplus::Color::Blue));
+		//line->setBarWidth(0.09f);
 
 		for (int i = 0; i < 20; ++i)
 			line->push_back(i*0.1f - 1.0f, sinf(i*0.5f));

@@ -34,7 +34,7 @@ namespace omni
 		class Plotter;
 			class Window;
 				class XYPlotter;
-				// class PolarPlotter;
+				class PolarPlotter;
 		class Object;
 			class LineGraph;
 		class Marker;
@@ -608,30 +608,34 @@ private:
 	} // XYPlotter
 
 
-#if 0
 	// PolarPlotter
 	namespace plot
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// PolarPlotter
-class PolarPlotter: public Window {
+/// @brief The polar plotter.
+class PolarPlotter:
+	public Window
+{
 	typedef Window inherited;
 public:
-	PolarPlotter(DWORD style,
-		HWND parent);
+	PolarPlotter(HWND parent, DWORD style,
+		DWORD ex_style);
 	~PolarPlotter();
 
 public:
-	void attach(Object &obj);
-	void attach(Object &obj, size_t level);
-	void detach(Object &obj);
 
-	enum Level {
+	/// @brief The draw levels.
+	enum Level
+	{
 		LEVEL_GRID,
 		LEVEL_GRAPH,
 		LEVEL_TEXT
 	};
+
+	void attach(Object &obj);
+	void attach(Object &obj, Level level);
+	void detach(Object &obj);
 
 public:
 	const Axis& radialAxis() const;
@@ -643,17 +647,18 @@ public:
 private:
 	virtual void on_world_changed();
 	virtual void on_full_changed();
+	virtual void on_view_changing(Real &x,
+		Real &y, Real &w, Real &h);
 
 private:
 	class RadialAxis;
 	class AngularAxis;
 
-	RadialAxis  *m_radialAxis;
-	AngularAxis *m_angularAxis;
+	std::auto_ptr<RadialAxis>  m_radialAxis;
+	std::auto_ptr<AngularAxis> m_angularAxis;
 };
 
 	} // PolarPlotter
-#endif
 
 
 	// Markers
@@ -778,7 +783,7 @@ private:
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Line Graph
+/// @brief The line graph.
 class LineGraph:
 	public Object
 {
@@ -830,61 +835,68 @@ private:
 
 	} // LineGraph
 
-#if 0
+
 	// HistGraph
 	namespace plot
 	{
 
 //////////////////////////////////////////////////////////////////////////
-// Hist Graph
-class HistGraph: public Object {
+/// @brief The  histogram graph.
+class HistGraph:
+	public Object
+{
 	typedef Object inherited;
-
 public:
 	HistGraph();
 	virtual ~HistGraph();
 
 public:
-	const GL::Pen& line() const;
-	void set_line(const GL::Pen &pen);
+	void setPen(const Gdiplus::Pen &pen);
+	const Gdiplus::Pen* getPen() const;
+	      Gdiplus::Pen* getPen();
 
-	const GL::Color& color() const;
-	void set_color(const GL::Color &c);
+	void setBrush(const Gdiplus::Brush &brush);
+	const Gdiplus::Brush* getBrush() const;
+	      Gdiplus::Brush* getBrush();
 
 public:
-	void assign(size_t N_points, const Real *Ys, const Real *Xs);
-	void assign(size_t N_points, const Real *Ys,
-		Real X_start = 0.0, Real X_step = 1.0);
+	void setZeroLevel(Real zeroLevel);
+	Real getZeroLevel() const;
 
-	void set_zeroLevel(Real zero);
-	void set_barWidth(Real width);
+	void setBarWidth(Real barWidth);
+	Real getBarWidth() const;
 
+public:
+	void assign(size_t Npoints, const Point *XYs);
+	void assign(size_t Npoints, const Real *Ys, const Real *Xs);
+	void assign(size_t Npoints, const Real *Ys,
+		Real Xstart = 0, Real Xstep = 1);
+
+public:
 	void push_back(const Point &pt);
 	void push_back(Real x, Real y);
 	void clear();
 
 public:
-	virtual void draw(const Plotter &plotter, const omni::GL::Font&) const;
+	virtual void draw(const Plotter &plotter, Canvas &canvas) const;
 	virtual bool hit_test(const Point &pt, Real eps) const;
-	virtual Rect full() const;
+	virtual const Rect full() const;
 
 private:
 	void update();
 
 private:
-	typedef GL::Array<GLdouble, 2> PointType;
-	typedef std::vector<PointType> PointList;
-	PointList m_points;
-	Real m_zero_level;
-	Real m_bar_width;
+	std::vector<Point> m_wpoints; ///< @brief The "world" points.
 
-	GL::Color m_color;
-	GL::Pen m_pen;
-	Rect m_full;
+	Real m_zeroLevel; ///< @brief The zero level.
+	Real m_barWidth;  ///< @brief The bar width.
+
+	std::auto_ptr<Gdiplus::Pen> m_pen; ///< @brief The pen.
+	std::auto_ptr<Gdiplus::Brush> m_brush; ///< @brief The brush.
+	Rect m_full; ///< @brief The "full" rectangle.
 };
 
 	} // HistGraph
-#endif
 
 } // omni namespace
 
