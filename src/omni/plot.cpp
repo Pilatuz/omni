@@ -1873,6 +1873,58 @@ bool Window::isZoomingEnabled() const
 
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief Offset the "world" rectangle.
+/**
+@param[in] dx The offset in the @b X axis.
+@param[in] dy The offset in the @b Y axis.
+*/
+void Window::offsetWorld(Real dx, Real dy)
+{
+	Rect W = wish();
+	W.offset(dx, dy);
+	show(W);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Scale the "world" area.
+/**
+@param[in] dx The size increment in the @b X axis.
+@param[in] dy The size increment in the @b Y axis.
+@param[in] ref_w The reference point in "world" space.
+*/
+void Window::scaleWorld(Real dx, Real dy, const Point &ref_w)
+{
+	const Rect &W1 = wish();
+
+	const Real w = W1.Xsize() + dx;
+	const Real h = W1.Ysize() + dy;
+
+	const float x = W1.Xmin() + w*(ref_w.X() - W1.Xmin())/W1.Xsize();
+	const float y = W1.Ymin() + h*(ref_w.Y() - W1.Ymin())/W1.Ysize();
+
+	show( Rect(Point(
+		W1.Xmin() - x + ref_w.X(),
+		W1.Ymin() - y + ref_w.Y()),
+		Size(w, h)) );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Scale the "world" area.
+/**
+		The reference point is the center of the "world" area.
+
+@param[in] dx The size increment in the @b X axis.
+@param[in] dy The size increment in the @b Y axis.
+*/
+void Window::scaleWorld(Real dx, Real dy)
+{
+	scaleWorld(dx, dy, wish().center());
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief Window message processing.
 bool Window::on_message(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT &result)
 {
@@ -2139,25 +2191,25 @@ bool Window::on_mouse_move(int vkeys, int x, int y)
 */
 bool Window::on_mouse_wheel(int delta, int vkeys, int x, int y)
 {
+	{ // screen -> client
+		POINT t;
+		t.x = x;
+		t.y = y;
+
+		::ScreenToClient(handle(), &t);
+
+		x = t.x;
+		y = t.y;
+	}
+
 	if (m_zoomEnabled)
 	{
+		const Real scale = Real(delta) / WHEEL_DELTA / -10;
 		const Point pt = v2w(Point(Real(x), Real(y)));
-		const Real scale = Real(delta) / WHEEL_DELTA;
+		const Rect &W = wish();
 
-		Rect W = wish();
-		//if (0 < scale)
-		{
-			const Real xmin = pt.X() - W.Xmin();
-			const Real ymin = pt.Y() - W.Ymin();
-			const Real xmax = W.Xmax() - pt.X();
-			const Real ymax = W.Ymax() - pt.Y();
-
-			W.inflate(xmin, ymin, xmax, ymax);
-		}
-		//else
-		//	W.inflate();
-
-		show(W); // (!)
+		scaleWorld(W.Xsize()*scale,
+			W.Ysize()*scale, pt);
 
 		redraw(true);
 		return true;
@@ -2225,6 +2277,12 @@ bool Window::on_Lbtn_up(int vkeys, int x, int y)
 */
 bool Window::on_Lbtn_2click(int vkeys, int x, int y)
 {
+	if (m_moveEnabled || m_zoomEnabled)
+	{
+		show(full());
+		redraw(true);
+	}
+
 	return false;
 }
 
@@ -2273,145 +2331,6 @@ bool Window::on_Rbtn_2click(int vkeys, int x, int y)
 	} // Window
 
 
-	// Tools
-	namespace plot
-	{
-
-////////////////////////////////////////////////////////////////////////////
-//// Zoom Tool construction
-//Window::ZoomTool::ZoomTool()
-//	: m_active(false),
-//	  m_color(0.0f, 0.0f, 1.0f, 0.3f),
-//	  m_line(GL::Color(0.5f, 0.5f, 0.5f, 0.7f), 1.0f, 2, 0xAAAA)
-//{}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// is Zoom Tool active?
-//bool Window::ZoomTool::active() const
-//{
-//	return m_active;
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// start zoom tool
-//void Window::ZoomTool::start(Window &wnd, int x, int y)
-//{
-//	m_active = true;
-//	m_ref_pt = Point(x, y);
-//	m_world = Rect();
-//
-//	wnd.push_world();
-//	::SetCapture(wnd.handle());
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// update zoom tool
-//void Window::ZoomTool::update(Window &wnd, int x, int y)
-//{
-//	m_world = wnd.v2w(Rect(m_ref_pt, Point(x, y)));
-//	m_world.normalize();
-//
-//	wnd.redraw(false);
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// stop zoom tool
-//void Window::ZoomTool::stop(Window &wnd, int x, int y, bool zoomIn)
-//{
-//	m_active = false;
-//
-//	update(wnd, x, y);
-//
-//	const int CX = ::GetSystemMetrics(SM_CXDOUBLECLK);
-//	const int CY = ::GetSystemMetrics(SM_CYDOUBLECLK);
-//	const Size TRESHOLD = wnd.v2w(Size(CX, CY));
-//
-//	if (TRESHOLD.Xsize() < m_world.Xsize()
-//		&& TRESHOLD.Ysize() < m_world.Ysize())
-//	{
-//		if (!zoomIn)
-//		{
-//			Rect W = wnd.wish(); // TODO: upgrade this algorithm
-//			Real x_min = m_world.Xmin() - wnd.world().Xmin();
-//			Real x_max = wnd.world().Xmax() - m_world.Xmax();
-//			Real y_min = m_world.Ymin() - wnd.world().Ymin();
-//			Real y_max = wnd.world().Ymax() - m_world.Ymax();
-//			W.inflate(x_min, y_min, x_max, y_max);
-//
-//			wnd.Plotter::show(W); // (!)
-//		}
-//		else
-//			wnd.Plotter::show(m_world); // (!)
-//	}
-//	else
-//		wnd.pop_world();
-//
-//	::ReleaseCapture();
-//	wnd.redraw(true);
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// zoom
-//void Window::ZoomTool::zoom(Window &wnd, int x, int y, bool zoomIn)
-//{
-//	Rect W = wnd.wish();
-//
-//	// center point
-//	Point pt = wnd.v2w(Point(x, y));
-//	W.offset(W.center() - pt);
-//
-//	if (zoomIn)
-//		W.deflate(W.Xsize()*0.1, W.Ysize()*0.1);
-//	else
-//		W.inflate(W.Xsize()*0.1, W.Ysize()*0.1);
-//
-//	wnd.push_world();
-//	wnd.Plotter::show(W); // (!)
-//
-//	wnd.redraw(true);
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// cancel zoom tool
-//void Window::ZoomTool::cancel(Window &wnd)
-//{
-//	m_active = false;
-//
-//	::ReleaseCapture();
-//	wnd.pop_world();
-//	wnd.redraw(true);
-//}
-//
-//
-////////////////////////////////////////////////////////////////////////////
-//// draw zoom tool
-//void Window::ZoomTool::draw()
-//{
-//		GL::Canvas::color(m_color);
-//		GL::Canvas::rect(m_world.Xmin(), m_world.Ymin(),
-//			m_world.Xmax(), m_world.Ymax());
-//
-//		GL::AttribBackup backup(GL::Attrib::ENABLE);
-//		GL::disable(GL::Capability::LINE_SMOOTH);
-//
-//		m_line.select();
-//
-//		GL::GroupLineLoop g;
-//		g.vertex(m_world.Xmin(), m_world.Ymin());
-//		g.vertex(m_world.Xmin(), m_world.Ymax());
-//		g.vertex(m_world.Xmax(), m_world.Ymax());
-//		g.vertex(m_world.Xmax(), m_world.Ymin());
-//}
-//
-	} // Tools
-
-
 	// Axis
 	namespace plot
 	{
@@ -2447,7 +2366,7 @@ Axis::~Axis()
 /**
 @param[in] pen The minor line's pen.
 */
-void Axis::setMinorLine(const Gdiplus::Pen &pen)
+void Axis::setMinorPen(const Gdiplus::Pen &pen)
 {
 	m_minorLine.reset(pen.Clone());
 }
@@ -2458,7 +2377,7 @@ void Axis::setMinorLine(const Gdiplus::Pen &pen)
 /**
 @return The minor line's pen.
 */
-const Gdiplus::Pen* Axis::getMinorLine() const
+const Gdiplus::Pen* Axis::getMinorPen() const
 {
 	return m_minorLine.get();
 }
@@ -2469,7 +2388,7 @@ const Gdiplus::Pen* Axis::getMinorLine() const
 /**
 @return The minor line's pen.
 */
-Gdiplus::Pen* Axis::getMinorLine()
+Gdiplus::Pen* Axis::getMinorPen()
 {
 	return m_minorLine.get();
 }
@@ -2546,7 +2465,7 @@ Real Axis::getMinorAutoStepHint() const
 /**
 @param[in] pen The major line's pen.
 */
-void Axis::setMajorLine(const Gdiplus::Pen &pen)
+void Axis::setMajorPen(const Gdiplus::Pen &pen)
 {
 	m_majorLine.reset(pen.Clone());
 }
@@ -2557,7 +2476,7 @@ void Axis::setMajorLine(const Gdiplus::Pen &pen)
 /**
 @return The major line's pen.
 */
-const Gdiplus::Pen* Axis::getMajorLine() const
+const Gdiplus::Pen* Axis::getMajorPen() const
 {
 	return m_majorLine.get();
 }
@@ -2568,7 +2487,7 @@ const Gdiplus::Pen* Axis::getMajorLine() const
 /**
 @return The major line's pen.
 */
-Gdiplus::Pen* Axis::getMajorLine()
+Gdiplus::Pen* Axis::getMajorPen()
 {
 	return m_majorLine.get();
 }
@@ -2867,6 +2786,19 @@ Real Axis::auto_step(Real wrange, Real vrange, Real vstep)
 	{
 
 //////////////////////////////////////////////////////////////////////////
+/// @brief Round.
+/**
+@param[in] x The value to round.
+@param[in] eps The epsilon.
+@return The rounded value.
+*/
+inline Real roundto(Real x, Real eps)
+{
+	return floorf(x/eps + 0.5f)*eps;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 /// @brief The X axis.
 class XYPlotter::XAxis:
 	public Axis
@@ -2921,8 +2853,8 @@ public:
 			// draw grid lines
 			if (0.0 < step)
 			{
-				const Gdiplus::Pen *ppen = m_axis->getMinorLine();
-				const Real Xstart = ceil(W.Xmin()/step) * step;
+				const Gdiplus::Pen *ppen = m_axis->getMinorPen();
+				const Real Xstart = ceilf(W.Xmin()/step) * step;
 				const Real Ymin = W.Ymin();
 				const Real Ymax = W.Ymax();
 
@@ -2977,8 +2909,8 @@ public:
 			// draw grid lines
 			if (0.0 < step)
 			{
-				const Gdiplus::Pen *ppen = m_axis->getMajorLine();
-				const Real Xstart = ceil(W.Xmin()/step) * step;
+				const Gdiplus::Pen *ppen = m_axis->getMajorPen();
+				const Real Xstart = ceilf(W.Xmin()/step) * step;
 				const Real Ymin = W.Ymin();
 				const Real Ymax = W.Ymax();
 
@@ -3059,7 +2991,7 @@ public:
 				const int BUF_SZ = 1024;
 				wchar_t buf[BUF_SZ];
 
-				const Real Xstart = ceil(W.Xmin()/step) * step;
+				const Real Xstart = ceilf(W.Xmin()/step) * step;
 				for (Real x = Xstart; x <= W.Xmax(); x += step)
 				{
 					const Point vpt = plotter.w2v(Point(x, W.Ymin()));
@@ -3071,7 +3003,7 @@ public:
 
 					_snwprintf(buf, BUF_SZ,
 						m_axis->getTextFormat(),
-						m_axis->transform(x));
+						roundto(m_axis->transform(x), step/10.0f));
 
 					canvas.MeasureString(buf, -1, &font,
 						vpt, &format, &hint_rc);
@@ -3183,8 +3115,8 @@ public:
 			// draw grid lines
 			if (0.0 < step)
 			{
-				const Gdiplus::Pen *ppen = m_axis->getMinorLine();
-				const Real Ystart = ceil(W.Ymin()/step) * step;
+				const Gdiplus::Pen *ppen = m_axis->getMinorPen();
+				const Real Ystart = ceilf(W.Ymin()/step) * step;
 				const Real Xmin = W.Xmin();
 				const Real Xmax = W.Xmax();
 
@@ -3239,8 +3171,8 @@ public:
 			// draw grid lines
 			if (0.0 < step)
 			{
-				const Gdiplus::Pen *ppen = m_axis->getMajorLine();
-				const Real Ystart = ceil(W.Ymin()/step) * step;
+				const Gdiplus::Pen *ppen = m_axis->getMajorPen();
+				const Real Ystart = ceilf(W.Ymin()/step) * step;
 				const Real Xmin = W.Xmin();
 				const Real Xmax = W.Xmax();
 
@@ -3325,7 +3257,7 @@ public:
 				const int BUF_SZ = 1024;
 				wchar_t buf[BUF_SZ];
 
-				const Real Ystart = ceil(W.Ymin()/step) * step;
+				const Real Ystart = ceilf(W.Ymin()/step) * step;
 				for (Real y = Ystart; y <= W.Ymax(); y += step)
 				{
 					const Point vpt = Point(V.Ymax() - plotter.w2v(Point(0, y)).Y(), (Real)MARGIN);
@@ -3337,7 +3269,7 @@ public:
 
 					_snwprintf(buf, BUF_SZ,
 						m_axis->getTextFormat(),
-						m_axis->transform(y));
+						roundto(m_axis->transform(y), step/10.0f));
 
 					canvas.MeasureString(buf, -1, &font,
 						vpt, &format, &hint_rc);

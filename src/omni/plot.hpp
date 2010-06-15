@@ -15,6 +15,10 @@
 
 #include <omni/defs.hpp>
 
+#if !defined(_WIN32_WINNT)
+#	define _WIN32_WINNT 0x0500
+#endif
+
 #include <Windows.h>
 #include <GdiPlus.h>
 
@@ -338,6 +342,26 @@ private:
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief The child window for the plotter.
+/**
+		To enable zooming feature the parent window should forward
+	the WM_MOUSEWHEEL message. For example, like this:
+
+@code
+BOOL MainFrame::PreTranslateMessage(MSG* pMsg)
+{
+	if (inherited::PreTranslateMessage(pMsg))
+		return TRUE;
+
+	if (WM_MOUSEWHEEL == pMsg->message)
+	{
+		if (HWND hWnd = ::WindowFromPoint(pMsg->pt))
+			pMsg->hwnd = hWnd;
+	}
+
+	return FALSE;
+}
+@endcode
+*/
 class Window
 	: public Plotter
 {
@@ -372,6 +396,11 @@ public:
 
 	void enableZooming(bool enabled);
 	bool isZoomingEnabled() const;
+
+public:
+	void offsetWorld(Real dx, Real dy);
+	void scaleWorld(Real dx, Real dy, const Point &ref_w);
+	void scaleWorld(Real dx, Real dy);
 
 protected:
 	virtual bool on_message(UINT msg,
@@ -438,9 +467,9 @@ public:
 	virtual ~Axis();
 
 public: // minor lines
-	void setMinorLine(const Gdiplus::Pen &pen);
-	const Gdiplus::Pen* getMinorLine() const;
-	      Gdiplus::Pen* getMinorLine();
+	void setMinorPen(const Gdiplus::Pen &pen);
+	const Gdiplus::Pen* getMinorPen() const;
+	      Gdiplus::Pen* getMinorPen();
 
 	void setMinorStep(Real step);
 	Real getMinorStep() const;
@@ -452,9 +481,9 @@ public: // minor lines
 	Real getMinorAutoStepHint() const;
 
 public: // major lines
-	void setMajorLine(const Gdiplus::Pen &pen);
-	const Gdiplus::Pen* getMajorLine() const;
-	      Gdiplus::Pen* getMajorLine();
+	void setMajorPen(const Gdiplus::Pen &pen);
+	const Gdiplus::Pen* getMajorPen() const;
+	      Gdiplus::Pen* getMajorPen();
 
 	void setMajorStep(Real step);
 	Real getMajorStep() const;

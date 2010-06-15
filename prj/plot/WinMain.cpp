@@ -1,6 +1,3 @@
-#include <Windows.h>
-#include <WindowsX.h>
-
 #include <omni/plot.hpp>
 
 #include <tchar.h>
