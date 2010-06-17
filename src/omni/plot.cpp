@@ -10,10 +10,17 @@
 //
 //		http://omni.sourceforge.net
 //////////////////////////////////////////////////////////////////////////
-#define _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_DEPRECATE
+#if !defined(_CRT_SECURE_NO_WARNINGS)
+#	define _CRT_SECURE_NO_WARNINGS
+#endif
 
-#define _USE_MATH_DEFINES
+#if !defined(_CRT_SECURE_NO_DEPRECATE)
+#	define _CRT_SECURE_NO_DEPRECATE
+#endif
+
+#if !defined(_USE_MATH_DEFINES)
+#	define _USE_MATH_DEFINES
+#endif
 
 #include <omni/plot.hpp>
 #include <omni/util.hpp>
