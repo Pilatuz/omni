@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <assert.h>
+#include <stdarg.h>
 #include <sstream>
 #include <limits>
 #include <string>
@@ -581,6 +582,22 @@ public:
 /// @name Auxiliary
 /// @{
 public:
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Format output to the value.
+/**
+@param[in] fmt The format string.
+*/
+	void format(Char const *fmt, ...)
+	{
+		va_list args = 0;
+		va_start(args, fmt);
+
+		details::format(m_val, fmt, args);
+
+		va_end(args);
+	}
+
 
 //////////////////////////////////////////////////////////////////////////
 /// @brief Are two configurations equal?
@@ -1462,7 +1479,6 @@ private:
 
 		return pos;
 	}
-
 
 private:
 	ItemT *m_parent; ///< @brief The parent or null.
@@ -2997,6 +3013,16 @@ public: // string constants
 	*/
 	static bool is_delim(Char ch);
 
+
+	/// @brief Write formated output.
+	/**
+	@param[in] buf The output buffer.
+	@param[in] len The maximum number of characters to write.
+	@param[in] fmt The format string.
+	@param[in] args The pointer to list of arguments.
+	*/
+	static int format(Char *buf, size_t len, Char const *fmt, va_list args);
+
 public: // char constants
 	static const Char ENDLINE;  ///< @brief The new line character ('\n').
 	static const Char SPACE;    ///< @brief The space character (' ').
@@ -3008,6 +3034,31 @@ public: // char constants
 	static const Char SQUOTE;   ///< @brief The single quote character ('\'').
 	static const Char DQUOTE;   ///< @brief The double quote character ('\"').
 };
+
+
+//////////////////////////////////////////////////////////////////////////
+/// @brief Write formated output to the string.
+/**
+@param[out] out The output string.
+@param[in] fmt The format string.
+@param[in] args The pointer to list of arguments.
+*/
+template<typename Str, typename Ch>
+void format(Str &out, Ch const *fmt, va_list args)
+{
+	std::vector<Ch> buf(16);
+
+	while (1)
+	{
+		int ret = CharConst<Ch>::format(&buf[0], buf.size()-1, fmt, args);
+		if (ret < 0 && buf.size() < 1*1024*1024) // (!) 1M limit?
+			buf.resize(2*buf.size());
+		else
+			break;
+	}
+
+	out = &buf[0];
+}
 
 		} // details namespace
 		/// @endcond

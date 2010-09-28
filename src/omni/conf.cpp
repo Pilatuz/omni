@@ -98,6 +98,12 @@ bool CharConst<wchar_t>::is_delim(Char ch)
 		|| (DQUOTE == ch);
 }
 
+template<>
+int CharConst<wchar_t>::format(Char *buf, size_t len, Char const *fmt, va_list args)
+{
+	return _vsnwprintf(buf, len, fmt, args);
+}
+
 // explicit CharConst<char> instantiation...
 template<> const CharConst<char>::Char CharConst<char>::SEPARATOR[]  = ":";
 template<> const CharConst<char>::Char CharConst<char>::ENDLINE  = '\n';
@@ -123,6 +129,11 @@ bool CharConst<char>::is_delim(Char ch)
 		|| (DQUOTE == ch);
 }
 
+template<>
+int CharConst<char>::format(Char *buf, size_t len, Char const *fmt, va_list args)
+{
+	return _vsnprintf(buf, len, fmt, args);
+}
 
 		} // CharConst
 		/// @endcond
