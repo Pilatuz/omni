@@ -1204,8 +1204,8 @@ const Trellis& ConvCodec::trellis() const
 		Method encodes data block [@a first, @a last), add tail zeros,
 	and store results to the output buffer @a out.
 
-		Размер буфера результатов должен быть достаточным,
-	чтобы вместить все кодированные данные.
+		Р Р°Р·РјРµСЂ Р±СѓС„РµСЂР° СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РґРѕСЃС‚Р°С‚РѕС‡РЅС‹Рј,
+	С‡С‚РѕР±С‹ РІРјРµСЃС‚РёС‚СЊ РІСЃРµ РєРѕРґРёСЂРѕРІР°РЅРЅС‹Рµ РґР°РЅРЅС‹Рµ.
 
 @param first Begin of the uncoded buffer.
 @param last End of the uncoded buffer.
@@ -1220,8 +1220,8 @@ const Trellis& ConvCodec::trellis() const
 		Method encodes data block [@a first, @a last) and store results
 	to the output buffer @a out.
 
-		Размер буфера результатов должен быть достаточным,
-	чтобы вместить все кодированные данные.
+		Р Р°Р·РјРµСЂ Р±СѓС„РµСЂР° СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РґРѕСЃС‚Р°С‚РѕС‡РЅС‹Рј,
+	С‡С‚РѕР±С‹ РІРјРµСЃС‚РёС‚СЊ РІСЃРµ РєРѕРґРёСЂРѕРІР°РЅРЅС‹Рµ РґР°РЅРЅС‹Рµ.
 
 @param first Begin of the uncoded buffer.
 @param last End of the uncoded buffer.
@@ -1399,7 +1399,7 @@ void ConvCodec::viterbi_iteration(const BranchMetrics &bm,
 		for (state_type state = 0; state < Nstates; ++state)
 		{
 			double max_metric = -std::numeric_limits<double>::infinity();
-			state_type max_state = 0; // переход с максимальной метрикой
+			state_type max_state = 0; // РїРµСЂРµС…РѕРґ СЃ РјР°РєСЃРёРјР°Р»СЊРЅРѕР№ РјРµС‚СЂРёРєРѕР№
 			bits_type max_ibits = 0;
 
 			for (size_type n = 0; n < Ni_len; ++n) // all variants

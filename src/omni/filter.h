@@ -12,10 +12,10 @@
 //////////////////////////////////////////////////////////////////////////
 /** @file
 
-		Файл содержит интерфейс и реализацию шаблонного
-	класса omni::dsp::FIR_Filter.
+		Р¤Р°Р№Р» СЃРѕРґРµСЂР¶РёС‚ РёРЅС‚РµСЂС„РµР№СЃ Рё СЂРµР°Р»РёР·Р°С†РёСЋ С€Р°Р±Р»РѕРЅРЅРѕРіРѕ
+	РєР»Р°СЃСЃР° omni::dsp::FIR_Filter.
 
-@author Сергей Поличной
+@author РЎРµСЂРіРµР№ РџРѕР»РёС‡РЅРѕР№
 */
 #ifndef __OMNI_FILTER_H_
 #define __OMNI_FILTER_H_
@@ -31,36 +31,36 @@ namespace omni
 	{
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief КИХ-фильтр
+/// @brief РљРРҐ-С„РёР»СЊС‚СЂ
 template<typename T, typename CF>
 	class FIR_Filter {
 		typedef std::vector<CF> coef_array;
 		typedef std::vector<T> basic_type;
 
-	public: /// @name Определения типов
-		typedef typename basic_type::const_reference const_reference;    ///< @brief Константная ссылка на отсчет
-		typedef typename basic_type::reference             reference;    ///< @brief Ссылка на отсчет
-		typedef typename basic_type::value_type value_type;              ///< @brief Тип отсчета
-		typedef typename basic_type::size_type   size_type;              ///< @brief Тип индексов и размера
+	public: /// @name РћРїСЂРµРґРµР»РµРЅРёСЏ С‚РёРїРѕРІ
+		typedef typename basic_type::const_reference const_reference;    ///< @brief РљРѕРЅСЃС‚Р°РЅС‚РЅР°СЏ СЃСЃС‹Р»РєР° РЅР° РѕС‚СЃС‡РµС‚
+		typedef typename basic_type::reference             reference;    ///< @brief РЎСЃС‹Р»РєР° РЅР° РѕС‚СЃС‡РµС‚
+		typedef typename basic_type::value_type value_type;              ///< @brief РўРёРї РѕС‚СЃС‡РµС‚Р°
+		typedef typename basic_type::size_type   size_type;              ///< @brief РўРёРї РёРЅРґРµРєСЃРѕРІ Рё СЂР°Р·РјРµСЂР°
 
-	public: /// @name Конструкторы
+	public: /// @name РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹
 		FIR_Filter();
 
 		template<typename In>
-			FIR_Filter(In first, In last)    /// @brief Создать фильтр с заданными коэффициентами
+			FIR_Filter(In first, In last)    /// @brief РЎРѕР·РґР°С‚СЊ С„РёР»СЊС‚СЂ СЃ Р·Р°РґР°РЅРЅС‹РјРё РєРѕСЌС„С„РёС†РёРµРЅС‚Р°РјРё
 				{ __init(first, last, value_type()); }
 		template<typename In>
-			FIR_Filter(In first, In last, const_reference x)  /// @brief Создать фильтр с заданными коэффициентами и заполнить
+			FIR_Filter(In first, In last, const_reference x)  /// @brief РЎРѕР·РґР°С‚СЊ С„РёР»СЊС‚СЂ СЃ Р·Р°РґР°РЅРЅС‹РјРё РєРѕСЌС„С„РёС†РёРµРЅС‚Р°РјРё Рё Р·Р°РїРѕР»РЅРёС‚СЊ
 				{ __init(first, last, x); }
 
-	public: /// @name Размер и содержимое
-		size_type size() const;            ///< @brief Текущий размер КИХ-фильтра
+	public: /// @name Р Р°Р·РјРµСЂ Рё СЃРѕРґРµСЂР¶РёРјРѕРµ
+		size_type size() const;            ///< @brief РўРµРєСѓС‰РёР№ СЂР°Р·РјРµСЂ РљРРҐ-С„РёР»СЊС‚СЂР°
 
-		void reset();                      ///< @brief Обнулить фильтр
-		void reset(const_reference x);     ///< @brief Заполнить фильтр заданным значением
+		void reset();                      ///< @brief РћР±РЅСѓР»РёС‚СЊ С„РёР»СЊС‚СЂ
+		void reset(const_reference x);     ///< @brief Р—Р°РїРѕР»РЅРёС‚СЊ С„РёР»СЊС‚СЂ Р·Р°РґР°РЅРЅС‹Рј Р·РЅР°С‡РµРЅРёРµРј
 
 	public: // ()
-		value_type operator()(const_reference x); ///< @brief Фильтровать значение
+		value_type operator()(const_reference x); ///< @brief Р¤РёР»СЊС‚СЂРѕРІР°С‚СЊ Р·РЅР°С‡РµРЅРёРµ
 
 		// only put
 		void put(const_reference x)
@@ -78,14 +78,14 @@ template<typename T, typename CF>
 			}
 		}
 
-	public: /// @name Коэффициенты фильтра
-		typedef typename coef_array::const_iterator const_cf_iterator;       ///< @brief Константный итератор для коэффициентов фильтра
-		typedef typename coef_array::      iterator       cf_iterator;       ///< @brief Итератор для коэффициентов фильтра
+	public: /// @name РљРѕСЌС„С„РёС†РёРµРЅС‚С‹ С„РёР»СЊС‚СЂР°
+		typedef typename coef_array::const_iterator const_cf_iterator;       ///< @brief РљРѕРЅСЃС‚Р°РЅС‚РЅС‹Р№ РёС‚РµСЂР°С‚РѕСЂ РґР»СЏ РєРѕСЌС„С„РёС†РёРµРЅС‚РѕРІ С„РёР»СЊС‚СЂР°
+		typedef typename coef_array::      iterator       cf_iterator;       ///< @brief РС‚РµСЂР°С‚РѕСЂ РґР»СЏ РєРѕСЌС„С„РёС†РёРµРЅС‚РѕРІ С„РёР»СЊС‚СЂР°
 
-		const_cf_iterator cf_begin() const; ///< @brief Константный итератор на первый коэффициент фильтра
-		      cf_iterator cf_begin();       ///< @brief Итератор на первый коэффициент фильтра
-		const_cf_iterator cf_end() const;   ///< @brief Константный итератор за последний коэффициент фильтра
-		      cf_iterator cf_end();         ///< @brief Итератор за последний коэффициент фильтра
+		const_cf_iterator cf_begin() const; ///< @brief РљРѕРЅСЃС‚Р°РЅС‚РЅС‹Р№ РёС‚РµСЂР°С‚РѕСЂ РЅР° РїРµСЂРІС‹Р№ РєРѕСЌС„С„РёС†РёРµРЅС‚ С„РёР»СЊС‚СЂР°
+		      cf_iterator cf_begin();       ///< @brief РС‚РµСЂР°С‚РѕСЂ РЅР° РїРµСЂРІС‹Р№ РєРѕСЌС„С„РёС†РёРµРЅС‚ С„РёР»СЊС‚СЂР°
+		const_cf_iterator cf_end() const;   ///< @brief РљРѕРЅСЃС‚Р°РЅС‚РЅС‹Р№ РёС‚РµСЂР°С‚РѕСЂ Р·Р° РїРѕСЃР»РµРґРЅРёР№ РєРѕСЌС„С„РёС†РёРµРЅС‚ С„РёР»СЊС‚СЂР°
+		      cf_iterator cf_end();         ///< @brief РС‚РµСЂР°С‚РѕСЂ Р·Р° РїРѕСЃР»РµРґРЅРёР№ РєРѕСЌС„С„РёС†РёРµРЅС‚ С„РёР»СЊС‚СЂР°
 
 	private: // initialization
 		template<typename In>
@@ -154,7 +154,7 @@ namespace details
 
 
 //////////////////////////////////////////////////////////////////////////
-/// @brief Создать всепропускающий фильтр
+/// @brief РЎРѕР·РґР°С‚СЊ РІСЃРµРїСЂРѕРїСѓСЃРєР°СЋС‰РёР№ С„РёР»СЊС‚СЂ
 template<typename T, typename CF>
 	FIR_Filter<T, CF>::FIR_Filter()
 		: m_wpos(0)
