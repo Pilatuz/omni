@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="OMNI Library">
+      <UniqueIdentifier>{450b02db-6354-459c-b299-feb4d3488ede}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OMNI Library\dsp">
+      <UniqueIdentifier>{adfb1c65-59fa-4bc6-9926-2eee9545fde9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TEST Files">
+      <UniqueIdentifier>{49b592fa-9e03-4f43-94bb-fa82f5fec3a3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\omni\calc.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\conf.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\defs.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\matmath.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\matrix.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\misc.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\pool.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\rand.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\smart.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\sync.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\util.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\codec.cpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\delay.cpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\DFT.cpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\fading.cpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\FHT.cpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\filter.cpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\modem.cpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\omni\turbo.cpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\test\calc.cpp">
+      <Filter>TEST Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\test\conf.cpp">
+      <Filter>TEST Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\test\matrix.cpp">
+      <Filter>TEST Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\test\pool.cpp">
+      <Filter>TEST Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\test\smart.cpp">
+      <Filter>TEST Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\test\test.cpp">
+      <Filter>TEST Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\test\util.cpp">
+      <Filter>TEST Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\omni\calc.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\conf.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\defs.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\matmath.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\matrix.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\misc.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\pool.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\rand.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\smart.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\sync.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\util.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\codec.h">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\delay.h">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\DFT.h">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\fading.h">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\FHT.hpp">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\filter.h">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\modem.h">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\omni\turbo.h">
+      <Filter>OMNI Library\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\test\test.hpp">
+      <Filter>TEST Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
