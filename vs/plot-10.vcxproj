@@ -54,7 +54,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -75,7 +75,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -95,25 +95,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="WinMain.cpp" />
-    <ClCompile Include="..\..\src\omni\defs.cpp" />
-    <ClCompile Include="..\..\src\omni\misc.cpp" />
-    <ClCompile Include="..\..\src\omni\plot.cpp" />
-    <ClCompile Include="..\..\src\omni\pool.cpp" />
-    <ClCompile Include="..\..\src\omni\rand.cpp" />
-    <ClCompile Include="..\..\src\omni\smart.cpp" />
-    <ClCompile Include="..\..\src\omni\sync.cpp" />
-    <ClCompile Include="..\..\src\omni\util.cpp" />
+    <ClCompile Include="..\main_win.cpp" />
+    <ClCompile Include="..\src\omni\defs.cpp" />
+    <ClCompile Include="..\src\omni\misc.cpp" />
+    <ClCompile Include="..\src\omni\plot.cpp" />
+    <ClCompile Include="..\src\omni\pool.cpp" />
+    <ClCompile Include="..\src\omni\rand.cpp" />
+    <ClCompile Include="..\src\omni\smart.cpp" />
+    <ClCompile Include="..\src\omni\sync.cpp" />
+    <ClCompile Include="..\src\omni\util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\omni\defs.hpp" />
-    <ClInclude Include="..\..\src\omni\misc.hpp" />
-    <ClInclude Include="..\..\src\omni\plot.hpp" />
-    <ClInclude Include="..\..\src\omni\pool.hpp" />
-    <ClInclude Include="..\..\src\omni\rand.hpp" />
-    <ClInclude Include="..\..\src\omni\smart.hpp" />
-    <ClInclude Include="..\..\src\omni\sync.hpp" />
-    <ClInclude Include="..\..\src\omni\util.hpp" />
+    <ClInclude Include="..\src\omni\defs.hpp" />
+    <ClInclude Include="..\src\omni\misc.hpp" />
+    <ClInclude Include="..\src\omni\plot.hpp" />
+    <ClInclude Include="..\src\omni\pool.hpp" />
+    <ClInclude Include="..\src\omni\rand.hpp" />
+    <ClInclude Include="..\src\omni\smart.hpp" />
+    <ClInclude Include="..\src\omni\sync.hpp" />
+    <ClInclude Include="..\src\omni\util.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

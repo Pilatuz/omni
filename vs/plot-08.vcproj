@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(SolutionDir)src"
+				AdditionalIncludeDirectories="$(SolutionDir)..\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -116,7 +116,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(SolutionDir)src"
+				AdditionalIncludeDirectories="$(SolutionDir)..\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -177,7 +177,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\WinMain.cpp"
+				RelativePath="..\main_win.cpp"
 				>
 			</File>
 		</Filter>
@@ -197,67 +197,67 @@
 			Name="OMNI Library"
 			>
 			<File
-				RelativePath="..\..\src\omni\defs.cpp"
+				RelativePath="..\src\omni\defs.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\defs.hpp"
+				RelativePath="..\src\omni\defs.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\misc.cpp"
+				RelativePath="..\src\omni\misc.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\misc.hpp"
+				RelativePath="..\src\omni\misc.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\plot.cpp"
+				RelativePath="..\src\omni\plot.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\plot.hpp"
+				RelativePath="..\src\omni\plot.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\pool.cpp"
+				RelativePath="..\src\omni\pool.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\pool.hpp"
+				RelativePath="..\src\omni\pool.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\rand.cpp"
+				RelativePath="..\src\omni\rand.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\rand.hpp"
+				RelativePath="..\src\omni\rand.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\smart.cpp"
+				RelativePath="..\src\omni\smart.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\smart.hpp"
+				RelativePath="..\src\omni\smart.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\sync.cpp"
+				RelativePath="..\src\omni\sync.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\sync.hpp"
+				RelativePath="..\src\omni\sync.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\util.cpp"
+				RelativePath="..\src\omni\util.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\omni\util.hpp"
+				RelativePath="..\src\omni\util.hpp"
 				>
 			</File>
 		</Filter>

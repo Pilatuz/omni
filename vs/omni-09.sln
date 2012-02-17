@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "prj\test\test-09.vcproj", "{B6A84AC1-5459-4C0A-9C8F-E2E22129F4FA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test-09.vcproj", "{B6A84AC1-5459-4C0A-9C8F-E2E22129F4FA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "plot", "prj\plot\plot-09.vcproj", "{DCF1E340-AA4F-484E-95DC-A277428F5128}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "plot", "plot-09.vcproj", "{DCF1E340-AA4F-484E-95DC-A277428F5128}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

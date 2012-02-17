@@ -1,8 +1,9 @@
-/bin
-/ipch
-/obj
+# Visual Studio
+/vs/bin
+/vs/ipch
+/vs/obj
 
-*.suo
-*.sdf
-*.opensdf
-*proj.user
+/vs/*.suo
+/vs/*.sdf
+/vs/*.opensdf
+/vs/*proj.user

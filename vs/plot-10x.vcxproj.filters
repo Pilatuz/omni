@@ -18,57 +18,57 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="WinMain.cpp">
+    <ClCompile Include="..\main_win.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\omni\defs.cpp">
+    <ClCompile Include="..\src\omni\defs.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\omni\misc.cpp">
+    <ClCompile Include="..\src\omni\misc.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\omni\plot.cpp">
+    <ClCompile Include="..\src\omni\plot.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\omni\pool.cpp">
+    <ClCompile Include="..\src\omni\pool.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\omni\rand.cpp">
+    <ClCompile Include="..\src\omni\rand.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\omni\smart.cpp">
+    <ClCompile Include="..\src\omni\smart.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\omni\sync.cpp">
+    <ClCompile Include="..\src\omni\sync.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\omni\util.cpp">
+    <ClCompile Include="..\src\omni\util.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\omni\defs.hpp">
+    <ClInclude Include="..\src\omni\defs.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\omni\misc.hpp">
+    <ClInclude Include="..\src\omni\misc.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\omni\plot.hpp">
+    <ClInclude Include="..\src\omni\plot.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\omni\pool.hpp">
+    <ClInclude Include="..\src\omni\pool.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\omni\rand.hpp">
+    <ClInclude Include="..\src\omni\rand.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\omni\smart.hpp">
+    <ClInclude Include="..\src\omni\smart.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\omni\sync.hpp">
+    <ClInclude Include="..\src\omni\sync.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\omni\util.hpp">
+    <ClInclude Include="..\src\omni\util.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
   </ItemGroup>
