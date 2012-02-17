@@ -8,12 +8,12 @@
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
 //
-//		http://omni.sourceforge.net
+//		https://bitbucket.org/pilatuz/omni
 //////////////////////////////////////////////////////////////////////////
 /** @file
 	@brief Interface of the test tools.
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #ifndef __OMNI_TEST_HPP_
 #define __OMNI_TEST_HPP_

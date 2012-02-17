@@ -8,14 +8,14 @@
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
 //
-//		http://omni.sourceforge.net
+//		https://bitbucket.org/pilatuz/omni
 //////////////////////////////////////////////////////////////////////////
 /** @file
-@brief Implementation of the miscellaneous classes.
+	@brief Implementation of some miscellaneous classes.
 
 		This file contains implementation of the omni::misc::Timer class.
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #include <omni/misc.hpp>
 

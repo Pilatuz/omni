@@ -8,14 +8,14 @@
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
 //
-//		http://omni.sourceforge.net
+//		https://bitbucket.org/pilatuz/omni
 //////////////////////////////////////////////////////////////////////////
 /** @file
 	@brief Main OMNI definitions.
 
 		This source file contains documentation only.
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #include <omni/defs.hpp>
 
@@ -403,5 +403,5 @@ will be disabled). Instead always use the following definitions:
 		TODO: detail math libraries using description.
 
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */

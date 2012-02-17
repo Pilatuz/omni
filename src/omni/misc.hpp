@@ -8,14 +8,14 @@
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
 //
-//		http://omni.sourceforge.net
+//		https://bitbucket.org/pilatuz/omni
 //////////////////////////////////////////////////////////////////////////
 /** @file
-@brief Interface of the miscellaneous classes.
+	@brief Interface of some miscellaneous classes.
 
-		This file contains interface of the omni::misc::Timer class.
+		This file contains interface of some miscellaneous classes.
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #ifndef __OMNI_MISC_HPP_
 #define __OMNI_MISC_HPP_

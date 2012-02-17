@@ -8,10 +8,10 @@
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
 //
-//		http://omni.sourceforge.net
+//		https://bitbucket.org/pilatuz/omni
 //////////////////////////////////////////////////////////////////////////
 /** @file
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #include <omni/SIMD.hpp>
 

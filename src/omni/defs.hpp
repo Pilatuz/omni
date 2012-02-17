@@ -8,7 +8,7 @@
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
 //
-//		http://omni.sourceforge.net
+//		https://bitbucket.org/pilatuz/omni
 //////////////////////////////////////////////////////////////////////////
 /** @file
 	@brief Main OMNI definitions.
@@ -16,7 +16,7 @@
 		This header file is included by all other OMNI files.
 	So this header file is a root of OMNI library.
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #ifndef __OMNI_DEFS_HPP_
 #define __OMNI_DEFS_HPP_

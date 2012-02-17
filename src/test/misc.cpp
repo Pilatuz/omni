@@ -8,12 +8,12 @@
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
 //
-//		http://omni.sourceforge.net
+//		https://bitbucket.org/pilatuz/omni
 //////////////////////////////////////////////////////////////////////////
 /** @file
 	@brief The unit-test of "misc.hpp".
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #include <omni/misc.hpp>
 #include <test/test.hpp>
@@ -23,10 +23,12 @@
 namespace
 {
 
-
+/// @brief The document.
 class Document
 {
 public:
+
+	/// @brief The events set.
 	struct MyEvents
 	{
 		virtual void onChanging(Document *pDoc) = 0;
@@ -65,6 +67,7 @@ public:
 	}
 };
 
+/// @brief Events handler.
 class Handler:
 	public Document::MyEvents
 {
@@ -84,7 +87,8 @@ public:
 	int m_hits;
 };
 
-}
+} // local namespace
+
 
 // test function
 bool test_misc(std::ostream &os)
@@ -117,7 +121,9 @@ bool test_misc(std::ostream &os)
 namespace
 {
 	// Test1 class
-	class Test1: public omni::test::UnitTest {
+	class Test1:
+		public omni::test::UnitTest
+	{
 		// test title
 		virtual const char* title() const
 		{

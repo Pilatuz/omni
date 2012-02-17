@@ -8,7 +8,7 @@
 //	is granted, provided the above notices are retained, and a notice that
 //	the code was modified is included with the above copyright notice.
 //
-//		http://omni.sourceforge.net
+//		https://bitbucket.org/pilatuz/omni
 //////////////////////////////////////////////////////////////////////////
 /** @file
 	@brief Configuration tools.
@@ -16,7 +16,7 @@
 		This source file contains a char constants,
 	that helps to work with configurations.
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #include <omni/conf.hpp>
 
@@ -184,5 +184,5 @@ int CharConst<char>::format(Char *buf, size_t len, Char const *fmt, va_list args
 
 		The line after the "#" char is ignored.
 
-@author Sergey Polichnoy
+@author Sergey Polichnoy <pilatuz@gmail.com>
 */
