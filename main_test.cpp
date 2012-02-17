@@ -1,4 +1,4 @@
-#include <omni/defs.hpp>
+#include <omni/omni.hpp>
 //#include <test/test.hpp>
 //#include <omni/rand.hpp>
 

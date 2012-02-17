@@ -11,4 +11,12 @@
   <ItemGroup>
     <ClCompile Include="..\main_test.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\omni\defs.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\omni\omni.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
