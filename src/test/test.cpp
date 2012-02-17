@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //		This material is provided "as is", with absolutely no warranty
 //	expressed or implied. Any use is at your own risk.
 //
@@ -9,13 +9,12 @@
 //	the code was modified is included with the above copyright notice.
 //
 //		https://bitbucket.org/pilatuz/omni
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /** @file
-	@brief Implementation of the test tools.
-
+@brief Implementation of the test tools.
 @author Sergey Polichnoy <pilatuz@gmail.com>
 */
-#include <test/test.hpp>
+#include "test.hpp"
 
 #include <ostream>
 #include <string>
@@ -23,19 +22,25 @@
 
 #include <time.h>
 
-namespace omni
+// locals
+namespace
 {
-	namespace test
-	{
-		namespace details
-		{
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The unit-test list.
-typedef std::list<UnitTest*> UnitTestList;
+///////////////////////////////////////////////////////////////////////////////
+/// @brief The unit-test list type.
+typedef std::list<omni::test::UnitTest*> UnitTestList;
 
-//////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief The speed-test list type.
+typedef std::list<omni::test::SpeedTest*> SpeedTestList;
+
+
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Get the global unit-test list.
+/**
+@return The reference to global instance of unit-test list.
+*/
 UnitTestList& unit_test_list()
 {
 	static UnitTestList g_list;
@@ -43,39 +48,56 @@ UnitTestList& unit_test_list()
 }
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The speed-test list.
-typedef std::list<SpeedTest*> SpeedTestList;
-
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Get the global speed-test list.
+/**
+@return The reference to global instance of speed-test list.
+*/
 SpeedTestList& speed_test_list()
 {
 	static SpeedTestList g_list;
 	return g_list;
 }
 
-		} // details namespace
-	} // test namespace
+} // locals
 
 
+namespace omni
+{
 	// UnitTest
 	namespace test
 	{
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Run all registered unit-tests.
-/**
-@param os The output stream.
-*/
+///////////////////////////////////////////////////////////////////////////////
+UnitTest::UnitTest()
+{
+	unit_test_list().push_back(this);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+UnitTest::~UnitTest()
+{
+	unit_test_list().remove(this);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+bool UnitTest::test(std::ostream &os) const
+{
+	return do_test(os);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void UnitTest::testAll(std::ostream &os)
 {
 	const std::string SEPARATOR(64, '>');
 	size_t N_success = 0;
 	size_t N_failed = 0;
 
-	details::UnitTestList::const_iterator it = details::unit_test_list().begin();
-	details::UnitTestList::const_iterator ite = details::unit_test_list().end();
+	UnitTestList::const_iterator it = unit_test_list().begin();
+	UnitTestList::const_iterator const ite = unit_test_list().end();
 	for (size_t i = 1; it != ite; ++it, ++i)
 	{
 		UnitTest *ptest = (*it);
@@ -83,19 +105,27 @@ void UnitTest::testAll(std::ostream &os)
 		os << "\n" << SEPARATOR << "\n" << ">> " << i
 			<< ". " << ptest->title() << "\n";
 
-		try {
+		try
+		{
 			N_failed += 1;
-			if (!ptest->do_test(os))
-				os << "\tTEST FAILED!!!\n";
+			if (!ptest->test(os))
+			{
+				os << "\tFAILED!!!\n";
+			}
 			else
 			{
 				os << "\tSUCCESS\n";
 				N_success += 1;
 				N_failed -= 1;
 			}
-		} catch (const std::exception &e) {
-			os << "\tERROR: " << e.what() << "\n";
-		} catch (...) {
+		}
+		catch (std::exception const& ex)
+		{
+			os << "\tERROR: "
+				<< ex.what() << "\n";
+		}
+		catch (...)
+		{
 			os << "\tFATAL ERROR\n";
 		}
 	}
@@ -105,22 +135,6 @@ void UnitTest::testAll(std::ostream &os)
 		<< ">> failed:  " << N_failed << "\n";
 }
 
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Register unit-test.
-UnitTest::UnitTest()
-{
-	details::unit_test_list().push_back(this);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Unregister unit-test.
-UnitTest::~UnitTest()
-{
-	details::unit_test_list().remove(this);
-}
-
 	} // UnitTest
 
 
@@ -128,18 +142,35 @@ UnitTest::~UnitTest()
 	namespace test
 	{
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Run all registered speed-tests.
-/**
-@param os The output stream.
-*/
+///////////////////////////////////////////////////////////////////////////////
+SpeedTest::SpeedTest()
+{
+	speed_test_list().push_back(this);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+SpeedTest::~SpeedTest()
+{
+	speed_test_list().remove(this);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+bool SpeedTest::test(std::ostream &os) const
+{
+	return do_test(os);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void SpeedTest::testAll(std::ostream &os)
 {
 	const std::string SEPARATOR(64, '>');
 	clock_t N_total = 0;
 
-	details::SpeedTestList::const_iterator it = details::speed_test_list().begin();
-	details::SpeedTestList::const_iterator ite = details::speed_test_list().end();
+	SpeedTestList::const_iterator it = speed_test_list().begin();
+	SpeedTestList::const_iterator const ite = speed_test_list().end();
 	for (size_t i = 1; it != ite; ++it, ++i)
 	{
 		SpeedTest *ptest = (*it);
@@ -147,19 +178,25 @@ void SpeedTest::testAll(std::ostream &os)
 		os << "\n" << SEPARATOR << "\n" << ">> " << i
 			<< ". " << ptest->title() << "\n";
 
-		try {
-			clock_t start = clock();
-			ptest->do_test(os);
-			clock_t stop = clock();
+		try
+		{
+			const clock_t start = clock();
+			ptest->test(os);
+			const clock_t stop = clock();
 			N_total += (stop - start);
 
 			os << "DURATION: "
 				<< (stop-start)/double(CLOCKS_PER_SEC)
 				<< " seconds\n";
 
-		} catch (const std::exception &e) {
-			os << "\tERROR: " << e.what() << "\n";
-		} catch (...) {
+		}
+		catch (std::exception const& ex)
+		{
+			os << "\tERROR: "
+				<< ex.what() << "\n";
+		}
+		catch (...)
+		{
 			os << "\tFATAL ERROR\n";
 		}
 	}
@@ -168,22 +205,6 @@ void SpeedTest::testAll(std::ostream &os)
 		<< ">> TOTAL DURATION: "
 		<< N_total/double(CLOCKS_PER_SEC)
 		<< " seconds\n";
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Register speed-test.
-SpeedTest::SpeedTest()
-{
-	details::speed_test_list().push_back(this);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Unregister speed-test.
-SpeedTest::~SpeedTest()
-{
-	details::speed_test_list().remove(this);
 }
 
 	} // SpeedTest

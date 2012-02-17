@@ -1,5 +1,5 @@
 #include <omni/omni.hpp>
-//#include <test/test.hpp>
+#include <test/test.hpp>
 //#include <omni/rand.hpp>
 
 #include <iostream>
@@ -56,7 +56,7 @@ int main(int argc, char const* argv[])
 		}
 
 		//omni::rnd::randomize();
-		//omni::test::UnitTest::testAll(std::cout);
+		omni::test::UnitTest::testAll(std::cout);
 
 #if !OMNI_DEBUG
 		//omni::test::SpeedTest::testAll(std::cout);

@@ -97,10 +97,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\main_test.cpp" />
+    <ClCompile Include="..\src\test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\omni\defs.hpp" />
     <ClInclude Include="..\src\omni\omni.hpp" />
+    <ClInclude Include="..\src\test\test.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -10,6 +10,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\main_test.cpp" />
+    <ClCompile Include="..\src\test\test.cpp">
+      <Filter>TEST Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\omni\defs.hpp">
@@ -17,6 +20,9 @@
     </ClInclude>
     <ClInclude Include="..\src\omni\omni.hpp">
       <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\test\test.hpp">
+      <Filter>TEST Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
