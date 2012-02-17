@@ -56,11 +56,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 // platform detection
 #if !defined(OMNI_DOXY_MODE)
-#if defined(_WIN32) || defined(WIN32)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #	define OMNI_WIN
-#elif defined(__LINUX__)
+#elif defined(linux) || defined(__linux) || defined(__linux__)
 #	define OMNI_LINUX
-#elif defined(__OSX__)
+#elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
 #	define OMNI_OSX
 #else
 #	error Unknown platform

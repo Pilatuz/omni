@@ -7,3 +7,8 @@
 /vs/*.sdf
 /vs/*.opensdf
 /vs/*proj.user
+
+# gcc
+/test.exe
+*.gch
+*.o
