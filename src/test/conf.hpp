@@ -20,7 +20,8 @@
 #include <iterator>
 #include <sstream>
 
-#include <tchar.h>
+//#include <tchar.h>
+#define _T(A) A
 
 template class omni::conf::ItemT<std::wstring>;
 template class omni::conf::ItemT<std::string>;

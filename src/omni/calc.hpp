@@ -1120,12 +1120,12 @@ std::wstring get_func_name(std::basic_istream<Ch,Tr> &is)
 {
 	typedef std::basic_istream<Ch,Tr> istream_type;
 	typedef std::basic_string<Ch,Tr> string_type;
-	typedef istream_type::traits_type traits_type;
+	typedef typename istream_type::traits_type traits_type;
 	typedef CharConst<Ch> calc_traits;
 	typedef std::ctype<Ch> facet_type;
 
 	std::ios::iostate state = std::ios::goodbit;
-	const istream_type::sentry ok(is); // (!) skip white space
+	const typename istream_type::sentry ok(is); // (!) skip white space
 
 	std::wstring func_name;
 	// func_name.reserve(32);
@@ -1185,7 +1185,7 @@ bool get_num(std::basic_istream<Ch,Tr> &is, T &x, bool is_integer)
 {
 	typedef std::basic_istream<Ch, Tr> istream_type;
 	typedef std::basic_string<Ch, Tr> string_type;
-	typedef istream_type::traits_type traits_type;
+	typedef typename istream_type::traits_type traits_type;
 	typedef CharConst<Ch> calc_traits;
 
 	typename traits_type::int_type meta = is.peek();
@@ -1272,7 +1272,7 @@ T level_4(std::basic_istream<Ch,Tr> &is, const Calculator<T> &calculator)
 	if (!get_num(is >> std::ws, x, calculator.is_integer())) // try to parse number
 	{
 		typedef std::basic_istream<Ch, Tr> istream_type;
-		typedef istream_type::traits_type traits_type;
+		typedef typename istream_type::traits_type traits_type;
 		typedef CharConst<Ch> calc_traits;
 
 		typename traits_type::int_type meta = is.peek();
@@ -1359,7 +1359,7 @@ T level_3(std::basic_istream<Ch,Tr> &is, const Calculator<T> &calculator)
 	while ((is >> std::ws) && !is.eof())
 	{
 		typedef std::basic_istream<Ch, Tr> istream_type;
-		typedef istream_type::traits_type traits_type;
+		typedef typename istream_type::traits_type traits_type;
 		typedef CharConst<Ch> calc_traits;
 
 		typename traits_type::int_type meta = is.peek();
@@ -1400,7 +1400,7 @@ T level_2(std::basic_istream<Ch,Tr> &is, const Calculator<T> &calculator)
 	while ((is >> std::ws) && !is.eof())
 	{
 		typedef std::basic_istream<Ch, Tr> istream_type;
-		typedef istream_type::traits_type traits_type;
+		typedef typename istream_type::traits_type traits_type;
 		typedef CharConst<Ch> calc_traits;
 
 		typename traits_type::int_type meta = is.peek();

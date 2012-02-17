@@ -29,13 +29,13 @@
 namespace
 {
 	// largest integer
-	typedef unsigned __int64 UInt64;
+	typedef unsigned long long UInt64;
 
 	// dummy flp2()
 	template<typename T>
 		T dummy_flp2(T x)
 	{
-		UInt64 res = 1ui64 << (sizeof(T)*8 - 1);
+		UInt64 res = UInt64(1) << (sizeof(T)*8 - 1);
 
 		while (UInt64(x) < res)
 			res >>= 1;
@@ -48,7 +48,7 @@ namespace
 	template<typename T>
 		T dummy_clp2(T x)
 	{
-		UInt64 res = 1ui64;
+		UInt64 res = UInt64(1);
 
 		while (res < UInt64(x))
 			res <<= 1;
@@ -64,7 +64,7 @@ namespace
 		size_t n = 0;
 
 		for (size_t i = 0; i < (sizeof(T)*8 - 1); ++i)
-			if (x & (1ui64<<i)) ++n;
+			if (x & (UInt64(1)<<i)) ++n;
 
 		return T(n&1);
 	}
@@ -93,7 +93,7 @@ namespace
 		{
 			for (size_t i = 0; i < (sizeof(T)*8-1); ++i)
 			{
-				x = T(1ui64 << i);
+				x = T(UInt64(1) << i);
 				if (omni::util::log2(x) != (T)i)
 					return false;
 			}
@@ -180,12 +180,12 @@ private:
 		TEST(log2_test<short>(0));
 		TEST(log2_test<int>(0));
 		TEST(log2_test<long>(0L));
-		TEST(log2_test<__int64>(0i64));
+		TEST(log2_test<long long>(0LL));
 		TEST(log2_test<unsigned char>('\0'));
 		TEST(log2_test<unsigned short>(0U));
 		TEST(log2_test<unsigned int>(0U));
 		TEST(log2_test<unsigned long>(0UL));
-		TEST(log2_test<unsigned __int64>(0UI64));
+		TEST(log2_test<unsigned long long>(0ULL));
 		os << "done\n";
 
 		// clp2, flp2, parity
@@ -194,12 +194,12 @@ private:
 		TEST(xxx_test<short>(0));
 		TEST(xxx_test<int>(0));
 		TEST(xxx_test<long>(0L));
-		TEST(xxx_test<__int64>(0I64));
+		TEST(xxx_test<long long>(0LL));
 		TEST(xxx_test<unsigned char>('\0'));
 		TEST(xxx_test<unsigned short>(0U));
 		TEST(xxx_test<unsigned int>(0U));
 		TEST(xxx_test<unsigned long>(0UL));
-		TEST(xxx_test<unsigned __int64>(0UI64));
+		TEST(xxx_test<unsigned long long>(0ULL));
 		os << "done\n";
 
 		{ // pack/unpack

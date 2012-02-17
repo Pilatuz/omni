@@ -20,6 +20,8 @@
 */
 #include <omni/conf.hpp>
 
+#include <stdio.h>
+
 namespace omni
 {
 
@@ -101,7 +103,7 @@ bool CharConst<wchar_t>::is_delim(Char ch)
 template<>
 int CharConst<wchar_t>::format(Char *buf, size_t len, Char const *fmt, va_list args)
 {
-	return _vsnwprintf(buf, len, fmt, args);
+	return vswprintf(buf, len, fmt, args);
 }
 
 // explicit CharConst<char> instantiation...
@@ -132,7 +134,7 @@ bool CharConst<char>::is_delim(Char ch)
 template<>
 int CharConst<char>::format(Char *buf, size_t len, Char const *fmt, va_list args)
 {
-	return _vsnprintf(buf, len, fmt, args);
+	return vsnprintf(buf, len, fmt, args);
 }
 
 		} // CharConst

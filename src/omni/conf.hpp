@@ -74,6 +74,8 @@ namespace omni
 		namespace details
 		{
 			template<typename Ch> class CharConst;
+			template<typename Str, typename Ch>
+				void format(Str &out, Ch const *fmt, va_list args);
 		} // implementation defined
 	} // forward declarations
 
@@ -386,7 +388,7 @@ public:
 */
 	ItemT& operator=(ItemT const& other)
 	{
-		swap(ItemT(other));
+		ItemT(other).swap(*this);
 		return *this;
 	}
 
@@ -590,7 +592,7 @@ public:
 */
 	void format(Char const *fmt, ...)
 	{
-		va_list args = 0;
+		va_list args;
 		va_start(args, fmt);
 
 		details::format(m_val, fmt, args);
@@ -1656,8 +1658,8 @@ public:
 		String const& theName,
 		String const& thePath)
 			: inherited(msg),
-			  m_name(theName),
-			  m_path(thePath)
+			  m_path(thePath),
+			  m_name(theName)
 	{}
 
 
@@ -2240,7 +2242,7 @@ public:
 				ItemT<String> &curr = top();
 				if (!curr.empty())
 				{
-					ItemT<String>::iterator child = curr.end();
+					typename ItemT<String>::iterator child = curr.end();
 					--child; // (!) now it is back() element
 
 					if (child->val().empty()
@@ -2655,11 +2657,9 @@ public:
 			- print empty values
 */
 	WriterT()
-		: tabSize(2), indent(0),
-		  rootName(false),
-		  newLine(true),
-		  printEmptyValues(true),
-		  doubleQuote(true)
+		: tabSize(2), rootName(false),
+		  newLine(true), doubleQuote(true),
+		  printEmptyValues(true), indent(0)
 {}
 
 

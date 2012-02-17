@@ -83,6 +83,10 @@ test_out:=test.exe
 
 
 # omni source files
+omni_src+=${home_path}/src/omni/calc.cpp
+omni_src+=${home_path}/src/omni/conf.cpp
+omni_src+=${home_path}/src/omni/util.cpp
+
 
 # PCH header files
 PCH_sources+=${home_path}/src/omni/defs.hpp
@@ -90,7 +94,8 @@ PCH_objects:=${PCH_sources:.hpp=.hpp.gch}
 
 
 # expands to list of object files
-test_sources:=${omni_src} ${home_path}/main_test.cpp
+test_sources+=${home_path}/src/test/test.cpp
+test_sources+=${omni_src} ${home_path}/main_test.cpp
 test_objects:=${test_sources:.cpp=.o}
 
 all: ${test_out}

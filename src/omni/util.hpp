@@ -24,6 +24,7 @@
 #include <omni/defs.hpp>
 
 #include <assert.h>
+#include <stdlib.h>
 
 namespace omni
 {

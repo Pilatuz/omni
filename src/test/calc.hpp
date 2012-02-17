@@ -84,8 +84,8 @@ private:
 #define TEST(expr) if (expr) {} else { os << "expression failed: \"" \
 	<< #expr << "\" at line " << __LINE__ << "\n"; return false; }
 
-# define TESTF(expr, eps) (ftest(calc::Calculator<double>(), L#expr, expr, eps) && ftest(calc::Calculator<double>(), #expr, expr, eps))
-# define TESTI(expr) (itest(calc::Calculator<int>(), L#expr, expr) && itest(calc::Calculator<int>(), #expr, expr))
+# define TESTF(expr, eps) (ftest(calc::Calculator<double>(), #expr, expr, eps) && ftest(calc::Calculator<double>(), #expr, expr, eps))
+# define TESTI(expr) (itest(calc::Calculator<int>(), #expr, expr) && itest(calc::Calculator<int>(), #expr, expr))
 
 		using namespace omni;
 
