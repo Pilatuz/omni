@@ -1,21 +1,16 @@
-#include <test/test.hpp>
-#include <omni/rand.hpp>
+#include <omni/defs.hpp>
+//#include <test/test.hpp>
+//#include <omni/rand.hpp>
 
 #include <iostream>
 
-// test functions
-bool test_SIMD(std::ostream &os);
-bool test_calc(std::ostream &os);
-bool test_conf(std::ostream &os);
-bool test_pool(std::ostream &os);
-bool test_smart(std::ostream &os);
-bool test_util(std::ostream &os);
-bool test_matrix(std::ostream &os);
+// locals
+namespace
+{
 
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The application entry point.
-int main()
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Print the compiler information to standard output stream.
+void print_compiler_info()
 {
 #if defined(__INTEL_COMPILER)
 	std::cout << "Intel compiler: " << int(__INTEL_COMPILER) << "\n";
@@ -30,38 +25,52 @@ int main()
 	std::cout << "Comeau C++: " << int(__COMO__) << "\n";
 #endif
 #if defined(_MSC_VER)
-	std::cout << "MS compiler: " << int(_MSC_VER) << "\n";
+	std::cout << "MS VS compiler: " << int(_MSC_VER) << "\n";
 #endif
+}
+
+} // locals
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief The application entry point.
+/**
+@param[in] argc The number of command line arguments.
+@param[in] argv The command line arguments.
+*/
+int main(int argc, char const* argv[])
+{
+	print_compiler_info();
 	std::cout << "\n";
 
 	try
 	{
 		if (0) // explicit test
 		{
-			if (!test_conf(std::cout))
-				std::cout << "test FAILED\n";
-			else
-				std::cout << "test SUCCESS\n";
+			//if (!test_conf(std::cout))
+			//	std::cout << "test FAILED\n";
+			//else
+			//	std::cout << "test SUCCESS\n";
 
 			return 0;
 		}
 
-		omni::rnd::randomize();
-		omni::test::UnitTest::testAll(std::cout);
+		//omni::rnd::randomize();
+		//omni::test::UnitTest::testAll(std::cout);
 
 #if !OMNI_DEBUG
-		omni::test::SpeedTest::testAll(std::cout);
+		//omni::test::SpeedTest::testAll(std::cout);
 #endif
 
 	}
-	catch (std::exception const& e)
+	catch (std::exception const& ex)
 	{
-		std::cerr << "ERROR: "
-			<< e.what() << "\n";
+		std::cerr << "\nERROR: "
+			<< ex.what() << "\n";
 	}
 	catch (...)
 	{
-		std::cerr << "FATAL ERROR!\n";
+		std::cerr << "\nFATAL ERROR!\n";
 	}
 
 	return 0;
