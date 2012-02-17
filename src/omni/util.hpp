@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //		This material is provided "as is", with absolutely no warranty
 //	expressed or implied. Any use is at your own risk.
 //
@@ -9,9 +9,9 @@
 //	the code was modified is included with the above copyright notice.
 //
 //		https://bitbucket.org/pilatuz/omni
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /** @file
-	@brief Auxiliary constants and functions.
+@brief Auxiliary constants and functions.
 
 		This header file contains declaration of the
 	some useful constants and auxiliary functions.
@@ -27,63 +27,207 @@
 
 namespace omni
 {
+	/// @brief Auxiliary constants and functions.
+	/**
+			This namespace contains some useful
+		constants and auxiliary functions.
+	*/
 	namespace util
-	{ /// @name Constants
+	{
+/// @name Constants
+/// @{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Square root of 2. @hideinitializer
 const double SQRT2 = 1.4142135623730950488016887242097;
 
-//////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Square root of 3. @hideinitializer
 const double SQRT3 = 1.7320508075688772935274463415059;
 
-//////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Decimal logarithm of 2. @hideinitializer
 const double LG2 = 0.3010299956639811952137388947245;
 
-//////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Natural logarithm of 2. @hideinitializer
 const double LN2 = 0.6931471805599453094172321214582;
 
-//////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The @b Pi value. @hideinitializer
 const double PI = 3.1415926535897932384626433832795;
 
-	} // Constants
+/// @}
+	}
 
 
 	namespace util
-	{ /// @name Conversions
+	{
+/// @name Conversions
+/// @{
 
-// radians and degrees
-double deg2rad(double deg);   ///< @brief Convert degrees to the radians.
-double rad2deg(double rad);   ///< @brief Convert radians to the degrees.
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Convert degrees to the radians.
+/**
+		This function converts the @a deg value
+	in degrees to the corresponding value in radians.
 
-// dB and line
-double dB2line(double dB);    ///< @brief Convert @b dB to the value in linear scale.
-double line2dB(double L);     ///< @brief Convert value in linear scale to the @b dB.
+@code
+	double rad = deg * 3.14/180;
+@endcode
 
-// dBm and watt
-double dBm2watt(double dBm);  ///< @brief Convert @b dBm to the watts.
-double watt2dBm(double W);    ///< @brief Convert watts to the @b dBm.
+@param[in] deg The value in degrees.
+@return The value in radians.
 
-// kph and mps
-double kph2mps(double kph);   ///< @brief Convert @b kph to the @b mps.
-double mps2kph(double mps);   ///< @brief Convert @b mps to the @b kph.
+@see rad2deg()
+*/
+double deg2rad(double deg);
 
-	} // Conversions
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Convert radians to the degrees.
+/**
+		This function converts the @a rad value in radians
+	to the corresponding value in degrees.
+
+@code
+	double deg = rad * 180/3.14;
+@endcode
+
+@param[in] rad The value in radians.
+@return The value in degrees.
+
+@see deg2rad()
+*/
+double rad2deg(double rad);
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Convert @b dB to the value in linear scale.
+/**
+		This function converts the @a dB value in logarithmic (@b dB) scale
+	to the corresponding value in linear scale.
+
+@code
+	double L = pow(10, dB/10);
+@endcode
+
+@param[in] dB The value in logarithmic scale.
+@return The value in linear scale.
+
+@see line2dB()
+*/
+double dB2line(double dB);
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Convert value in linear scale to the @b dB.
+/**
+		This function converts the @a L value in linear scale to the
+	corresponding value in logarithmic (@b dB) scale.
+
+@code
+	double dB = 10*log10(L);
+@endcode
+
+@param[in] L The value in linear scale. Should be positive nonzero value!
+@return The value in logarithmic scale.
+
+@see dB2line()
+*/
+double line2dB(double L);
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Convert @b dBm to the watts.
+/**
+		This function converts the @a dBm value in logarithmic (@b dBm) scale
+	to the value in watts.
+
+@code
+	double W = pow(10, dBm/10) / 1000;
+@endcode
+
+@param[in] dBm The value in @b dBm.
+@return The value in watts.
+
+@see watt2dBm()
+*/
+double dBm2watt(double dBm);
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Convert watts to the @b dBm.
+/**
+		This function converts the @a W value in watts
+	to the value in logarithmic (@b dBm) scale.
+
+@code
+	double dBm = 10*log10(W*1000);
+@endcode
+
+@param[in] W The value in watts. Should be positive nonzero value!
+@return The value in @b dBm.
+
+@see dBm2watt()
+*/
+double watt2dBm(double W);
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Convert @b kph to the @b mps.
+/**
+		This function converts the value in kilometers per hour (@b kph)
+	to the value in meters per second (@b mps).
+
+@code
+	double mps = kph / 3.6;
+@endcode
+
+@param[in] kph The value in @b kph.
+@return The value in @b mps.
+
+@see mps2kph()
+*/
+double kph2mps(double kph);
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief Convert @b mps to the @b kph.
+/**
+		This function converts the value in meters per second (@b mps)
+	to the value in kilometers per hour (@b kph).
+
+@code
+	double kph = mps * 3.6;
+@endcode
+
+@param[in] mps The value in @b mps.
+@return The value in @b kph.
+
+@see kph2mps()
+*/
+double mps2kph(double mps);
+
+/// @}
+	}
 
 
 	namespace util
-	{ /// @name Power of two and parity
+	{
+/// @name Power of two and parity
+/// @{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Is integer power of two?
 /**
-		This functions checks the @a x arguments - is it integer power of two?
+		This functions checks the @a x argument - is it integer power of two?
 
-		The valid integer powers of two: 0, 1, 2, 4, 8, 16, 32, 64, 128, etc...
+	The valid integer powers of two are: 0, 1, 2, 4, 8, 16, 32, 64, 128, etc...
 
 @note The template argument @a T should be unsigned integer type.
 
@@ -101,7 +245,7 @@ template<typename T> inline
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Binary integer logarithm.
 /**
 		This function calculates a binary integer logarithm
@@ -127,7 +271,7 @@ template<typename T> inline
 template<typename T>
 	T log2(T x)
 {
-	assert(x!=T() && is_ipow2(x)
+	assert(T(0)<x && is_ipow2(x)
 		&& "log2() argument should "
 		"be integer power of two");
 
@@ -153,7 +297,7 @@ template<typename T>
 #endif // (MSC_VER)
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Nearest (floor) integer power of two.
 /**
 		This function calculates an integer value representing the largest
@@ -193,7 +337,7 @@ template<typename T>
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Nearest (ceil) integer power of two.
 /**
 		This function calculates an integer value representing the smallest
@@ -235,7 +379,7 @@ template<typename T>
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Parity bit.
 /**
 		This function calculates a parity bit of the input argument @a x.
@@ -271,13 +415,16 @@ template<typename T>
 #	pragma warning(pop)
 #endif // (MSC_VER)
 
-	} // Power of two and parity
+/// @}
+	}
 
 
 	namespace util
-	{ /// @name Bits packing/unpacking and flip
+	{
+/// @name Bits packing/unpacking and flip
+/// @{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Binary to decimal (MSB first).
 /**
 		This function converts input binary sequence [@a first,
@@ -329,7 +476,7 @@ template<typename T, typename In>
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Decimal to binary (MSB first).
 /**
 		This function convert "decimal" value @a x to the output bit
@@ -377,7 +524,7 @@ template<typename T, typename Out>
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Binary to decimal (LSB first).
 /**
 		This function converts input binary sequence [@a first,
@@ -431,7 +578,7 @@ template<typename T, typename In>
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Decimal to binary (LSB first).
 /**
 		This function convert "decimal" value @a x to the output bit
@@ -479,7 +626,7 @@ template<typename T, typename Out>
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Reverse the bit order.
 /**
 		This function returns the flipped @a Nbits
@@ -514,13 +661,16 @@ template<typename T>
 	return res;
 }
 
-	} // Bits packing/unpacking and flip
+/// @}
+	}
 
 
 	namespace util
-	{ /// @name Polynomials
+	{
+/// @name Polynomials
+/// @{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Calculate the polynomial's function.
 /**
 		This function calculates the value of polynomial's function:
@@ -559,7 +709,7 @@ template<typename TY, typename TX, typename Bi>
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Calculate the polynomial's function.
 /**
 		This function calculates the value of polynomial's function:
@@ -586,7 +736,8 @@ template<typename T, typename Bi> inline
 	return poly(x, first, last, x);
 }
 
-	} // Polynomials
+/// @}
+	}
 
 } // omni namespace
 

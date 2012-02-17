@@ -13,6 +13,18 @@
     <ClCompile Include="..\src\test\test.cpp">
       <Filter>TEST Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\omni\calc.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\omni\conf.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\omni\misc.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\omni\util.cpp">
+      <Filter>OMNI Library</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\omni\defs.hpp">
@@ -23,6 +35,27 @@
     </ClInclude>
     <ClInclude Include="..\src\test\test.hpp">
       <Filter>TEST Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\test\calc.hpp">
+      <Filter>TEST Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\test\conf.hpp">
+      <Filter>TEST Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\test\util.hpp">
+      <Filter>TEST Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\omni\calc.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\omni\conf.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\omni\misc.hpp">
+      <Filter>OMNI Library</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\omni\util.hpp">
+      <Filter>OMNI Library</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

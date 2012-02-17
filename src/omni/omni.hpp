@@ -20,6 +20,9 @@
 #ifndef __OMNI_HPP_
 #define __OMNI_HPP_
 
-#include "defs.hpp"
+#include <omni/defs.hpp>
+#include <omni/calc.hpp>
+#include <omni/conf.hpp>
+#include <omni/util.hpp>
 
 #endif // __OMNI_HPP_

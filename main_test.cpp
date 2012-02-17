@@ -1,6 +1,9 @@
 #include <omni/omni.hpp>
+
 #include <test/test.hpp>
-//#include <omni/rand.hpp>
+#include <test/calc.hpp>
+#include <test/conf.hpp>
+#include <test/util.hpp>
 
 #include <iostream>
 
