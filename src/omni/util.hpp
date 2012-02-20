@@ -222,6 +222,93 @@ double mps2kph(double mps);
 	{
 /// @name Power of two and parity
 /// @{
+		namespace details
+		{
+			/// @brief The shift helper.
+			/**
+				This class performs right shift operations on custom type:
+					- xor_shr() is equal to x ^= x >> shift;
+					-  or_shr() is equal to x |= x >> shift;
+
+					If shift value is greater than or equal to the type size,
+				then no actual shift performed.
+			*/
+			template<size_t shift>
+				class Shift
+			{
+			public:
+
+				/// @brief Shift right and XOR.
+				/**
+				@param[in,out] x Operand.
+				*/
+				template<typename T>
+				static inline void xor_shr(T &x)
+				{
+					Impl<Check<T>::sense>::xor_shr(x);
+				}
+
+				/// @brief Shift right and OR.
+				/**
+				@param[in,out] x Operand.
+				*/
+				template<typename T>
+				static inline void or_shr(T &x)
+				{
+					Impl<Check<T>::sense>::or_shr(x);
+				}
+
+			private:
+
+				/// @brief Do shift.
+				template<int sense>
+					struct Impl
+				{
+					/// @brief Shift right and XOR.
+					template<typename T>
+					static inline void xor_shr(T &x)
+					{
+						x ^= (x >> shift);
+					}
+
+					/// @brief Shift right and OR.
+					template<typename T>
+					static inline void or_shr(T &x)
+					{
+						x |= (x >> shift);
+					}
+				};
+
+				/// @brief Do nothing.
+				template<>
+					struct Impl<0>
+				{
+					/// @brief Shift right and XOR.
+					template<typename T>
+					static inline void xor_shr(T&)
+					{} // do nothing
+
+					/// @brief Shift right and OR.
+					template<typename T>
+					static inline void or_shr(T&)
+					{} // do nothing
+				};
+
+			private:
+
+				/// @brief Type size check.
+				template<typename T>
+					struct Check
+				{
+					enum
+					{
+						/// @brief Does it make sense?
+						sense = (shift < 8*sizeof(T))
+					};
+				};
+			};
+		}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// @brief Is integer power of two?
@@ -287,17 +374,6 @@ template<typename T>
 }
 
 
-// disable some MSVC++ warnings
-#if defined(_MSC_VER)
-#	pragma warning(push)
-#	if (1400 <= _MSC_VER)
-#		pragma warning(disable: 4293) // warning C4293: '>>' : shift count negative or too big, undefined behavior
-#		pragma warning(disable: 4333) // warning C4333: '>>' : right shift by too large amount, data loss
-#	endif // (1400 <= _MSC_VER)
-#	pragma warning(disable: 4127) // warning C4127: conditional expression is constant
-#endif // (MSC_VER)
-
-
 ///////////////////////////////////////////////////////////////////////////////
 /// @brief Nearest (floor) integer power of two.
 /**
@@ -323,16 +399,12 @@ template<typename T>
 template<typename T>
 	T flp2(T x)
 {
-	x |= x >> 1;
-	x |= x >> 2;
-	x |= x >> 4;
-
-	if (1 < sizeof(T))
-		x |= x >> 8;
-	if (2 < sizeof(T))
-		x |= x >> 16;
-	if (4 < sizeof(T))
-		x |= x >> 32;
+	details::Shift< 1>::or_shr(x);
+	details::Shift< 2>::or_shr(x);
+	details::Shift< 4>::or_shr(x);
+	details::Shift< 8>::or_shr(x);
+	details::Shift<16>::or_shr(x);
+	details::Shift<32>::or_shr(x);
 
 	return x - (x>>1);
 }
@@ -365,16 +437,12 @@ template<typename T>
 {
 	x -= 1;
 
-	x |= x >> 1;
-	x |= x >> 2;
-	x |= x >> 4;
-
-	if (1 < sizeof(T))
-		x |= x >> 8;
-	if (2 < sizeof(T))
-		x |= x >> 16;
-	if (4 < sizeof(T))
-		x |= x >> 32;
+	details::Shift< 1>::or_shr(x);
+	details::Shift< 2>::or_shr(x);
+	details::Shift< 4>::or_shr(x);
+	details::Shift< 8>::or_shr(x);
+	details::Shift<16>::or_shr(x);
+	details::Shift<32>::or_shr(x);
 
 	return x + 1;
 }
@@ -397,26 +465,17 @@ template<typename T>
 template<typename T>
 	T parity(T x)
 {
-	if (4 < sizeof(T))
-		x ^= x >> 32;
-	if (2 < sizeof(T))
-		x ^= x >> 16;
-	if (1 < sizeof(T))
-		x ^= x >> 8;
-
-	x ^= x >> 4;
-	x ^= x >> 2;
-	x ^= x >> 1;
+	details::Shift<32>::xor_shr(x);
+	details::Shift<16>::xor_shr(x);
+	details::Shift< 8>::xor_shr(x);
+	details::Shift< 4>::xor_shr(x);
+	details::Shift< 2>::xor_shr(x);
+	details::Shift< 1>::xor_shr(x);
 
 	return (x&1);
 }
-
-// restore some MSVC++ warnings
-#if defined(_MSC_VER)
-#	pragma warning(pop)
-#endif // (MSC_VER)
-
 /// @}
+
 	}
 
 
