@@ -224,6 +224,53 @@ double mps2kph(double mps);
 /// @{
 		namespace details
 		{
+			/// @brief Type size check.
+			template<typename T, size_t shift>
+				struct ShiftCheck
+			{
+				enum
+				{
+					/// @brief Does it make sense?
+					sense = (shift < 8*sizeof(T))
+				};
+			};
+
+
+			/// @brief Do the shift.
+			template<int sense>
+				struct ShiftImpl
+			{
+				/// @brief Shift right and XOR.
+				template<typename T>
+				static inline void xor_shr(T &x, size_t shift)
+				{
+					x ^= (x >> shift);
+				}
+
+				/// @brief Shift right and OR.
+				template<typename T>
+				static inline void or_shr(T &x, size_t shift)
+				{
+					x |= (x >> shift);
+				}
+			};
+
+			/// @brief Do nothing.
+			template<>
+				struct ShiftImpl<0>
+			{
+				/// @brief Shift right and XOR.
+				template<typename T>
+				static inline void xor_shr(T&, size_t)
+				{} // do nothing
+
+				/// @brief Shift right and OR.
+				template<typename T>
+				static inline void or_shr(T&, size_t)
+				{} // do nothing
+			};
+
+
 			/// @brief The shift helper.
 			/**
 				This class performs right shift operations on custom type:
@@ -245,7 +292,10 @@ double mps2kph(double mps);
 				template<typename T>
 				static inline void xor_shr(T &x)
 				{
-					Impl<Check<T>::sense>::xor_shr(x);
+					typedef ShiftCheck<T, shift> Check;
+					typedef ShiftImpl<Check::sense> Impl;
+
+					Impl::xor_shr(x, shift);
 				}
 
 				/// @brief Shift right and OR.
@@ -255,57 +305,11 @@ double mps2kph(double mps);
 				template<typename T>
 				static inline void or_shr(T &x)
 				{
-					Impl<Check<T>::sense>::or_shr(x);
+					typedef ShiftCheck<T, shift> Check;
+					typedef ShiftImpl<Check::sense> Impl;
+
+					Impl::or_shr(x, shift);
 				}
-
-			private:
-
-				/// @brief Do shift.
-				template<int sense>
-					struct Impl
-				{
-					/// @brief Shift right and XOR.
-					template<typename T>
-					static inline void xor_shr(T &x)
-					{
-						x ^= (x >> shift);
-					}
-
-					/// @brief Shift right and OR.
-					template<typename T>
-					static inline void or_shr(T &x)
-					{
-						x |= (x >> shift);
-					}
-				};
-
-				/// @brief Do nothing.
-				template<>
-					struct Impl<0>
-				{
-					/// @brief Shift right and XOR.
-					template<typename T>
-					static inline void xor_shr(T&)
-					{} // do nothing
-
-					/// @brief Shift right and OR.
-					template<typename T>
-					static inline void or_shr(T&)
-					{} // do nothing
-				};
-
-			private:
-
-				/// @brief Type size check.
-				template<typename T>
-					struct Check
-				{
-					enum
-					{
-						/// @brief Does it make sense?
-						sense = (shift < 8*sizeof(T))
-					};
-				};
 			};
 		}
 
