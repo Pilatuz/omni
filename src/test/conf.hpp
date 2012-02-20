@@ -21,7 +21,11 @@
 #include <sstream>
 
 //#include <tchar.h>
-#define _T(A) A
+#if OMNI_UNICODE
+#	define _T(A) L##A
+#else
+#	define _T(A) A
+#endif
 
 template class omni::conf::ItemT<std::wstring>;
 template class omni::conf::ItemT<std::string>;
@@ -95,7 +99,8 @@ private:
 
 			// push_back
 			s1.push_back(_T("key1")) = _T("val1");
-			Config::const_iterator it = s1.begin();
+			Config::ConstIterator it = s1.begin();
+			it->fullName();
 			TEST(++it == s1.end());
 
 			// push_back

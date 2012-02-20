@@ -101,7 +101,7 @@ bool CharConst<wchar_t>::is_delim(Char ch)
 }
 
 template<>
-int CharConst<wchar_t>::format(Char *buf, size_t len, Char const *fmt, va_list args)
+int CharConst<wchar_t>::formatv(Char *buf, size_t len, Char const *fmt, va_list args)
 {
 	return vswprintf(buf, len, fmt, args);
 }
@@ -132,7 +132,7 @@ bool CharConst<char>::is_delim(Char ch)
 }
 
 template<>
-int CharConst<char>::format(Char *buf, size_t len, Char const *fmt, va_list args)
+int CharConst<char>::formatv(Char *buf, size_t len, Char const *fmt, va_list args)
 {
 	return vsnprintf(buf, len, fmt, args);
 }

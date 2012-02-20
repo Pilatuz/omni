@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 //		This material is provided "as is", with absolutely no warranty
 //	expressed or implied. Any use is at your own risk.
 //
@@ -9,9 +9,9 @@
 //	the code was modified is included with the above copyright notice.
 //
 //		https://bitbucket.org/pilatuz/omni
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 /** @file
-	@brief Configuration tools.
+@brief Configuration tools.
 
 		This header file contains a several tools,
 	that helps to work with configurations.
@@ -27,19 +27,12 @@
 #include <stdexcept>
 #include <assert.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <sstream>
-#include <limits>
+#include <limits.h>
 #include <string>
 #include <vector>
 #include <list>
-
-// (!) Windows.h guard
-#if defined(min)
-#	undef min
-#endif
-#if defined(max)
-#	undef max
-#endif
 
 namespace omni
 {
@@ -47,7 +40,8 @@ namespace omni
 	namespace conf
 	{
 		// main class
-		template<typename Str> class ItemT;
+		template<typename Str>
+			class ItemT;
 
 		// exceptions
 		namespace err
@@ -66,34 +60,36 @@ namespace omni
 		// input/output
 		namespace io
 		{
-			template<typename Str> class ParserT;
-			template<typename Str> class WriterT;
+			template<typename Str>
+				class ParserT;
+			template<typename Str>
+				class WriterT;
 		} // input/output
 
-		// implementation defined
+		// implementation details
 		namespace details
 		{
-			template<typename Ch> class CharConst;
+			template<typename Ch>
+				class CharConst;
 			template<typename Str, typename Ch>
-				void format(Str &out, Ch const *fmt, va_list args);
-		} // implementation defined
+				void formatv(Str &out, Ch const *fmt, va_list args);
+		} // implementation details
 	} // forward declarations
 
 
-#if OMNI_UNICODE
 	/// @brief The default configuration.
+#if OMNI_UNICODE
 	typedef conf::ItemT<std::wstring> Config;
 #else
-	/// @brief The default configuration.
 	typedef conf::ItemT<std::string> Config;
 #endif // OMNI_UNICODE
 
 
-	// ItemT<> template class...
+	// ItemT
 	namespace conf
 	{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The configuration item.
 /**
 		This class represents a custom configuration. The configuration
@@ -162,25 +158,27 @@ elem_name = "elem_value" # comment
 template<typename Str>
 class ItemT
 {
-
-//////////////////////////////////////////////////////////////////////////
-/** @name Main typedefs */
+///////////////////////////////////////////////////////////////////////////////
+/// @name Main typedefs
 /// @{
 public:
+	typedef ItemT<Str> ThisType; ///< @brief The this type.
+	typedef ItemT<Str> ChildType; ///< @brief The child type.
+
 	typedef Str String; ///< @brief The string type.
 	typedef typename Str::traits_type StrTraits; ///< @brief The string traits type.
 	typedef typename StrTraits::char_type Char;  ///< @brief The character type.
 
 	typedef typename String::allocator_type Allocator; ///< @brief The allocator type.
-	typedef std::list< ItemT, typename Allocator::
-		template rebind<ItemT>::other > Container; ///< @brief The childs container type.
-	typedef typename Container::const_iterator const_iterator; ///< @brief The constant iterator.
-	typedef typename Container::iterator iterator; ///< @brief The iterator.
+	typedef std::list< ChildType, typename Allocator::
+		template rebind<ChildType>::other > Container; ///< @brief The childs container type.
+	typedef typename Container::const_iterator ConstIterator; ///< @brief The constant iterator.
+	typedef typename Container::iterator Iterator; ///< @brief The iterator.
 /// @}
 
 
-//////////////////////////////////////////////////////////////////////////
-/** @name Exception typedefs */
+///////////////////////////////////////////////////////////////////////////////
+/// @name Exception typedefs
 /// @{
 public:
 	typedef err::FailureT<String> Failure;                    ///< @brief The basic exception.
@@ -195,112 +193,111 @@ public:
 /// @}
 
 
-//////////////////////////////////////////////////////////////////////////
-/** @name Constructors and destructor */
+///////////////////////////////////////////////////////////////////////////////
+/// @name Constructors and destructor
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The default constructor.
-/**
-		This constructor creates an empty configuration:
-	the name, the value, and the childs are empty.
-*/
+	/// @brief The default constructor.
+	/**
+			This constructor creates an empty configuration:
+		the name, the value, and the childs are empty.
+	*/
 	ItemT()
 		: m_parent(0)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create with specified name.
-/**
-		This constructor initializes the configuration name.
-	The value, and the childs are empty.
+	/// @brief Create with specified name.
+	/**
+			This constructor initializes the configuration name.
+		The value, and the childs are empty.
 
-@param[in] theName The configuration name.
-*/
+	@param[in] theName The configuration name.
+	*/
 	explicit ItemT(String const& theName)
 		: m_parent(0), // will be set later
 		  m_name(theName)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create with specified name (C-style string).
-/**
-		This constructor initializes the configuration name.
-	The value, and the childs are empty.
+	/// @brief Create with specified name (C-style string).
+	/**
+			This constructor initializes the configuration name.
+		The value, and the childs are empty.
 
-@param[in] theName The configuration name.
-*/
+	@param[in] theName The configuration name.
+	*/
 	explicit ItemT(Char const* theName)
 		: m_parent(0), // will be set later
 		  m_name(theName)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Copy constructor.
-/**
-		This constructor creates the copy of the @a other configuration.
+	/// @brief Copy constructor.
+	/**
+			This constructor creates the copy of the @a other configuration.
 
-@param[in] other The other configuration.
-*/
-	ItemT(ItemT const& other)
+	@param[in] other The other configuration.
+	*/
+	ItemT(ThisType const& other)
 		: m_parent(0), // will be set later
 		  m_name(other.m_name),
 		  m_val(other.m_val),
 		  m_childs(other.m_childs)
 	{
 		// update childs parent
-		const iterator ie = m_childs.end();
-		iterator i = m_childs.begin();
+		const Iterator ie = m_childs.end();
+		Iterator i = m_childs.begin();
 		for (; i != ie; ++i)
 			i->m_parent = this;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Destructor.
-/**
-		Checks the configuration consistency and releases all resources.
-*/
+	// TODO: move constructor
+
+
+	/// @brief Destructor.
+	/**
+			Checks the configuration consistency and releases all resources.
+	*/
 	~ItemT()
 	{
+#if OMNI_DEBUG
 		// checks the childs parent
-		const_iterator const ie = m_childs.end();
-		const_iterator i = m_childs.begin();
+		ConstIterator const ie = m_childs.end();
+		ConstIterator i = m_childs.begin();
 		for (; i != ie; ++i)
 			assert(this == i->m_parent
 				&& "invalid parent");
+#endif
 	}
 /// @}
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Assignments
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Parse the configuration.
-/**
-		The current configuration context will be replaced with
-	the configuration parsed from the input string.
+	/// @brief Parse configuration.
+	/**
+			The current configuration context will be replaced with
+		the configuration parsed from the input string.
 
-@param[in] str The configuration string.
-@return The self reference.
-@throw ItemT::ParsingFailure if configuration string is invalid.
-@see io::ParserT
-*/
-	ItemT& parse(String const& str)
+	@param[in] str The configuration string.
+	@return The self reference.
+	@throw ItemT::ParsingFailure if configuration string is invalid.
+	@see io::ParserT
+	*/
+	ThisType& parse(String const& str)
 	{
 		typedef std::basic_istringstream<Char,
 			StrTraits, Allocator> ISStream;
 
 		ISStream is(str); // input stream
 
-		ItemT tmp;
+		ThisType tmp;
 		is >> tmp; // use default parser
 		swap(tmp);
 
@@ -308,68 +305,66 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Parse the configuration (C-style string).
-/**
-		The current configuration context will be replaced with
-	the configuration parsed from the input string.
+	/// @brief Parse configuration (C-style string).
+	/**
+			The current configuration context will be replaced with
+		the configuration parsed from the input string.
 
-@param[in] str The configuration string.
-@return The self reference.
-@throw ItemT::ParsingFailure if configuration string is invalid.
-@see io::ParserT
-*/
-	ItemT& parse(Char const* str)
+	@param[in] str The configuration string.
+	@return The self reference.
+	@throw ItemT::ParsingFailure if configuration string is invalid.
+	@see io::ParserT
+	*/
+	ThisType& parse(Char const* str)
 	{
 		return parse(String(str));
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Merge configuration.
-/**
-		This method replaces the some childs with corresponding childs
-	of @a other configuration. The only childs with the same names will
-	be replaced. If child with specified name not exists yet, it will be added.
+	/// @brief Merge configuration.
+	/**
+			This method replaces the some childs with corresponding childs
+		of @a other configuration. The only childs with the same names will
+		be replaced. If child with specified name not exists yet, it will be added.
 
-	For examples, let two configuration A and B:
+		For examples, let two configuration A and B:
 
-@code
-	<A>
-		elem1 = "A_value1"
-		elem2 = "A_value2"
-	</A>
+	@code
+		<A>
+			elem1 = "A_value1"
+			elem2 = "A_value2"
+		</A>
 
-	<B>
-		elem1 = "B_value1"
-		elem3 = "B_value3"
-	</B>
-@endcode
+		<B>
+			elem1 = "B_value1"
+			elem3 = "B_value3"
+		</B>
+	@endcode
 
-	After the command @a A.merge(B), the A section will be:
+		After the command @a A.merge(B), the A section will be:
 
-@code
-	<A>
-		elem1 = "B_value1"
-		elem2 = "A_value2"
-		elem3 = "B_value3"
-	</A>
-@endcode
+	@code
+		<A>
+			elem1 = "B_value1"
+			elem2 = "A_value2"
+			elem3 = "B_value3"
+		</A>
+	@endcode
 
-		If the child configuration has ambiguous names, exception will be thrown.
+			If the child configuration has ambiguous names, exception will be thrown.
 
-@param[in] other The other configuration.
-@return The self reference.
-@throw ItemT::NameIsAmbiguous if child configuration has ambiguous names.
-*/
-	ItemT& merge(ItemT const& other)
+	@param[in] other The other configuration.
+	@return The self reference.
+	@throw ItemT::NameIsAmbiguous if child configuration has ambiguous names.
+	*/
+	ThisType& merge(ThisType const& other)
 	{
-		const_iterator const ie = other.end();
-		const_iterator i = other.begin();
+		ConstIterator const ie = other.m_childs.end();
+		ConstIterator i = other.m_childs.begin();
 
 		for (; i != ie; ++i)
 		{
-			ItemT &child = get(i->name(), true);
+			ChildType &child = get(i->name(), true);
 			child.val() = i->val(); // assign value
 
 			if (!i->empty())
@@ -380,237 +375,238 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Assignment operator.
-/**
-@param[in] other The other configuration.
-@return The self reference.
-*/
-	ItemT& operator=(ItemT const& other)
+	/// @brief Assignment operator.
+	/**
+	@param[in] other The other configuration.
+	@return The self reference.
+	*/
+	ThisType& operator=(ThisType const& other)
 	{
-		ItemT(other).swap(*this);
+		ThisType(other).swap(*this);
 		return *this;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Assign a new value.
-/**
-		This assignment operator allows to implicit set the configuration value.
+	/// @brief Assign a new value.
+	/**
+			This assignment operator allows to implicit set the configuration value.
 
-@param[in] theVal The new value.
-@return The self reference.
-*/
-	ItemT& operator=(String const& theVal)
+	@param[in] theVal The new value.
+	@return The self reference.
+	*/
+	ThisType& operator=(String const& theVal)
 	{
 		m_val = theVal;
 		return *this;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Assign a new value (C-style string).
-/**
-		This assignment operator allows to implicit set the configuration value.
+	/// @brief Assign a new value (C-style string).
+	/**
+			This assignment operator allows to implicit set the configuration value.
 
-@param[in] theVal The new value.
-@return The self reference.
-*/
-	ItemT& operator=(Char const* theVal)
+	@param[in] theVal The new value.
+	@return The self reference.
+	*/
+	ThisType& operator=(Char const* theVal)
 	{
 		m_val = theVal;
 		return *this;
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Name and value
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get name.
-/**
-		This method returns a constant reference to the configuration name.
+	/// @brief Get configuration name.
+	/**
+			This method returns a constant reference to the configuration name.
 
-@return The name.
-*/
+	@return The configuration name.
+	*/
 	String const& name() const
 	{
 		return m_name;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get/set name.
-/**
-		This method returns a non-constant reference to the configuration name.
+	/// @brief Get/set configuration name.
+	/**
+			This method returns a non-constant reference to the configuration name.
 
-@return The name.
-*/
+	@return The confgiuration name.
+	*/
 	String& name()
 	{
 		return m_name;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get value.
-/**
-		This method returns a constant reference to the configuration value.
+	/// @brief Get configuration value.
+	/**
+			This method returns a constant reference to the configuration value.
 
-@return The value.
-*/
+	@return The configuration value.
+	*/
 	String const& val() const
 	{
 		return m_val;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get/set value.
-/**
-		This method returns a non-constant reference to the configuration value.
+	/// @brief Get/set configuration value.
+	/**
+			This method returns a non-constant reference to the configuration value.
 
-@return The value.
-*/
+	@return The configuration value.
+	*/
 	String& val()
 	{
 		return m_val;
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Full name
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get full name.
-/**
-		This method returns the configuration full name, including all parents.
-	The parent names are separated by @a sep string. For example,
-	if @a sep is equal to the "|", then the full name of element "param1"
-	will be "root|section|param1":
+	/// @brief Get full name.
+	/**
+			This method returns the configuration full name, including all parents.
+		The parent names are separated by @a sep string. For example,
+		if @a sep is equal to the "|", then the full name of element "param1"
+		will be "root|section|param1":
 
-@code
-	<root>
-		<section>
-			param1 = "value1"
-		</section>
-	</root>
-@endcode
+	@code
+		<root>
+			<section>
+				param1 = "value1"
+			</section>
+		</root>
+	@endcode
 
-@param[in] sep The separator.
-@return The full name.
-*/
+	@param[in] sep The separator.
+	@return The full name.
+	*/
 	String const fullName(String const& sep) const
 	{
 		if (m_parent)
 		{
-			String full_name = m_parent->fullName(sep);
-			if (!full_name.empty())
-			{
-				full_name += sep;
-				full_name += m_name;
-				return full_name;
+			const size_t sep_len = sep.size();
+
+			size_t len = m_name.size();
+			{ // calculate output size
+				ThisType *p = m_parent;
+				while (p)
+				{
+					len += p->m_name.size() + sep_len;
+					p = p->m_parent;
+				}
 			}
+
+			String full_name;
+			full_name.resize(len);
+			{ // build output
+				len -= m_name.size();
+				std::copy(m_name.begin(), m_name.end(),
+					full_name.begin() + len);
+
+				ThisType *p = m_parent;
+				while (p)
+				{
+					len -= sep_len;
+					std::copy(sep.begin(), sep.end(),
+						full_name.begin() + len);
+
+					len -= p->m_name.size();
+					std::copy(p->m_name.begin(), p->m_name.end(),
+						full_name.begin() + len);
+
+					p = p->m_parent;
+				}
+
+				assert(0 == len && "WTF?");
+			}
+
+			return full_name;
 		}
 
 		return m_name;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get full name (C-style string).
-/**
-		This method returns the configuration full name, including all parents.
-	The parent names are separated by @a sep string. For example,
-	if @a sep is equal to the "|", then the full name of element "param1"
-	will be "root|section|param1":
+	/// @brief Get full name (C-style string).
+	/**
+			This method returns the configuration full name, including all parents.
+		The parent names are separated by @a sep string. For example,
+		if @a sep is equal to the "|", then the full name of element "param1"
+		will be "root|section|param1":
 
-@code
-	<root>
-		<section>
-			param1 = "value1"
-		</section>
-	</root>
-@endcode
+	@code
+		<root>
+			<section>
+				param1 = "value1"
+			</section>
+		</root>
+	@endcode
 
-@param[in] sep The separator.
-@return The full name.
-*/
+	@param[in] sep The separator.
+	@return The full name.
+	*/
 	String const fullName(Char const* sep) const
 	{
-		if (m_parent)
-		{
-			String full_name = m_parent->fullName(sep);
-			if (!full_name.empty())
-			{
-				full_name += sep;
-				full_name += m_name;
-				return full_name;
-			}
-		}
-
-		return m_name;
+		return fullName(String(sep));
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get full name.
-/**
-		This method returns the configuration full name
-	using default separator ":".
+	/// @brief Get full name.
+	/**
+			This method returns the configuration full name
+		using default separator ":".
 
-@return The full name.
-*/
+	@return The full name.
+	*/
 	String const fullName() const
 	{
 		return fullName(details::CharConst<Char>::SEPARATOR);
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Auxiliary
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Format output to the value.
-/**
-@param[in] fmt The format string.
-*/
+	/// @brief Format output to the value.
+	/**
+	@param[in] fmt The format string.
+	*/
 	void format(Char const *fmt, ...)
 	{
 		va_list args;
 		va_start(args, fmt);
 
-		details::format(m_val, fmt, args);
+		details::formatv(m_val, fmt, args);
 
 		va_end(args);
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two configurations equal?
-/**
-		The two configurations are equal if they have the same names,
-	the same values and the same child configurations.
+	/// @brief Are two configurations equal?
+	/**
+			The two configurations are equal if they have the same names,
+		the same values and the same child configurations.
 
-@param[in] other The other configuration.
-@return @b true if two configurations are equal, otherwise @b false.
-*/
-	bool equal(ItemT const& other) const
+	@param[in] other The other configuration.
+	@return @b true if two configurations are equal, otherwise @b false.
+	*/
+	bool equal(ThisType const& other) const
 	{
 		if (m_name != other.m_name)
 			return false;
@@ -624,15 +620,14 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Swap two configurations.
-/**
-		This method swaps the two configurations.
-	The parents are not changed.
+	/// @brief Swap two configurations.
+	/**
+			This method swaps the two configurations.
+		The parents are not changed.
 
-@param[in,out] other The other configuration.
-*/
-	void swap(ItemT &other)
+	@param[in,out] other The other configuration.
+	*/
+	void swap(ThisType &other)
 	{
 		// (!) do not swap parents
 
@@ -642,281 +637,261 @@ public:
 		m_childs.swap(other.m_childs);
 
 		{ // update this.childs parent
-			iterator const ie = m_childs.end();
-			iterator i = m_childs.begin();
+			Iterator const ie = m_childs.end();
+			Iterator i = m_childs.begin();
 			for (; i != ie; ++i)
 				i->m_parent = this;
 		}
 
 		{ // update other.childs parent
-			iterator const ie = other.m_childs.end();
-			iterator i = other.m_childs.begin();
+			Iterator const ie = other.m_childs.end();
+			Iterator i = other.m_childs.begin();
 			for (; i != ie; ++i)
 				i->m_parent = &other;
 		}
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get empty configuration.
-/**
-		This static method returns a constant reference to the empty configuration.
-	This empty configuration may be used as default value in get() methods.
+	/// @brief Get empty configuration.
+	/**
+			This static method returns a constant reference to the empty configuration.
+		This empty configuration may be used as default value in get() methods.
 
-@code
-	void f(const omni::Config &cfg)
+	@code
+		void f(const omni::Config &cfg)
+		{
+			const omni::Config &elem = cfg.get("param", omni::Config::EMPTY());
+
+			// ...
+		}
+	@endcode
+
+	@return The empty configuration.
+	*/
+	static ThisType const& EMPTY()
 	{
-		const omni::Config &elem = cfg.get("param", omni::Config::EMPTY());
-
-		// ...
-	}
-@endcode
-
-@return The empty configuration.
-*/
-	static ItemT const& EMPTY()
-	{
-		static ItemT g_empty;
+		static ThisType g_empty;
 		return g_empty;
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Iterators
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the begin of the childs.
-/**
-@return The constant iterator.
-*/
-	const_iterator const begin() const
+	/// @brief Get the begin of the childs.
+	/**
+	@return The constant iterator.
+	*/
+	ConstIterator const begin() const
 	{
 		return m_childs.begin();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the begin of the childs.
-/**
-@return The non-constant iterator.
-*/
-	iterator const begin()
+	/// @brief Get the begin of the childs.
+	/**
+	@return The non-constant iterator.
+	*/
+	Iterator const begin()
 	{
 		return m_childs.begin();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the end of the childs.
-/**
-@return The constant iterator.
-*/
-	const_iterator const end() const
+	/// @brief Get the end of the childs.
+	/**
+	@return The constant iterator.
+	*/
+	ConstIterator const end() const
 	{
 		return m_childs.end();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the end of the childs.
-/**
-@return The non-constant iterator.
-*/
-	iterator const end()
+	/// @brief Get the end of the childs.
+	/**
+	@return The non-constant iterator.
+	*/
+	Iterator const end()
 	{
 		return m_childs.end();
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Front & Back
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the first child.
-/**
-@return The constant reference.
-*/
-	ItemT const& front() const
+	/// @brief Get the first child.
+	/**
+	@return The constant reference.
+	*/
+	ChildType const& front() const
 	{
 		return m_childs.front();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the first child.
-/**
-@return The non-constant reference.
-*/
-	ItemT& front()
+	/// @brief Get the first child.
+	/**
+	@return The non-constant reference.
+	*/
+	ChildType& front()
 	{
 		return m_childs.front();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the last child.
-/**
-@return The constant reference.
-*/
-	ItemT const& back() const
+	/// @brief Get the last child.
+	/**
+	@return The constant reference.
+	*/
+	ChildType const& back() const
 	{
 		return m_childs.back();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the last child.
-/**
-@return The non-constant reference.
-*/
-	ItemT& back()
+	/// @brief Get the last child.
+	/**
+	@return The non-constant reference.
+	*/
+	ChildType& back()
 	{
 		return m_childs.back();
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Get child by name
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name.
-/**
-		This method returns a child with specified name @a theName.
-	If the child with that name is not exists or the name
-	is not unique the exception will be thrown.
+	/// @brief Get child by name.
+	/**
+			This method returns a child with specified name @a theName.
+		If the child with that name is not exists or the name
+		is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@return The child's constant reference.
-@throw ItemT::ChildNotFound If child not found.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT const& get(String const& theName) const
+	@param[in] theName The child name.
+	@return The child's constant reference.
+	@throw ItemT::ChildNotFound If child not found.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType const& get(String const& theName) const
 	{
-		const_iterator found = find(theName, begin());
-		if (found == end())
+		ConstIterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 			throw ChildNotFound(theName, fullName());
 
-		ItemT const& child = *found;
-		if (find(theName, ++found) != end())
+		ChildType const& child = *found;
+		if (find(theName, ++found) != m_childs.end())
 			throw NameIsAmbiguous(theName, fullName());
 
 		return child;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name (C-style string).
-/**
-		This method returns a child with specified name @a theName.
-	If the child with that name is not exists or the name
-	is not unique the exception will be thrown.
+	/// @brief Get child by name (C-style string).
+	/**
+			This method returns a child with specified name @a theName.
+		If the child with that name is not exists or the name
+		is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@return The child's constant reference.
-@throw ItemT::ChildNotFound If child not found.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT const& get(Char const* theName) const
+	@param[in] theName The child name.
+	@return The child's constant reference.
+	@throw ItemT::ChildNotFound If child not found.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType const& get(Char const* theName) const
 	{
-		const_iterator found = find(theName, begin());
-		if (found == end())
+		ConstIterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 			throw ChildNotFound(theName, fullName());
 
-		ItemT const& child = *found;
-		if (find(theName, ++found) != end())
+		ChildType const& child = *found;
+		if (find(theName, ++found) != m_childs.end())
 			throw NameIsAmbiguous(theName, fullName());
 
 		return child;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name or default.
-/**
-		This method returns a child with specified name @a theName.
-	If the child with that name is not exists, then the @a def configuration
-	will be return. If the child's name is not unique the exception
-	will be thrown.
+	/// @brief Get child by name or default.
+	/**
+			This method returns a child with specified name @a theName.
+		If the child with that name is not exists, then the @a def configuration
+		will be return. If the child's name is not unique the exception
+		will be thrown.
 
-@param[in] theName The child name.
-@param[in] def The default configuration.
-@return The child's constant reference.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT const& get(String const& theName, ItemT const& def) const
+	@param[in] theName The child name.
+	@param[in] def The default configuration.
+	@return The child's constant reference.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType const& get(String const& theName, ChildType const& def) const
 	{
-		const_iterator found = find(theName, begin());
-		if (found == end())
+		ConstIterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 			return def;
 
-		ItemT const& child = *found;
-		if (find(theName, ++found) != end())
+		ChildType const& child = *found;
+		if (find(theName, ++found) != m_childs.end())
 			throw NameIsAmbiguous(theName, fullName());
 
 		return child;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name or default (C-style string).
-/**
-		This method returns a child with specified name @a theName.
-	If the child with that name is not exists, then the @a def configuration
-	will be return. If the child's name is not unique the exception
-	will be thrown.
+	/// @brief Get child by name or default (C-style string).
+	/**
+			This method returns a child with specified name @a theName.
+		If the child with that name is not exists, then the @a def configuration
+		will be return. If the child's name is not unique the exception
+		will be thrown.
 
-@param[in] theName The child name.
-@param[in] def The default configuration.
-@return The child's constant reference.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT const& get(Char const* theName, ItemT const& def) const
+	@param[in] theName The child name.
+	@param[in] def The default configuration.
+	@return The child's constant reference.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType const& get(Char const* theName, ChildType const& def) const
 	{
-		const_iterator found = find(theName, begin());
-		if (found == end())
+		ConstIterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 			return def;
 
-		ItemT const& child = *found;
-		if (find(theName, ++found) != end())
+		ChildType const& child = *found;
+		if (find(theName, ++found) != m_childs.end())
 			throw NameIsAmbiguous(theName, fullName());
 
 		return child;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name or create.
-/**
-		This method returns a child with specified name @a theName.
-	If the child with that name is not exists, then the it will be created
-	if @a create flag is set, otherwise the exception will be thrown.
-	If the child's name is not unique the exception will be thrown.
+	/// @brief Get child by name or create.
+	/**
+			This method returns a child with specified name @a theName.
+		If the child with that name is not exists, then the it will be created
+		if @a create flag is set, otherwise the exception will be thrown.
+		If the child's name is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@param[in] create Create if not exists flag.
-@return The child's non-constant reference.
-@throw ItemT::ChildNotFound If child not found and @a create flag is not set.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT& get(String const& theName, bool create = false)
+	@param[in] theName The child name.
+	@param[in] create Create if not exists flag.
+	@return The child's non-constant reference.
+	@throw ItemT::ChildNotFound If child not found and @a create flag is not set.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType& get(String const& theName, bool create = false)
 	{
-		iterator found = find(theName, begin());
-		if (found == end())
+		Iterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 		{
 			if (create)
 			{
@@ -927,7 +902,7 @@ public:
 				throw ChildNotFound(theName, fullName());
 		}
 
-		ItemT &child = *found;
+		ChildType &child = *found;
 		if (find(theName, ++found) != end())
 			throw NameIsAmbiguous(theName, fullName());
 
@@ -935,24 +910,23 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name or create (C-style string).
-/**
-		This method returns a child with specified name @a theName.
-	If the child with that name is not exists, then the it will be created
-	if @a create flag is set, otherwise the exception will be thrown.
-	If the child's name is not unique the exception will be thrown.
+	/// @brief Get child by name or create (C-style string).
+	/**
+			This method returns a child with specified name @a theName.
+		If the child with that name is not exists, then the it will be created
+		if @a create flag is set, otherwise the exception will be thrown.
+		If the child's name is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@param[in] create Create if not exists flag.
-@return The child's non-constant reference.
-@throw ItemT::ChildNotFound If child not found and @a create flag is not set.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT& get(Char const* theName, bool create = false)
+	@param[in] theName The child name.
+	@param[in] create Create if not exists flag.
+	@return The child's non-constant reference.
+	@throw ItemT::ChildNotFound If child not found and @a create flag is not set.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType& get(Char const* theName, bool create = false)
 	{
-		iterator found = find(theName, begin());
-		if (found == end())
+		Iterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 		{
 			if (create)
 			{
@@ -963,309 +937,287 @@ public:
 				throw ChildNotFound(theName, fullName());
 		}
 
-		ItemT &child = *found;
-		if (find(theName, ++found) != end())
+		ChildType &child = *found;
+		if (find(theName, ++found) != m_childs.end())
 			throw NameIsAmbiguous(theName, fullName());
 
 		return child;
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Get child's value by name
 /// @{
-
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child's value by name.
-/**
-		This method returns a child's value with specified name @a theName.
-	If the child with that name is not exists or the name
-	is not unique the exception will be thrown.
+	/// @brief Get child's value by name.
+	/**
+			This method returns a child's value with specified name @a theName.
+		If the child with that name is not exists or the name
+		is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@return The child's value.
-@throw ItemT::ChildNotFound If child not found.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
+	@param[in] theName The child name.
+	@return The child's value.
+	@throw ItemT::ChildNotFound If child not found.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
 	String const& getv(String const& theName) const
 	{
 		return get(theName).val();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child's value by name (C-style string).
-/**
-		This method returns a child's value with specified name @a theName.
-	If the child with that name is not exists or the name
-	is not unique the exception will be thrown.
+	/// @brief Get child's value by name (C-style string).
+	/**
+			This method returns a child's value with specified name @a theName.
+		If the child with that name is not exists or the name
+		is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@return The child's value.
-@throw ItemT::ChildNotFound If child not found.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
+	@param[in] theName The child name.
+	@return The child's value.
+	@throw ItemT::ChildNotFound If child not found.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
 	String const& getv(Char const* theName) const
 	{
 		return get(theName).val();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child's value by name or default.
-/**
-		This method returns a child's value with specified name @a theName.
-	If the child with that name is not exists, then the @a def will be return.
-	If the child's name is not unique the exception will be thrown.
+	/// @brief Get child's value by name or default.
+	/**
+			This method returns a child's value with specified name @a theName.
+		If the child with that name is not exists, then the @a def will be return.
+		If the child's name is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@param[in] def The default value.
-@return The child's value.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
+	@param[in] theName The child name.
+	@param[in] def The default value.
+	@return The child's value.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
 	String const& getv(String const& theName, String const& def) const
 	{
-		const_iterator found = find(theName, begin());
-		if (found == end())
+		ConstIterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 			return def;
 
-		ItemT const& child = *found;
-		if (find(theName, ++found) != end())
+		ChildType const& child = *found;
+		if (find(theName, ++found) != m_childs.end())
 			throw NameIsAmbiguous(theName, fullName());
 
 		return child.val();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child's value by name or default (C-style string).
-/**
-		This method returns a child's value with specified name @a theName.
-	If the child with that name is not exists, then the @a def will be return.
-	If the child's name is not unique the exception will be thrown.
+	/// @brief Get child's value by name or default (C-style string).
+	/**
+			This method returns a child's value with specified name @a theName.
+		If the child with that name is not exists, then the @a def will be return.
+		If the child's name is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@param[in] def The default value.
-@return The child's value.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
+	@param[in] theName The child name.
+	@param[in] def The default value.
+	@return The child's value.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
 	String const& getv(Char const* theName, String const& def) const
 	{
-		const_iterator found = find(theName, begin());
-		if (found == end())
+		ConstIterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 			return def;
 
-		ItemT const& child = *found;
-		if (find(theName, ++found) != end())
+		ChildType const& child = *found;
+		if (find(theName, ++found) != m_childs.end())
 			throw NameIsAmbiguous(theName, fullName());
 
 		return child.val();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child's value by name or default (C-style string).
-/**
-		This method returns a child's value with specified name @a theName.
-	If the child with that name is not exists, then the @a def will be return.
-	If the child's name is not unique the exception will be thrown.
+	/// @brief Get child's value by name or default (C-style string).
+	/**
+			This method returns a child's value with specified name @a theName.
+		If the child with that name is not exists, then the @a def will be return.
+		If the child's name is not unique the exception will be thrown.
 
-@param[in] theName The child name.
-@param[in] def The default value.
-@return The child's value.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
+	@param[in] theName The child name.
+	@param[in] def The default value.
+	@return The child's value.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
 	Char const* getv(Char const* theName, Char const* def) const
 	{
-		const_iterator found = find(theName, begin());
-		if (found == end())
+		ConstIterator found = find(theName, m_childs.begin());
+		if (found == m_childs.end())
 			return def;
 
-		ItemT const& child = *found;
-		if (find(theName, ++found) != end())
+		ChildType const& child = *found;
+		if (find(theName, ++found) != m_childs.end())
 			throw NameIsAmbiguous(theName, fullName());
 
 		return child.val().c_str();
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Auxiliary operators
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name.
-/**
-		This method is equivalent for ItemT::get(theName).
+	/// @brief Get child by name.
+	/**
+			This method is equivalent for ItemT::get(theName).
 
-@param[in] theName The child name.
-@return The child's constant reference.
-@throw ItemT::ChildNotFound If child not found.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT const& operator[](String const& theName) const
+	@param[in] theName The child name.
+	@return The child's constant reference.
+	@throw ItemT::ChildNotFound If child not found.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType const& operator[](String const& theName) const
 	{
 		return get(theName);
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name (C-style string).
-/**
-		This method is equivalent for ItemT::get(theName).
+	/// @brief Get child by name (C-style string).
+	/**
+			This method is equivalent for ItemT::get(theName).
 
-@param[in] theName The child name.
-@return The child's constant reference.
-@throw ItemT::ChildNotFound If child not found.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT const& operator[](Char const* theName) const
+	@param[in] theName The child name.
+	@return The child's constant reference.
+	@throw ItemT::ChildNotFound If child not found.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType const& operator[](Char const* theName) const
 	{
 		return get(theName);
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name or create.
-/**
-		This method is equivalent for ItemT::get(theName, true), i.e.
-	if the child with that name is not exists it will be created!
+	/// @brief Get child by name or create.
+	/**
+			This method is equivalent for ItemT::get(theName, true), i.e.
+		if the child with that name is not exists it will be created!
 
-@param[in] theName The child name.
-@return The child's non-constant reference.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT& operator[](String const& theName)
+	@param[in] theName The child name.
+	@return The child's non-constant reference.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType& operator[](String const& theName)
 	{
 		// (!) create if not exists
 		return get(theName, true);
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get child by name or create (C-style string).
-/**
-		This method is equivalent for ItemT::get(theName, true), i.e.
-	if the child with that name is not exists it will be created!
+	/// @brief Get child by name or create (C-style string).
+	/**
+			This method is equivalent for ItemT::get(theName, true), i.e.
+		if the child with that name is not exists it will be created!
 
-@param[in] theName The child name.
-@return The child's non-constant reference.
-@throw ItemT::NameIsAmbiguous If child's name is not unique.
-*/
-	ItemT& operator[](Char const* theName)
+	@param[in] theName The child name.
+	@return The child's non-constant reference.
+	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	*/
+	ChildType& operator[](Char const* theName)
 	{
 		// (!) create if not exists
 		return get(theName, true);
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Manipulators
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create a new child at the end.
-/**
-		This method creates a new child as a copy of the @a other,
-	and puts it to the end of child list.
+	/// @brief Create a new child at the end.
+	/**
+			This method creates a new child as a copy of the @a other,
+		and puts it to the end of child list.
 
-@param[in] other The prototype of the child configuration.
-@return The created child reference.
-*/
-	ItemT& push_back(ItemT const& other)
+	@param[in] child The prototype of the child configuration.
+	@return The created child reference.
+	*/
+	ChildType& push_back(ChildType const& child)
 	{
-		m_childs.push_back(other);
-		ItemT &child = m_childs.back();
+		m_childs.push_back(child);
+		ChildType &res = m_childs.back();
 
 		// (!) update the parent
-		child.m_parent = this;
+		res.m_parent = this;
 
-		return child;
+		return res;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create a new child at the end.
-/**
-		This method creates a new child with name @a theName,
-	and puts it to the end of child list.
+	/// @brief Create a new child at the end.
+	/**
+			This method creates a new child with name @a theName,
+		and puts it to the end of child list.
 
-@param[in] theName The child's name.
-@return The created child reference.
-*/
-	ItemT& push_back(String const& theName)
+	@param[in] theName The child's name.
+	@return The created child reference.
+	*/
+	ChildType& push_back(String const& theName)
 	{
-		m_childs.push_back(ItemT());
-		ItemT &child = m_childs.back();
-		child.name() = theName;
+		m_childs.push_back(ChildType());
+		ChildType &res = m_childs.back();
+		res.name() = theName;
 
 		// (!) update the parent
-		child.m_parent = this;
+		res.m_parent = this;
 
-		return child;
+		return res;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Create a new child at the end (C-style string).
-/**
-		This method creates a new child with name @a theName,
-	and puts it to the end of child list.
+	/// @brief Create a new child at the end (C-style string).
+	/**
+			This method creates a new child with name @a theName,
+		and puts it to the end of child list.
 
-@param[in] theName The child's name.
-@return The created child reference.
-*/
-	ItemT& push_back(Char const* theName)
+	@param[in] theName The child's name.
+	@return The created child reference.
+	*/
+	ChildType& push_back(Char const* theName)
 	{
-		m_childs.push_back(ItemT());
-		ItemT &child = m_childs.back();
-		child.name() = theName;
+		m_childs.push_back(ChildType());
+		ChildType &res = m_childs.back();
+		res.name() = theName;
 
 		// (!) update the parent
-		child.m_parent = this;
+		res.m_parent = this;
 
-		return child;
+		return res;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Remove the child configuration by iterator.
-/**
-		This method removes the child configuration.
+	/// @brief Remove the child configuration by iterator.
+	/**
+			This method removes the child configuration.
 
-@warning The input configuration should be a child of this configuration!
-
-@param[in] pos The child configuration iterator to remove.
-*/
-	iterator erase(iterator pos)
+	@warning The input configuration should be a child of this configuration!
+	@param[in] pos The child configuration iterator to remove.
+	*/
+	Iterator erase(Iterator pos)
 	{
 		return m_childs.erase(pos);
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Remove the child configuration.
-/**
-		This method removes the child configuration.
+	/// @brief Remove the child configuration.
+	/**
+			This method removes the child configuration.
 
-@warning The input configuration should be a child of this configuration!
+	@warning The input configuration should be a child of this configuration!
 
-@param[in] child The child configuration to remove.
-*/
-	void remove(ItemT const& child)
+	@param[in] child The child configuration to remove.
+	*/
+	void remove(ChildType const& child)
 	{
 		assert(this == child.m_parent
 			&& "invalid child parent");
@@ -1274,17 +1226,16 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Remove the child configurations.
-/**
-		This methos removes the all child configurations with name @a theName.
+	/// @brief Remove the child configurations.
+	/**
+			This methos removes the all child configurations with name @a theName.
 
-@param[in] theName The child's name to remove.
-*/
+	@param[in] theName The child's name to remove.
+	*/
 	void remove(String const& theName)
 	{
-		iterator ie = end();
-		for (iterator i = begin(); i != ie; )
+		Iterator const ie = m_childs.end();
+		for (Iterator i = m_childs.begin(); i != ie; )
 		{
 			if (i->name() == theName)
 				i = erase(i);
@@ -1294,17 +1245,16 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Remove the child configurations (C-style string).
-/**
-		This methos removes the all child configurations with name @a theName.
+	/// @brief Remove the child configurations (C-style string).
+	/**
+			This methos removes the all child configurations with name @a theName.
 
-@param[in] theName The child's name to remove.
-*/
+	@param[in] theName The child's name to remove.
+	*/
 	void remove(const Char *theName)
 	{
-		iterator ie = end();
-		for (iterator i = begin(); i != ie; )
+		Iterator const ie = m_childs.end();
+		for (Iterator i = m_childs.begin(); i != ie; )
 		{
 			if (i->name() == theName)
 				i = erase(i);
@@ -1314,104 +1264,95 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Remove all child configurations.
-/**
-		This method removes all child configurations.
-*/
+	/// @brief Remove all child configurations.
+	/**
+			This method removes all child configurations.
+	*/
 	void clear()
 	{
 		m_childs.clear();
 	}
-
 /// @}
-//////////////////////////////////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @name Selectors
 /// @{
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is child exists?
-/**
-		This method checks at least one child configuration
-	with name @a theName.
+	/// @brief Is child exists?
+	/**
+			This method checks at least one child configuration
+		with name @a theName.
 
-@param[in] theName The child name
-@return @b true if there is at least one child configuration with specified name,
-	otherwise @b false
-*/
+	@param[in] theName The child name
+	@return @b true if there is at least one child configuration with specified name,
+		otherwise @b false
+	*/
 	bool exists(String const& theName) const
 	{
-		return find(theName, begin()) != end();
+		return find(theName, m_childs.begin()) != m_childs.end();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is child exists? (C-style string)
-/**
-		This method checks at least one child configuration
-	with name @a theName.
+	/// @brief Is child exists? (C-style string)
+	/**
+			This method checks at least one child configuration
+		with name @a theName.
 
-@param[in] theName The child name
-@return @b true if there is at least one child configuration with specified name,
-	otherwise @b false
-*/
+	@param[in] theName The child name
+	@return @b true if there is at least one child configuration with specified name,
+		otherwise @b false
+	*/
 	bool exists(Char const* theName) const
 	{
-		return find(theName, begin()) != end();
+		return find(theName, m_childs.begin()) != m_childs.end();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get number of child configurations.
-/**
-@return The number of child configurations.
-*/
+	/// @brief Get number of child configurations.
+	/**
+	@return The number of child configurations.
+	*/
 	size_t size() const
 	{
 		return m_childs.size();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is there no child configurations?
-/**
-@return @b true If there are no child configurations, otherwise @b false.
-*/
+	/// @brief Is there no child configurations?
+	/**
+	@return @b true If there are no child configurations, otherwise @b false.
+	*/
 	bool empty() const
 	{
 		return m_childs.empty();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the parent.
-/**
-@return The parent pointer or null.
-*/
-	ItemT const* parent() const
+	/// @brief Get the parent.
+	/**
+	@return The parent pointer or null.
+	*/
+	ThisType const* parent() const
 	{
 		return m_parent;
 	}
 
 private:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Find the child configuration.
-/**
-		This method search the child configuration with name @a theName
-	starting at the @a pos position.
+	/// @brief Find the child configuration.
+	/**
+			This method search the child configuration with name @a theName
+		starting at the @a pos position.
 
-@param[in] theName The child configuration name.
-@param[in] pos The search starting position.
-@return The found child configuration position or end(), if there is no childs with specified name.
-*/
-	const_iterator const find(String const& theName, const_iterator pos) const
+	@param[in] theName The child configuration name.
+	@param[in] pos The search starting position.
+	@return The found child configuration position or end(), if there is no childs with specified name.
+	*/
+	ConstIterator const find(String const& theName, ConstIterator pos) const
 	{
-		const_iterator const last = end();
+		ConstIterator const last = m_childs.end();
 		for (; pos != last; ++pos)
 			if (pos->name() == theName)
 				break;
@@ -1420,19 +1361,18 @@ private:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Find the child configuration (C-style string).
-/**
-		This method search the child configuration with name @a theName
-	starting at the @a pos position.
+	/// @brief Find the child configuration (C-style string).
+	/**
+			This method search the child configuration with name @a theName
+		starting at the @a pos position.
 
-@param[in] theName The child configuration name.
-@param[in] pos The search starting position.
-@return The found child configuration position or end(), if there is no childs with specified name.
-*/
-	const_iterator const find(Char const* theName, const_iterator pos) const
+	@param[in] theName The child configuration name.
+	@param[in] pos The search starting position.
+	@return The found child configuration position or end(), if there is no childs with specified name.
+	*/
+	ConstIterator const find(Char const* theName, ConstIterator pos) const
 	{
-		const_iterator const last = end();
+		ConstIterator const last = m_childs.end();
 		for (; pos != last; ++pos)
 			if (pos->name() == theName)
 				break;
@@ -1441,19 +1381,18 @@ private:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Find the child configuration.
-/**
-		This method search the child configuration with name @a theName
-	starting at the @a pos position.
+	/// @brief Find the child configuration.
+	/**
+			This method search the child configuration with name @a theName
+		starting at the @a pos position.
 
-@param[in] theName The child configuration name.
-@param[in] pos The search starting position.
-@return The found child configuration position or end(), if there is no childs with specified name.
-*/
-	iterator const find(String const& theName, iterator pos)
+	@param[in] theName The child configuration name.
+	@param[in] pos The search starting position.
+	@return The found child configuration position or end(), if there is no childs with specified name.
+	*/
+	Iterator const find(String const& theName, Iterator pos)
 	{
-		iterator const last = end();
+		Iterator const last = m_childs.end();
 		for (; pos != last; ++pos)
 			if (pos->name() == theName)
 				break;
@@ -1462,19 +1401,18 @@ private:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Find the child configuration (C-style string).
-/**
-		This method search the child configuration with name @a theName
-	starting at the @a pos position.
+	/// @brief Find the child configuration (C-style string).
+	/**
+			This method search the child configuration with name @a theName
+		starting at the @a pos position.
 
-@param[in] theName The child configuration name.
-@param[in] pos The search starting position.
-@return The found child configuration position or end(), if there is no childs with specified name.
-*/
-	iterator const find(Char const* theName, iterator pos)
+	@param[in] theName The child configuration name.
+	@param[in] pos The search starting position.
+	@return The found child configuration position or end(), if there is no childs with specified name.
+	*/
+	Iterator const find(Char const* theName, Iterator pos)
 	{
-		iterator const last = end();
+		Iterator const last = m_childs.end();
 		for (; pos != last; ++pos)
 			if (pos->name() == theName)
 				break;
@@ -1483,7 +1421,7 @@ private:
 	}
 
 private:
-	ItemT *m_parent; ///< @brief The parent or null.
+	ThisType *m_parent; ///< @brief The parent or null.
 
 	String m_name; ///< @brief The item's name.
 	String m_val;  ///< @brief The item's value.
@@ -1492,9 +1430,9 @@ private:
 };
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two configurations equal?
+///////////////////////////////////////////////////////////////////////////////
 /** @relates ItemT
+@brief Are two configurations equal?
 
 		This operator is equivalent to the:
 
@@ -1513,9 +1451,9 @@ bool operator==(const ItemT<Str> &x, const ItemT<Str> &y)
 }
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Are two configurations non-equal?
+///////////////////////////////////////////////////////////////////////////////
 /** @relates ItemT
+@brief Are two configurations non-equal?
 
 		This operator is equivalent to the:
 
@@ -1534,9 +1472,9 @@ bool operator!=(const ItemT<Str> &x, const ItemT<Str> &y)
 }
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Swap two configurations.
+///////////////////////////////////////////////////////////////////////////////
 /** @relates ItemT
+@brief Swap two configurations.
 
 		This function is equivalent to the:
 
@@ -1553,16 +1491,16 @@ void swap(ItemT<Str> &x, ItemT<Str> &y)
 	x.swap(y);
 }
 
-	} // ItemT<> template class
+	} // ItemT
 
 
-	// exception template classes...
+	// exceptions
 	namespace conf
 	{
 		namespace err
 		{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The basic exception.
 /**
 		This class is derived from the standard std::runtime_error, so you
@@ -1577,40 +1515,40 @@ template<typename Str>
 class FailureT:
 	public std::runtime_error
 {
-	typedef std::runtime_error inherited;
-protected:
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param[in] msg The error message.
-*/
-	explicit FailureT(std::string const& msg)
-		: inherited(msg)
-	{}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor (C-style string).
-/**
-@param[in] msg The error message.
-*/
-	explicit FailureT(char const* msg)
-		: inherited(msg)
-	{}
-
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
-	virtual ~FailureT() OMNI_THROW0()
-	{}
+	typedef std::runtime_error base_type;
 
 public:
-	typedef Str String; ///< @brief The string type.
+
+	/// @brief The string type.
+	typedef Str String;
+
+protected:
+
+	/// @brief The main constructor.
+	/**
+	@param[in] msg The error message.
+	*/
+	explicit FailureT(std::string const& msg)
+		: base_type(msg)
+	{}
+
+
+	/// @brief The main constructor (C-style string).
+	/**
+	@param[in] msg The error message.
+	*/
+	explicit FailureT(char const* msg)
+		: base_type(msg)
+	{}
+
+
+	/// @brief The trivial destructor.
+	virtual ~FailureT() OMNI_THROW0()
+	{}
 };
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The child access exception.
 /**
 		Child configuration access exception. This class contains the name of
@@ -1624,68 +1562,65 @@ template<typename Str>
 class AccessFailureT:
 	public FailureT<Str>
 {
-	typedef FailureT<Str> inherited;
-
-public:
-	typedef typename inherited::String String; ///< @brief The string type.
+	typedef FailureT<Str> base_type;
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param[in] msg The error message.
-@param[in] theName The child configuration name.
-@param[in] thePath The parent configuration path.
-*/
+	/// @brief The string type.
+	typedef typename base_type::String String;
+
+public:
+
+	/// @brief The main constructor.
+	/**
+	@param[in] msg The error message.
+	@param[in] theName The child configuration name.
+	@param[in] thePath The parent configuration path.
+	*/
 	AccessFailureT(std::string const& msg,
 		String const& theName,
 		String const& thePath)
-			: inherited(msg),
+			: base_type(msg),
 			  m_name(theName),
 			  m_path(thePath)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor (C-style string).
-/**
-@param[in] msg The error message.
-@param[in] theName The child configuration name.
-@param[in] thePath The parent configuration path.
-*/
+	/// @brief The main constructor (C-style string).
+	/**
+	@param[in] msg The error message.
+	@param[in] theName The child configuration name.
+	@param[in] thePath The parent configuration path.
+	*/
 	AccessFailureT(char const* msg,
 		String const& theName,
 		String const& thePath)
-			: inherited(msg),
+			: base_type(msg),
 			  m_path(thePath),
 			  m_name(theName)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
+	/// @brief The trivial destructor.
 	virtual ~AccessFailureT() OMNI_THROW0()
 	{}
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the parent configuration full name.
-/**
-@return The parent configuration full name.
-*/
+	/// @brief Get the parent configuration full name.
+	/**
+	@return The parent configuration full name.
+	*/
 	String const& path() const
 	{
 		return m_path;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the child configuration name.
-/**
-@return The child configuration name.
-*/
+	/// @brief Get the child configuration name.
+	/**
+	@return The child configuration name.
+	*/
 	String const& name() const
 	{
 		return m_name;
@@ -1697,7 +1632,7 @@ private:
 };
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Child not found exception.
 /**
 		This exception will be thrown if the child configuration not found.
@@ -1712,32 +1647,32 @@ template<typename Str>
 class ChildNotFoundT:
 	public AccessFailureT<Str>
 {
-	typedef AccessFailureT<Str> inherited;
-
-public:
-	typedef typename inherited::String String; ///< @brief The string type.
+	typedef AccessFailureT<Str> base_type;
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param[in] theName The child configuration name.
-@param[in] thePath The parent configuration path.
-*/
+	/// @brief The string type.
+	typedef typename base_type::String String;
+
+public:
+
+	/// @brief The main constructor.
+	/**
+	@param[in] theName The child configuration name.
+	@param[in] thePath The parent configuration path.
+	*/
 	ChildNotFoundT(String const& theName, String const& thePath)
-		: inherited("child not found", theName, thePath)
+		: base_type("child not found", theName, thePath)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
+	/// @brief The trivial destructor.
 	virtual ~ChildNotFoundT() OMNI_THROW0()
 	{}
 };
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The child name is not unique.
 /**
 		This exception will be thrown if the child configuration name is ambiguous,
@@ -1753,32 +1688,32 @@ template<typename Str>
 class NameIsAmbiguousT:
 	public AccessFailureT<Str>
 {
-	typedef AccessFailureT<Str> inherited;
-
-public:
-	typedef typename inherited::String String; ///< @brief The string type.
+	typedef AccessFailureT<Str> base_type;
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param[in] theName The child configuration name.
-@param[in] thePath The parent configuration path.
-*/
+	/// @brief The string type.
+	typedef typename base_type::String String;
+
+public:
+
+	/// @brief The main constructor.
+	/**
+	@param[in] theName The child configuration name.
+	@param[in] thePath The parent configuration path.
+	*/
 	NameIsAmbiguousT(String const& theName, String const& thePath)
-		: inherited("ambiguous child name", theName, thePath)
+		: base_type("ambiguous child name", theName, thePath)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
+	/// @brief The trivial destructor.
 	virtual ~NameIsAmbiguousT() OMNI_THROW0()
 	{}
 };
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Configuration parsing exception.
 /**
 		This exception may be thrown during configuration parsing procedure.
@@ -1792,47 +1727,45 @@ template<typename Str>
 class ParsingFailureT:
 	public FailureT<Str>
 {
-	typedef FailureT<Str> inherited;
-
-public:
-	typedef typename inherited::String String; ///< @brief The string type.
+	typedef FailureT<Str> base_type;
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param[in] msg The error message.
-@param[in] theLine The line number.
-*/
+	/// @brief The string type.
+	typedef typename base_type::String String;
+
+public:
+
+	/// @brief The main constructor.
+	/**
+	@param[in] msg The error message.
+	@param[in] theLine The line number.
+	*/
 	ParsingFailureT(std::string const& msg, long theLine)
-		: inherited(msg), m_line(theLine)
+		: base_type(msg), m_line(theLine)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor (C-style string).
-/**
-@param[in] msg The error message.
-@param[in] theLine The line number.
-*/
+	/// @brief The main constructor (C-style string).
+	/**
+	@param[in] msg The error message.
+	@param[in] theLine The line number.
+	*/
 	ParsingFailureT(char const* msg, long theLine)
-		: inherited(msg), m_line(theLine)
+		: base_type(msg), m_line(theLine)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
+	/// @brief The trivial destructor.
 	virtual ~ParsingFailureT() OMNI_THROW0()
 	{}
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the line number.
-/**
-@return The line number.
-*/
+	/// @brief Get the line number.
+	/**
+	@return The line number.
+	*/
 	long line() const
 	{
 		return m_line;
@@ -1843,7 +1776,7 @@ private:
 };
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Syntax error.
 /**
 		This exception will be thrown if the syntax error occurs during
@@ -1858,53 +1791,51 @@ template<typename Str>
 class SyntaxErrorT:
 	public ParsingFailureT<Str>
 {
-	typedef ParsingFailureT<Str> inherited;
-
-public:
-	typedef typename inherited::String String; ///< @brief The string type.
+	typedef ParsingFailureT<Str> base_type;
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param[in] msg The error message.
-@param[in] thePath The configuration path.
-@param[in] theLine The line number.
-*/
+	/// @brief The string type.
+	typedef typename base_type::String String;
+
+public:
+
+	/// @brief The main constructor.
+	/**
+	@param[in] msg The error message.
+	@param[in] thePath The configuration path.
+	@param[in] theLine The line number.
+	*/
 	SyntaxErrorT(std::string const& msg,
 			String const& thePath, long theLine)
-		: inherited(msg, theLine),
+		: base_type(msg, theLine),
 		  m_path(thePath)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor (C-style string).
-/**
-@param[in] msg The error message.
-@param[in] thePath The configuration path.
-@param[in] theLine The line number.
-*/
+	/// @brief The main constructor (C-style string).
+	/**
+	@param[in] msg The error message.
+	@param[in] thePath The configuration path.
+	@param[in] theLine The line number.
+	*/
 	SyntaxErrorT(char const* msg,
 			String const& thePath, long theLine)
-		: inherited(msg, theLine),
+		: base_type(msg, theLine),
 		  m_path(thePath)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
+	/// @brief The trivial destructor.
 	virtual ~SyntaxErrorT() OMNI_THROW0()
 	{}
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the configuration path.
-/**
-@return The configuration path.
-*/
+	/// @brief Get the configuration path.
+	/**
+	@return The configuration path.
+	*/
 	String const& path() const
 	{
 		return m_path;
@@ -1915,7 +1846,7 @@ private:
 };
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Name mismatch exception.
 /**
 		This exception will be thrown if the closed name isn't equal to the open name.
@@ -1938,51 +1869,49 @@ template<typename Str>
 class NameMismatchT:
 	public ParsingFailureT<Str>
 {
-	typedef ParsingFailureT<Str> inherited;
-
-public:
-	typedef typename inherited::String String; ///< @brief The string type.
+	typedef ParsingFailureT<Str> base_type;
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-	@param[in] theExpected The expected configuration name.
-	@param[in] theFound The found configuration name.
-	@param[in] theLine The line number.
-*/
+	/// @brief The string type.
+	typedef typename base_type::String String;
+
+public:
+
+	/// @brief The main constructor.
+	/**
+		@param[in] theExpected The expected configuration name.
+		@param[in] theFound The found configuration name.
+		@param[in] theLine The line number.
+	*/
 	NameMismatchT(String const& theExpected,
 			String const& theFound, long theLine)
-		: inherited("name mismatch", theLine),
+		: base_type("name mismatch", theLine),
 		  m_expected(theExpected),
 		  m_found(theFound)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
+	/// @brief The destructor.
 	virtual ~NameMismatchT() OMNI_THROW0()
 	{}
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the expected configuration name.
-/**
-@return The expected configuration name.
-*/
+	/// @brief Get the expected configuration name.
+	/**
+	@return The expected configuration name.
+	*/
 	String const& expected() const
 	{
 		return m_expected;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the found configuration name.
-/**
-@return The found configuration name.
-*/
+	/// @brief Get the found configuration name.
+	/**
+	@return The found configuration name.
+	*/
 	String const& found() const
 	{
 		return m_found;
@@ -1994,7 +1923,7 @@ private:
 };
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Configuration writing exception.
 /**
 		This exception may be thrown during configuration writing procedure.
@@ -2007,48 +1936,46 @@ template<typename Str>
 class WritingFailureT:
 	public FailureT<Str>
 {
-	typedef FailureT<Str> inherited;
-
-public:
-	typedef typename inherited::String String; ///< @brief The string type.
+	typedef FailureT<Str> base_type;
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param[in] msg The error message.
-@param[in] thePath The configuration path.
-*/
+	/// @brief The string type.
+	typedef typename base_type::String String;
+
+public:
+
+	/// @brief The main constructor.
+	/**
+	@param[in] msg The error message.
+	@param[in] thePath The configuration path.
+	*/
 	WritingFailureT(std::string const& msg, String const& thePath)
-		: inherited(msg), m_path(thePath)
+		: base_type(msg), m_path(thePath)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor (C-style string).
-/**
-@param[in] msg The error message.
-@param[in] thePath The configuration path.
-*/
+	/// @brief The main constructor (C-style string).
+	/**
+	@param[in] msg The error message.
+	@param[in] thePath The configuration path.
+	*/
 	WritingFailureT(char const* msg, String const& thePath)
-		: inherited(msg), m_path(thePath)
+		: base_type(msg), m_path(thePath)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
+	/// @brief The trivial destructor.
 	virtual ~WritingFailureT() OMNI_THROW0()
 	{}
 
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the configuration path.
-/**
-@return The configuration path.
-*/
+	/// @brief Get the configuration path.
+	/**
+	@return The configuration path.
+	*/
 	String const& path() const
 	{
 		return m_path;
@@ -2060,7 +1987,7 @@ private:
 
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Name is empty.
 /**
 		This exception will be thrown during writing procedure if the empty
@@ -2074,40 +2001,40 @@ template<typename Str>
 class NameIsEmptyT:
 	public WritingFailureT<Str>
 {
-	typedef WritingFailureT<Str> inherited;
-
-public:
-	typedef typename inherited::String String; ///< @brief The string type.
+	typedef WritingFailureT<Str> base_type;
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-@param[in] thePath The configuration path.
-*/
+	/// @brief The string type.
+	typedef typename base_type::String String;
+
+public:
+
+	/// @brief The main constructor.
+	/**
+	@param[in] thePath The configuration path.
+	*/
 	explicit NameIsEmptyT(String const& thePath)
-		: inherited("name is empty", thePath)
+		: base_type("name is empty", thePath)
 	{}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The destructor.
+	/// @brief The trivial destructor.
 	virtual ~NameIsEmptyT() OMNI_THROW0()
 	{}
 };
 
 		} // err namespace
-	} // exception template classes
+	} // exceptions
 
 
-	// ParserT template class
+	// ParserT
 	namespace conf
 	{
 		namespace io
 		{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The configuration parser.
 /**
 		This class parses configuration from the input stream.
@@ -2128,13 +2055,12 @@ public:
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The main constructor.
-/**
-		Initializes the parser and starts the line counting from one.
+	/// @brief The main constructor.
+	/**
+			Initializes the parser and starts the line counting from one.
 
-@param[in,out] root The root configuration.
-*/
+	@param[in,out] root The root configuration.
+	*/
 	explicit ParserT(ItemT<String> &root)
 		: m_line_counter(1),
 		  m_brace_depth(0)
@@ -2143,14 +2069,13 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Parse the configuration from the input stream.
-/**
-@param[in] is The input stream.
-@throw ParserT::ParsingFailure If the input stream is invalid.
-@throw ParserT::SyntaxError If there is invalid syntax.
-@throw ParserT::NameMismatch If there is name mismatch.
-*/
+	/// @brief Parse the configuration from the input stream.
+	/**
+	@param[in] is The input stream.
+	@throw ParserT::ParsingFailure If the input stream is invalid.
+	@throw ParserT::SyntaxError If there is invalid syntax.
+	@throw ParserT::NameMismatch If there is name mismatch.
+	*/
 	virtual void parse(IStream &is)
 	{
 		typedef details::CharConst<Char> ChConst;
@@ -2242,7 +2167,7 @@ public:
 				ItemT<String> &curr = top();
 				if (!curr.empty())
 				{
-					typename ItemT<String>::iterator child = curr.end();
+					typename ItemT<String>::Iterator child = curr.end();
 					--child; // (!) now it is back() element
 
 					if (child->val().empty()
@@ -2273,37 +2198,34 @@ public:
 
 protected:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Push the new configuration.
-/**
-		This method is called when the new configuration is open.
+	/// @brief Push the new configuration.
+	/**
+			This method is called when the new configuration is open.
 
-@param[in] cfg The configuration.
-*/
+	@param[in] cfg The configuration.
+	*/
 	void push(ItemT<String> &cfg)
 	{
 		m_stack.push_back(&cfg);
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the current configuration.
-/**
-@return The current configuration.
-*/
+	/// @brief Get the current configuration.
+	/**
+	@return The current configuration.
+	*/
 	ItemT<String>& top() const
 	{
 		return *m_stack.back();
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Pop the configuration.
-/**
-		This method is called when the configuration is closed.
+	/// @brief Pop the configuration.
+	/**
+			This method is called when the configuration is closed.
 
-@throw ItemT::ParsingFailure If all configurations are closed.
-*/
+	@throw ItemT::ParsingFailure If all configurations are closed.
+	*/
 	void pop()
 	{
 		m_stack.pop_back();
@@ -2314,21 +2236,17 @@ protected:
 
 protected:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Open brace.
-/**
-*/
+	/// @brief Open brace.
 	void brace_open()
 	{
 		m_brace_depth += 1;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Close brace.
-/**
-@throw ParserT::SyntaxError If brace is closed before opening.
-*/
+	/// @brief Close brace.
+	/**
+	@throw ParserT::SyntaxError If brace is closed before opening.
+	*/
 	void brace_close()
 	{
 		m_brace_depth -= 1;
@@ -2339,13 +2257,11 @@ protected:
 
 protected:
 
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the unquoted token from input stream.
-/**
-@param[in,out] is The input stream.
-@param[out] token The token.
-*/
+	/// @brief Get the unquoted token from input stream.
+	/**
+	@param[in,out] is The input stream.
+	@param[out] token The token.
+	*/
 	static void get_pure_token(IStream &is, String &token)
 	{
 		std::ios_base::iostate state = std::ios_base::goodbit;
@@ -2375,13 +2291,12 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the quoted token from input stream.
-/**
-@param[in,out] is The input stream.
-@param[out] token The token.
-@param[in] quote The quote character. Should be '\"' or '\''.
-*/
+	/// @brief Get the quoted token from input stream.
+	/**
+	@param[in,out] is The input stream.
+	@param[out] token The token.
+	@param[in] quote The quote character. Should be '\"' or '\''.
+	*/
 	static void get_quoted_token(IStream &is, String &token, Char quote)
 	{
 		std::ios_base::iostate state = std::ios_base::goodbit;
@@ -2430,14 +2345,13 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Parse token from input stream.
-/**
-		This method parses the next token from the input stream and counts the lines.
+	/// @brief Parse token from input stream.
+	/**
+			This method parses the next token from the input stream and counts the lines.
 
-@param[in,out] is The input stream.
-@param[out] token The token.
-*/
+	@param[in,out] is The input stream.
+	@param[out] token The token.
+	*/
 	void get_token(IStream &is, String &token)
 	{
 		typedef details::CharConst<Char> ChConst;
@@ -2476,15 +2390,14 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Parse the configuration value.
-/**
-		This method assigns the configuration value if present.
+	/// @brief Parse the configuration value.
+	/**
+			This method assigns the configuration value if present.
 
-@param[in,out] is The input stream.
-@param[in,out] cfg The configuration.
-@return @b true If value is assigned, otherwise @b false
-*/
+	@param[in,out] is The input stream.
+	@param[in,out] cfg The configuration.
+	@return @b true If value is assigned, otherwise @b false
+	*/
 	bool parse_value(IStream &is, ItemT<String> &cfg)
 	{
 		typedef details::CharConst<Char> ChConst;
@@ -2507,31 +2420,29 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Skip the whole line.
-/**
-		This method ignores the comment line.
+	/// @brief Skip the whole line.
+	/**
+			This method ignores the comment line.
 
-@param[in,out] is The input stream.
-*/
+	@param[in,out] is The input stream.
+	*/
 	void skip_comment(IStream &is)
 	{
 		typedef details::CharConst<Char> ChConst;
 
-		is.ignore(std::numeric_limits<int>::max(),
+		is.ignore(INT_MAX,
 			StrTraits::to_int_type(ChConst::ENDLINE));
 		m_line_counter += 1;
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Skip the whitespaces.
-/**
-		This method skips the whitespaces and counts the lines.
+	/// @brief Skip the whitespaces.
+	/**
+			This method skips the whitespaces and counts the lines.
 
-@param[in,out] is The input stream.
-@return The number of skipped lines.
-*/
+	@param[in,out] is The input stream.
+	@return The number of skipped lines.
+	*/
 	long skip_ws(IStream &is)
 	{
 		std::ios::iostate state = std::ios::goodbit;
@@ -2576,11 +2487,10 @@ protected:
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Get the current line number.
-/**
-@return The current line number.
-*/
+	/// @brief Get the current line number.
+	/**
+	@return The current line number.
+	*/
 	long getLineNumber() const
 	{
 		return m_line_counter;
@@ -2597,9 +2507,9 @@ private:
 		} // io namespace
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Parse the configuration from the input stream.
+///////////////////////////////////////////////////////////////////////////////
 /** @relates ItemT
+@brief Parse the configuration from the input stream.
 
 @param[in] is The input stream.
 @param[out] cfg The configuration.
@@ -2607,9 +2517,7 @@ private:
 @throw ItemT::ParsingFailure if the input stream is invalid.
 */
 template<typename Ch, typename Tr, typename Str> inline
-	std::basic_istream<Ch, Tr>& operator>>(
-		std::basic_istream<Ch, Tr> &is,
-		ItemT<Str> &cfg)
+	std::basic_istream<Ch,Tr>& operator>>(std::basic_istream<Ch,Tr> &is, ItemT<Str> &cfg)
 {
 	ItemT<Str> tmp;
 	io::ParserT<Str> parser(tmp);
@@ -2619,16 +2527,16 @@ template<typename Ch, typename Tr, typename Str> inline
 	return is;
 }
 
-	} // ParserT template class
+	} // ParserT
 
 
-	// WriterT template class...
+	// WriterT
 	namespace conf
 	{
 		namespace io
 		{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The configuration writer.
 /**
 	TODO: writer description
@@ -2648,14 +2556,13 @@ public:
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief The default constructor.
-/**
-		The following default parameters are used by default:
-			- tab size is 2 spaces
-			- double quoted
-			- print empty values
-*/
+	/// @brief The default constructor.
+	/**
+			The following default parameters are used by default:
+				- tab size is 2 spaces
+				- double quoted
+				- print empty values
+	*/
 	WriterT()
 		: tabSize(2), rootName(false),
 		  newLine(true), doubleQuote(true),
@@ -2663,24 +2570,25 @@ public:
 {}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Print the configuration to the output stream.
-/**
-@param[in,out] os The output stream.
-@param[in] cfg The configuration.
-@return The output stream.
+public:
 
-@throw WriterT::NameIsEmpty if configuration name is empty.
-*/
+	/// @brief Print the configuration to the output stream.
+	/**
+	@param[in,out] os The output stream.
+	@param[in] cfg The configuration.
+	@return The output stream.
+
+	@throw WriterT::NameIsEmpty if configuration name is empty.
+	*/
 	OStream& print(OStream &os, ItemT<String> const& cfg) const
 	{
 		if (!cfg.empty() || is_root(cfg)) // (!) root is always section
 		{
 			open_section(os, cfg);
 
-			typedef typename ItemT<String>::const_iterator item_iterator;
-			item_iterator i = cfg.begin();
-			item_iterator const ie = cfg.end();
+			typedef typename ItemT<String>::ConstIterator Iterator;
+			Iterator i = cfg.begin();
+			Iterator const ie = cfg.end();
 			for (; i != ie; ++i)
 				print(os, *i);
 
@@ -2694,13 +2602,12 @@ public:
 
 protected:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Section begin.
-/**
-@param[in,out] os The output stream.
-@param[in] cfg The configuration.
-@throw WriterT::NameIsEmpty If configuration name is empty.
-*/
+	/// @brief Section begin.
+	/**
+	@param[in,out] os The output stream.
+	@param[in] cfg The configuration.
+	@throw WriterT::NameIsEmpty If configuration name is empty.
+	*/
 	virtual void open_section(OStream &os, ItemT<String> const& cfg) const
 	{
 		typedef details::CharConst<Char> ChConst;
@@ -2733,13 +2640,12 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Section end.
-/**
-@param[in,out] os The output stream.
-@param[in] cfg The configuration.
-@throw WriterT::NameIsEmpty If configuration name is empty.
-*/
+	/// @brief Section end.
+	/**
+	@param[in,out] os The output stream.
+	@param[in] cfg The configuration.
+	@throw WriterT::NameIsEmpty If configuration name is empty.
+	*/
 	virtual void close_section(OStream &os, ItemT<String> const& cfg) const
 	{
 		typedef details::CharConst<Char> ChConst;
@@ -2768,13 +2674,12 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Put the empty configuration.
-/**
-@param[in,out] os The output stream.
-@param[in] cfg The empty configuration.
-@throw WriterT::NameIsEmpty If configuration name is empty.
-*/
+	/// @brief Put the empty configuration.
+	/**
+	@param[in,out] os The output stream.
+	@param[in] cfg The empty configuration.
+	@throw WriterT::NameIsEmpty If configuration name is empty.
+	*/
 	virtual void put_element(OStream &os, ItemT<String> const& cfg) const
 	{
 		typedef details::CharConst<Char> ChConst;
@@ -2805,15 +2710,14 @@ protected:
 
 protected:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is quote needed?
-/**
-		This static method checks the input string. If it contains any
-	delimiters then the method returns @b true.
+	/// @brief Is quote needed?
+	/**
+			This static method checks the input string. If it contains any
+		delimiters then the method returns @b true.
 
-@param[in] str The string.
-@return @b true if string need to be quoted, otherwise @b false.
-*/
+	@param[in] str The string.
+	@return @b true if string need to be quoted, otherwise @b false.
+	*/
 	static bool need_quote(String const& str)
 	{
 		typedef details::CharConst<Char> ChConst;
@@ -2827,29 +2731,28 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Print the quoted string.
-/**
-		This method prints the quoted string to the output stream.
-	If string contains the quotes it will be doudled. For example,
-	the following string
+	/// @brief Print the quoted string.
+	/**
+			This method prints the quoted string to the output stream.
+		If string contains the quotes it will be doudled. For example,
+		the following string
 
-@code
-	this is "simple" text
-@endcode
+	@code
+		this is "simple" text
+	@endcode
 
-		will be printed as
+			will be printed as
 
-@code
-	"this is ""simple"" text"
-@endcode
+	@code
+		"this is ""simple"" text"
+	@endcode
 
 
-@param[in,out] os The output stream.
-@param[in] str The string to print.
-@param[in] quote The quote character. Should be '\"' or '\''.
-@return The output stream.
-*/
+	@param[in,out] os The output stream.
+	@param[in] str The string to print.
+	@param[in] quote The quote character. Should be '\"' or '\''.
+	@return The output stream.
+	*/
 	static OStream& put_qstring(OStream &os, String const& str, Char quote)
 	{
 		os.put(quote);
@@ -2867,15 +2770,14 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Put the indent string.
-/**
-		This method prints the current indent number of spaces.
+	/// @brief Put the indent string.
+	/**
+			This method prints the current indent number of spaces.
 
-@param[in,out] os The output stream.
-@param[in] space The space character.
-@return The output stream.
-*/
+	@param[in,out] os The output stream.
+	@param[in] space The space character.
+	@return The output stream.
+	*/
 	OStream& put_indent(OStream &os, Char space) const
 	{
 		for (size_t i = 0; i < indent; ++i)
@@ -2886,28 +2788,26 @@ protected:
 
 protected:
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is configuration a root?
-/**
-		This method checks if the input configuration is a root, i.e. hasn't parent.
+	/// @brief Is configuration a root?
+	/**
+			This method checks if the input configuration is a root, i.e. hasn't parent.
 
-@param[in] cfg The configuration.
-@return @b true if the configuration is a root, otherwise @b false.
-*/
+	@param[in] cfg The configuration.
+	@return @b true if the configuration is a root, otherwise @b false.
+	*/
 	static bool is_root(ItemT<String> const& cfg)
 	{
 		return (0 == cfg.parent());
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is configuration a first child?
-/**
-		This method checks if the input configuration is a first child.
+	/// @brief Is configuration a first child?
+	/**
+			This method checks if the input configuration is a first child.
 
-@param[in] cfg The configuration.
-@return @b true if the configuration is a first child, otherwise @b false.
-*/
+	@param[in] cfg The configuration.
+	@return @b true if the configuration is a first child, otherwise @b false.
+	*/
 	static bool is_front(ItemT<String> const& cfg)
 	{
 		const ItemT<String> *parent = cfg.parent();
@@ -2920,14 +2820,13 @@ protected:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Is configuration a last child?
-/**
-		This method checks if the input configuration is a last child.
+	/// @brief Is configuration a last child?
+	/**
+			This method checks if the input configuration is a last child.
 
-@param[in] cfg The configuration.
-@return @b true if the configuration is a last child, otherwise @b false.
-*/
+	@param[in] cfg The configuration.
+	@return @b true if the configuration is a last child, otherwise @b false.
+	*/
 	static bool is_back(ItemT<String> const& cfg)
 	{
 		const ItemT<String> *parent = cfg.parent();
@@ -2954,9 +2853,9 @@ public:
 		} // io namespace
 
 
-//////////////////////////////////////////////////////////////////////////
-/// @brief Print the configuration to the output stream.
+///////////////////////////////////////////////////////////////////////////////
 /** @relates ItemT
+@brief Print the configuration to the output stream.
 
 		This operator prints the configuration to the output stream.
 
@@ -2968,26 +2867,24 @@ public:
 @throw ItemT::WritingFailure if the input stream is invalid.
 */
 template<typename Ch, typename Tr, typename Str> inline
-	std::basic_ostream<Ch,Tr>& operator<<(
-		std::basic_ostream<Ch,Tr> &os,
-		ItemT<Str> const& cfg)
+	std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &os, ItemT<Str> const& cfg)
 {
 	io::WriterT<Str> writer;
 	writer.print(os, cfg);
 	return os;
 }
 
-	} // WriterT template class
+	} // WriterT
 
 
-	// CharConst...
+	// CharConst
 	namespace conf
 	{
 		/// @cond details
 		namespace details
 		{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The character constants.
 /**
 		This template class contains the set of character constants
@@ -3021,7 +2918,7 @@ public: // string constants
 	@param[in] fmt The format string.
 	@param[in] args The pointer to list of arguments.
 	*/
-	static int format(Char *buf, size_t len, Char const *fmt, va_list args);
+	static int formatv(Char *buf, size_t len, Char const *fmt, va_list args);
 
 public: // char constants
 	static const Char ENDLINE;  ///< @brief The new line character ('\n').
@@ -3036,7 +2933,7 @@ public: // char constants
 };
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Write formated output to the string.
 /**
 @param[out] out The output string.
@@ -3044,20 +2941,20 @@ public: // char constants
 @param[in] args The pointer to list of arguments.
 */
 template<typename Str, typename Ch>
-void format(Str &out, Ch const *fmt, va_list args)
+void formatv(Str &out, Ch const *fmt, va_list args)
 {
 	std::vector<Ch> buf(16);
 
 	while (1)
 	{
-		int ret = CharConst<Ch>::format(&buf[0], buf.size()-1, fmt, args);
+		int ret = CharConst<Ch>::formatv(&buf[0], buf.size()-1, fmt, args);
 		if (ret < 0 && buf.size() < 1*1024*1024) // (!) 1M limit?
 			buf.resize(2*buf.size());
 		else
 			break;
 	}
 
-	out = &buf[0];
+	out.assign(buf.begin(), buf.end());
 }
 
 		} // details namespace
