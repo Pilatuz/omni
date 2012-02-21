@@ -16,9 +16,6 @@
     <ClCompile Include="..\src\omni\calc.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\omni\conf.cpp">
-      <Filter>OMNI Library</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\omni\misc.cpp">
       <Filter>OMNI Library</Filter>
     </ClCompile>

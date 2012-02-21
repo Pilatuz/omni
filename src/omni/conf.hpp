@@ -25,25 +25,39 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include <assert.h>
-#include <stdarg.h>
-#include <stdio.h>
 #include <sstream>
-#include <limits.h>
 #include <string>
 #include <vector>
 #include <list>
 
+#include <assert.h>
+#include <stdarg.h>
+#include <limits.h>
+#include <stdio.h>
+
 namespace omni
 {
-	// forward declarations
+	/** @brief Configuration tools.
+
+			This namespace contains configuration tools.
+
+	@code
+		#include <omni/conf.hpp>
+	@endcode
+
+	@see @ref omni_config
+	*/
 	namespace conf
 	{
-		// main class
 		template<typename Str>
 			class ItemT;
 
-		// exceptions
+
+		/// @brief Configuration tools: exceptions.
+		/**
+				This namespace contains exception classes
+			related to the configuration tools.
+		*/
 		namespace err
 		{
 			template<typename Str> class FailureT;
@@ -55,26 +69,36 @@ namespace omni
 			template<typename Str>     class NameMismatchT;
 			template<typename Str>   class WritingFailureT;
 			template<typename Str>     class NameIsEmptyT;
-		} // exceptions
+		}
 
-		// input/output
+
+		/// @brief Configuration tools: input/output.
+		/**
+				This namespace contains input/output tools.
+		*/
 		namespace io
 		{
 			template<typename Str>
 				class ParserT;
 			template<typename Str>
 				class WriterT;
-		} // input/output
+		}
 
-		// implementation details
+
+		/// @brief Configuration tools: implementation.
+		/**
+				This namespace contains implementation specific tools.
+
+		@warning Do not use this namespace.
+		*/
 		namespace details
 		{
 			template<typename Ch>
 				class CharConst;
 			template<typename Str, typename Ch>
 				void formatv(Str &out, Ch const *fmt, va_list args);
-		} // implementation details
-	} // forward declarations
+		}
+	}
 
 
 	/// @brief The default configuration.
@@ -499,40 +523,33 @@ public:
 		{
 			const size_t sep_len = sep.size();
 
+			// calculate output size
 			size_t len = m_name.size();
-			{ // calculate output size
-				ThisType *p = m_parent;
-				while (p)
-				{
-					len += p->m_name.size() + sep_len;
-					p = p->m_parent;
-				}
-			}
+			for (ThisType const* p = m_parent; p != 0; p = p->m_parent)
+				len += p->m_name.size() + sep_len;
 
 			String full_name;
 			full_name.resize(len);
-			{ // build output
-				len -= m_name.size();
-				std::copy(m_name.begin(), m_name.end(),
+
+			// current name
+			len -= m_name.size();
+			std::copy(m_name.begin(), m_name.end(),
+				full_name.begin() + len);
+
+			for (ThisType const* p = m_parent; p != 0; p = p->m_parent)
+			{
+				// separator
+				len -= sep_len;
+				std::copy(sep.begin(), sep.end(),
 					full_name.begin() + len);
 
-				ThisType *p = m_parent;
-				while (p)
-				{
-					len -= sep_len;
-					std::copy(sep.begin(), sep.end(),
-						full_name.begin() + len);
-
-					len -= p->m_name.size();
-					std::copy(p->m_name.begin(), p->m_name.end(),
-						full_name.begin() + len);
-
-					p = p->m_parent;
-				}
-
-				assert(0 == len && "WTF?");
+				// parent name
+				len -= p->m_name.size();
+				std::copy(p->m_name.begin(), p->m_name.end(),
+					full_name.begin() + len);
 			}
 
+			assert(0 == len && "WTF?");
 			return full_name;
 		}
 
@@ -573,7 +590,7 @@ public:
 	*/
 	String const fullName() const
 	{
-		return fullName(details::CharConst<Char>::SEPARATOR);
+		return fullName(details::CharConst<Char>::SEPARATOR());
 	}
 /// @}
 
@@ -2891,24 +2908,44 @@ template<typename Ch, typename Tr, typename Str> inline
 	specialized for @b wchar_t and @b char. These constants are used
 	during configuration parsing and/or writing.
 
-		The name separator #SEPARATOR is used
+		The name separator SEPARATOR() is used
 	by omni::conf::ItemT::fullName() method.
 */
 template<typename Ch>
-class CharConst
+	class CharConst;
+
+
+// CharConst<wchar_t> specialization
+template<>
+	class CharConst<wchar_t>
 {
 public:
-	typedef Ch Char; ///< @brief The character type.
+	typedef wchar_t Char; ///< @brief The character type.
 
 public: // string constants
-	static const Char SEPARATOR[];  ///< @brief The default name separator.
+
+	/// @brief Get default name separator.
+	static Char const* SEPARATOR()
+	{
+		return L":";
+	}
 
 	/// @brief Is delimiter?
 	/**
 	@param[in] ch The character to test.
 	@return @b true if the input character is delimiter, otherwise @b false.
 	*/
-	static bool is_delim(Char ch);
+	static bool is_delim(Char ch)
+	{
+		return ::iswspace(ch)
+			|| (COMMENT == ch)
+			|| (EQUAL == ch)
+			|| (BEGIN == ch)
+			|| (CLOSE == ch)
+			|| (END == ch)
+			|| (SQUOTE == ch)
+			|| (DQUOTE == ch);
+	}
 
 
 	/// @brief Write formated output.
@@ -2918,18 +2955,96 @@ public: // string constants
 	@param[in] fmt The format string.
 	@param[in] args The pointer to list of arguments.
 	*/
-	static int formatv(Char *buf, size_t len, Char const *fmt, va_list args);
+	static int formatv(Char *buf, size_t len, Char const* fmt, va_list args)
+	{
+		return vswprintf(buf, len, fmt, args);
+	}
 
 public: // char constants
-	static const Char ENDLINE;  ///< @brief The new line character ('\n').
-	static const Char SPACE;    ///< @brief The space character (' ').
-	static const Char COMMENT;  ///< @brief The comment character ('#').
-	static const Char EQUAL;    ///< @brief The equal character ('=').
-	static const Char BEGIN;    ///< @brief The section begin ('<').
-	static const Char CLOSE;    ///< @brief The section close ('/').
-	static const Char END;      ///< @brief The section end ('>').
-	static const Char SQUOTE;   ///< @brief The single quote character ('\'').
-	static const Char DQUOTE;   ///< @brief The double quote character ('\"').
+
+	enum Constants
+	{
+		ENDLINE = L'\n',  ///< @brief The new line character.
+		SPACE   = L' ',   ///< @brief The space character.
+		COMMENT = L'#',   ///< @brief The comment character.
+		EQUAL   = L'=',   ///< @brief The equal character.
+		BEGIN   = L'<',   ///< @brief The section begin.
+		CLOSE   = L'/',   ///< @brief The section close.
+		END     = L'>',   ///< @brief The section end.
+		SQUOTE  = L'\'',  ///< @brief The single quote character.
+		DQUOTE  = L'\"'   ///< @brief The double quote character.
+	};
+};
+
+
+// CharConst<char> specialization
+template<>
+	class CharConst<char>
+{
+public:
+	typedef char Char; ///< @brief The character type.
+
+public: // string constants
+
+	/// @brief Get default name separator.
+	static Char const* SEPARATOR()
+	{
+		return ":";
+	}
+
+	/// @brief Is delimiter?
+	/**
+	@param[in] ch The character to test.
+	@return @b true if the input character is delimiter, otherwise @b false.
+	*/
+	static bool is_delim(Char ch)
+	{
+		return ::isspace(ch)
+			|| (COMMENT == ch)
+			|| (EQUAL == ch)
+			|| (BEGIN == ch)
+			|| (CLOSE == ch)
+			|| (END == ch)
+			|| (SQUOTE == ch)
+			|| (DQUOTE == ch);
+	}
+
+
+	/// @brief Write formated output.
+	/**
+	@param[in] buf The output buffer.
+	@param[in] len The maximum number of characters to write.
+	@param[in] fmt The format string.
+	@param[in] args The pointer to list of arguments.
+	*/
+	static int formatv(Char *buf, size_t len, Char const* fmt, va_list args)
+	{
+#if defined(_MSC_VER)
+#	pragma warning(push)
+#	pragma warning(disable:4996) // disable: "Consider using vsnprintf_s instead" warning
+#endif
+
+		return vsnprintf(buf, len, fmt, args);
+
+#if defined(_MSC_VER)
+#	pragma warning(pop)
+#endif
+	}
+
+public: // char constants
+
+	enum Constants
+	{
+		ENDLINE = '\n',  ///< @brief The new line character.
+		SPACE   = ' ',   ///< @brief The space character.
+		COMMENT = '#',   ///< @brief The comment character.
+		EQUAL   = '=',   ///< @brief The equal character.
+		BEGIN   = '<',   ///< @brief The section begin.
+		CLOSE   = '/',   ///< @brief The section close.
+		END     = '>',   ///< @brief The section end.
+		SQUOTE  = '\'',  ///< @brief The single quote character.
+		DQUOTE  = '\"'   ///< @brief The double quote character.
+	};
 };
 
 
@@ -2945,16 +3060,18 @@ void formatv(Str &out, Ch const *fmt, va_list args)
 {
 	std::vector<Ch> buf(16);
 
-	while (1)
+	int ret = -1;
+	while (true)
 	{
-		int ret = CharConst<Ch>::formatv(&buf[0], buf.size()-1, fmt, args);
-		if (ret < 0 && buf.size() < 1*1024*1024) // (!) 1M limit?
+		ret = CharConst<Ch>::formatv(&buf[0], buf.size(), fmt, args);
+		if (ret < 0) // buffer too small
 			buf.resize(2*buf.size());
 		else
 			break;
 	}
 
-	out.assign(buf.begin(), buf.end());
+	out.assign(buf.begin(),
+		buf.begin() + ret);
 }
 
 		} // details namespace
@@ -2962,5 +3079,51 @@ void formatv(Str &out, Ch const *fmt, va_list args)
 	} // CharConst
 
 } // omni namespace
+
+
+///////////////////////////////////////////////////////////////////////////////
+/** @page omni_config Configuration tools
+
+		omni::conf::ItemT class represents a very simple hierarchical data base.
+	It can be used as an universal data format for various simulator's configurations
+	or output results.
+
+		Each instance of omni::conf::ItemT (called as configuration) contains name,
+	value and optional any number of child configurations.
+
+		The configuration's text format is similar to the XML data format:
+
+@code
+	<data>
+		time = "1000" # [seconds]
+	</data>
+@endcode
+
+		If name or value contains spaces or any other special symbols, then
+	it should be quoted by " or '.
+
+
+@section omni_config_section Configurations
+
+	There are a few method to define configuration section:
+
+@code
+	<A>
+		name = "val"
+	</A>
+
+	<B name = "val" />
+
+	<C name = "val" C>
+@endcode
+
+		The last method is used to parse XML-like comments (<? ... ?>).
+
+@section omni_config_comment Comments
+
+		The line after the "#" char is ignored.
+
+@author Sergey Polichnoy <pilatuz@gmail.com>
+*/
 
 #endif // __OMNI_CONF_HPP_

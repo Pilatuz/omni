@@ -210,6 +210,14 @@ private:
 			TEST(s1 == s3);
 		}
 
+		{ // format
+			Config s1;
+			s1.format(_T("%07X%08X"), 1, 2);
+			TEST(s1.val() == _T("000000100000002"));
+			s1.format(_T("%07X%08X%08X%08X"), 1, 2, 3, 4);
+			TEST(s1.val() == _T("0000001000000020000000300000004"));
+		}
+
 		{ // exceptions
 			const Config s1;
 

@@ -222,6 +222,8 @@ double mps2kph(double mps);
 	{
 /// @name Power of two and parity
 /// @{
+
+		// shift helper
 		namespace details
 		{
 			/// @brief Type size check.

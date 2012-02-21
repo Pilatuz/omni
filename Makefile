@@ -84,7 +84,6 @@ test_out:=test.exe
 
 # omni source files
 omni_src+=${home_path}/src/omni/calc.cpp
-omni_src+=${home_path}/src/omni/conf.cpp
 omni_src+=${home_path}/src/omni/util.cpp
 
 

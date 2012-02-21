@@ -98,7 +98,6 @@
   <ItemGroup>
     <ClCompile Include="..\main_test.cpp" />
     <ClCompile Include="..\src\omni\calc.cpp" />
-    <ClCompile Include="..\src\omni\conf.cpp" />
     <ClCompile Include="..\src\omni\misc.cpp" />
     <ClCompile Include="..\src\omni\util.cpp" />
     <ClCompile Include="..\src\test\test.cpp" />
