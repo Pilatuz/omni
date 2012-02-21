@@ -311,7 +311,7 @@ public:
 
 	@param[in] str The configuration string.
 	@return The self reference.
-	@throw ItemT::ParsingFailure if configuration string is invalid.
+	@throw ThisType::ParsingFailure if configuration string is invalid.
 	@see io::ParserT
 	*/
 	ThisType& parse(String const& str)
@@ -336,7 +336,7 @@ public:
 
 	@param[in] str The configuration string.
 	@return The self reference.
-	@throw ItemT::ParsingFailure if configuration string is invalid.
+	@throw ThisType::ParsingFailure if configuration string is invalid.
 	@see io::ParserT
 	*/
 	ThisType& parse(Char const* str)
@@ -379,7 +379,7 @@ public:
 
 	@param[in] other The other configuration.
 	@return The self reference.
-	@throw ItemT::NameIsAmbiguous if child configuration has ambiguous names.
+	@throw ThisType::NameIsAmbiguous if child configuration has ambiguous names.
 	*/
 	ThisType& merge(ThisType const& other)
 	{
@@ -798,8 +798,8 @@ public:
 
 	@param[in] theName The child name.
 	@return The child's constant reference.
-	@throw ItemT::ChildNotFound If child not found.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::ChildNotFound If child not found.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType const& get(String const& theName) const
 	{
@@ -823,8 +823,8 @@ public:
 
 	@param[in] theName The child name.
 	@return The child's constant reference.
-	@throw ItemT::ChildNotFound If child not found.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::ChildNotFound If child not found.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType const& get(Char const* theName) const
 	{
@@ -850,7 +850,7 @@ public:
 	@param[in] theName The child name.
 	@param[in] def The default configuration.
 	@return The child's constant reference.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType const& get(String const& theName, ChildType const& def) const
 	{
@@ -876,7 +876,7 @@ public:
 	@param[in] theName The child name.
 	@param[in] def The default configuration.
 	@return The child's constant reference.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType const& get(Char const* theName, ChildType const& def) const
 	{
@@ -902,8 +902,8 @@ public:
 	@param[in] theName The child name.
 	@param[in] create Create if not exists flag.
 	@return The child's non-constant reference.
-	@throw ItemT::ChildNotFound If child not found and @a create flag is not set.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::ChildNotFound If child not found and @a create flag is not set.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType& get(String const& theName, bool create = false)
 	{
@@ -937,8 +937,8 @@ public:
 	@param[in] theName The child name.
 	@param[in] create Create if not exists flag.
 	@return The child's non-constant reference.
-	@throw ItemT::ChildNotFound If child not found and @a create flag is not set.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::ChildNotFound If child not found and @a create flag is not set.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType& get(Char const* theName, bool create = false)
 	{
@@ -976,8 +976,8 @@ public:
 
 	@param[in] theName The child name.
 	@return The child's value.
-	@throw ItemT::ChildNotFound If child not found.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::ChildNotFound If child not found.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	String const& getv(String const& theName) const
 	{
@@ -993,8 +993,8 @@ public:
 
 	@param[in] theName The child name.
 	@return The child's value.
-	@throw ItemT::ChildNotFound If child not found.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::ChildNotFound If child not found.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	String const& getv(Char const* theName) const
 	{
@@ -1011,7 +1011,7 @@ public:
 	@param[in] theName The child name.
 	@param[in] def The default value.
 	@return The child's value.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	String const& getv(String const& theName, String const& def) const
 	{
@@ -1036,7 +1036,7 @@ public:
 	@param[in] theName The child name.
 	@param[in] def The default value.
 	@return The child's value.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	String const& getv(Char const* theName, String const& def) const
 	{
@@ -1061,7 +1061,7 @@ public:
 	@param[in] theName The child name.
 	@param[in] def The default value.
 	@return The child's value.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	Char const* getv(Char const* theName, Char const* def) const
 	{
@@ -1085,12 +1085,12 @@ public:
 
 	/// @brief Get child by name.
 	/**
-			This method is equivalent for ItemT::get(theName).
+			This method is equivalent for ThisType::get(theName).
 
 	@param[in] theName The child name.
 	@return The child's constant reference.
-	@throw ItemT::ChildNotFound If child not found.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::ChildNotFound If child not found.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType const& operator[](String const& theName) const
 	{
@@ -1100,12 +1100,12 @@ public:
 
 	/// @brief Get child by name (C-style string).
 	/**
-			This method is equivalent for ItemT::get(theName).
+			This method is equivalent for ThisType::get(theName).
 
 	@param[in] theName The child name.
 	@return The child's constant reference.
-	@throw ItemT::ChildNotFound If child not found.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::ChildNotFound If child not found.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType const& operator[](Char const* theName) const
 	{
@@ -1115,12 +1115,12 @@ public:
 
 	/// @brief Get child by name or create.
 	/**
-			This method is equivalent for ItemT::get(theName, true), i.e.
+			This method is equivalent for ThisType::get(theName, true), i.e.
 		if the child with that name is not exists it will be created!
 
 	@param[in] theName The child name.
 	@return The child's non-constant reference.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType& operator[](String const& theName)
 	{
@@ -1131,12 +1131,12 @@ public:
 
 	/// @brief Get child by name or create (C-style string).
 	/**
-			This method is equivalent for ItemT::get(theName, true), i.e.
+			This method is equivalent for ThisType::get(theName, true), i.e.
 		if the child with that name is not exists it will be created!
 
 	@param[in] theName The child name.
 	@return The child's non-constant reference.
-	@throw ItemT::NameIsAmbiguous If child's name is not unique.
+	@throw ThisType::NameIsAmbiguous If child's name is not unique.
 	*/
 	ChildType& operator[](Char const* theName)
 	{
@@ -2241,7 +2241,7 @@ protected:
 	/**
 			This method is called when the configuration is closed.
 
-	@throw ItemT::ParsingFailure If all configurations are closed.
+	@throw ThisType::ParsingFailure If all configurations are closed.
 	*/
 	void pop()
 	{
@@ -2531,7 +2531,7 @@ private:
 @param[in] is The input stream.
 @param[out] cfg The configuration.
 @return The input stream.
-@throw ItemT::ParsingFailure if the input stream is invalid.
+@throw ThisType::ParsingFailure if the input stream is invalid.
 */
 template<typename Ch, typename Tr, typename Str> inline
 	std::basic_istream<Ch,Tr>& operator>>(std::basic_istream<Ch,Tr> &is, ItemT<Str> &cfg)
@@ -2881,7 +2881,7 @@ public:
 @param[in] os The output stream.
 @param[in] cfg The configuration.
 @return The output stream.
-@throw ItemT::WritingFailure if the input stream is invalid.
+@throw ThisType::WritingFailure if the input stream is invalid.
 */
 template<typename Ch, typename Tr, typename Str> inline
 	std::basic_ostream<Ch,Tr>& operator<<(std::basic_ostream<Ch,Tr> &os, ItemT<Str> const& cfg)
@@ -2897,7 +2897,6 @@ template<typename Ch, typename Tr, typename Str> inline
 	// CharConst
 	namespace conf
 	{
-		/// @cond details
 		namespace details
 		{
 
@@ -3085,7 +3084,6 @@ void formatv(Str &out, Ch const *fmt, va_list args)
 }
 
 		} // details namespace
-		/// @endcond
 	} // CharConst
 
 } // omni namespace
