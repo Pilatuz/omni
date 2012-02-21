@@ -255,7 +255,8 @@ template<typename Callback, typename CallbackPtr = Callback*>
 class EventsImpl:
 	public Events<Callback, CallbackPtr>
 {
-	typedef typename CallbackList::const_iterator Iterator;
+	typedef Events<Callback, CallbackPtr> base_type;
+	typedef typename base_type::CallbackList::const_iterator Iterator;
 
 public:
 

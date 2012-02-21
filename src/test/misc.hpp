@@ -79,10 +79,32 @@ public:
 
 public:
 
-	virtual void onChanging(Document *pDoc) { pDoc; m_hits += 1000; }
-	virtual void onChanged(Document *pDoc)  { pDoc; m_hits += 100; }
-	virtual void onNewTitle(Document *pDoc, const char *title) { pDoc; title; m_hits += 10; }
-	virtual void onNewAuthor(Document *pDoc, const char *author, int flags) { pDoc; author; flags; m_hits += 1; }
+	virtual void onChanging(Document *pDoc)
+	{
+		(void)pDoc;
+		m_hits += 1000;
+	}
+
+	virtual void onChanged(Document *pDoc)
+	{
+		(void)pDoc;
+		m_hits += 100;
+	}
+
+	virtual void onNewTitle(Document *pDoc, const char *title)
+	{
+		(void)pDoc;
+		(void)title;
+		m_hits += 10;
+	}
+
+	virtual void onNewAuthor(Document *pDoc, const char *author, int flags)
+	{
+		(void)pDoc;
+		(void)author;
+		(void)flags;
+		m_hits += 1;
+	}
 
 public:
 	int m_hits;
