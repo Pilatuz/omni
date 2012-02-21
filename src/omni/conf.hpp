@@ -3063,8 +3063,18 @@ void formatv(Str &out, Ch const *fmt, va_list args)
 	int ret = -1;
 	while (true)
 	{
+#if defined(va_copy)
+		// make copy of arguments, otherwise next iteration will fail
+		// because 'args' will be undefined after vsprintf() call
+		va_list xargs;
+		va_copy(xargs, args);
+		ret = CharConst<Ch>::formatv(&buf[0], buf.size(), fmt, xargs);
+		va_end(xargs);
+#else
 		ret = CharConst<Ch>::formatv(&buf[0], buf.size(), fmt, args);
-		if (ret < 0) // buffer too small
+#endif // va_copy
+
+		if (ret < 0 || buf.size() < size_t(ret)) // buffer too small
 			buf.resize(2*buf.size());
 		else
 			break;
