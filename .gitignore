@@ -1,3 +1,8 @@
+#doxygen
+/doxygen.exe
+/*.log
+/html
+
 # Visual Studio
 /vs/bin
 /vs/ipch
