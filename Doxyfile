@@ -106,6 +106,8 @@ WARN_LOGFILE           = omni.log
 INPUT                  = ./src/omni/
 INPUT_ENCODING         = CP1251
 FILE_PATTERNS          = defs.* \
+                         util.* \
+                         misc.* \
                          conf.*
 RECURSIVE              = NO
 EXCLUDE                =
@@ -123,7 +125,7 @@ FILTER_SOURCE_PATTERNS =
 #---------------------------------------------------------------------------
 # configuration options related to source browsing
 #---------------------------------------------------------------------------
-SOURCE_BROWSER         = NO
+SOURCE_BROWSER         = YES
 INLINE_SOURCES         = NO
 STRIP_CODE_COMMENTS    = NO
 REFERENCED_BY_RELATION = NO

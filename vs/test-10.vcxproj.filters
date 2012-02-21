@@ -54,5 +54,8 @@
     <ClInclude Include="..\src\omni\util.hpp">
       <Filter>OMNI Library</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\test\misc.hpp">
+      <Filter>TEST Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //		This material is provided "as is", with absolutely no warranty
 //	expressed or implied. Any use is at your own risk.
 //
@@ -9,16 +9,17 @@
 //	the code was modified is included with the above copyright notice.
 //
 //		https://bitbucket.org/pilatuz/omni
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /** @file
-	@brief The unit-test of "misc.hpp".
-
+@brief The unit-test of <omni/misc.hpp>.
 @author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #include <omni/misc.hpp>
 #include <test/test.hpp>
 
 #include <iostream>
+
+#include <time.h>
 
 namespace
 {
@@ -43,7 +44,7 @@ public:
 	}
 
 private:
-	omni::misc::EventsDriver<MyEvents> m_events;
+	omni::misc::EventsImpl<MyEvents> m_events;
 
 public:
 	void doChaning()
@@ -87,53 +88,77 @@ public:
 	int m_hits;
 };
 
-} // local namespace
+} // locals
 
 
-// test function
-bool test_misc(std::ostream &os)
-{
-	os << " Events Test...";
-
-	Document doc;
-	Handler hh;
-	doc.events().insert(&hh);
-	doc.events().insert(&hh);
-	doc.events().insert(&hh);
-
-	for (int i = 0; i < 4; ++i)
-	{
-		doc.doChaning();
-		doc.doChanged();
-		doc.doNewTitle("title");
-		doc.doNewAuthor("author", 0);
-		doc.events().remove(&hh);
-	}
-
-	os << "done\n";
-
-	return hh.m_hits == 6666;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
 // unit test
 namespace
 {
-	// Test1 class
-	class Test1:
-		public omni::test::UnitTest
+
+///////////////////////////////////////////////////////////////////////////////
+/// @brief The omni::misc unit test.
+class MiscTest:
+	public omni::test::UnitTest
+{
+private:
+
+	// test title
+	virtual const char* title() const
 	{
-		// test title
-		virtual const char* title() const
-		{
-			return "omni::misc";
+		return "omni::misc";
+	}
+
+private:
+
+	// test function
+	virtual bool do_test(std::ostream &os) const
+	{
+		{ // events
+			os << " Events test...";
+
+			Document doc;
+			Handler hh;
+			doc.events().insert(&hh);
+			doc.events().insert(&hh);
+			doc.events().insert(&hh);
+
+			for (int i = 0; i < 4; ++i)
+			{
+				doc.doChaning();
+				doc.doChanged();
+				doc.doNewTitle("title");
+				doc.doNewAuthor("author", 0);
+				doc.events().remove(&hh);
+			}
+
+			if (hh.m_hits != 6666)
+				return false;
+			os << "done\n";
 		}
 
-		// test function
-		virtual bool do_test(std::ostream &os) const
-		{
-			return test_misc(os);
+		{ // timer test
+			os << " Timer test...";
+			const int T = 100;
+
+			omni::misc::Timer t(T);
+			if (t.interval() != T)
+				return false;
+			const clock_t t0 = clock();
+			while (!t.elapsed());
+			const clock_t t1 = clock();
+
+			const int TT = (t1-t0)/(CLOCKS_PER_SEC/1000);
+			const int dt = T - TT;
+			if (dt < -T/2 || T/2 < dt)
+				return false;
+			os << "done\n";
 		}
-	} test1;
-} // namespace
+
+		return true;
+	}
+};
+
+	// global instance
+	MiscTest g_MiscTest;
+
+} // unit test

@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 //		This material is provided "as is", with absolutely no warranty
 //	expressed or implied. Any use is at your own risk.
 //
@@ -9,12 +9,9 @@
 //	the code was modified is included with the above copyright notice.
 //
 //		https://bitbucket.org/pilatuz/omni
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /** @file
-	@brief Interface of some miscellaneous classes.
-
-		This file contains interface of some miscellaneous classes.
-
+@brief Interface of some miscellaneous classes.
 @author Sergey Polichnoy <pilatuz@gmail.com>
 */
 #ifndef __OMNI_MISC_HPP_
@@ -30,7 +27,7 @@ namespace omni
 	namespace misc
 	{
 
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 /// @brief The passive timer.
 /**
 	The Timer class is used for keeping time intervals.
@@ -65,20 +62,46 @@ For example to print simulation statistics each second:
 class Timer
 {
 public:
-	typedef long tick_type; ///< @brief Tick type.
+
+	/// @brief Tick type (one millisecond).
+	typedef long tick_type;
 
 public:
-	Timer();
-	explicit Timer(tick_type ms);
+
+	/// @brief The main constructor.
+	/**
+		This constructor sets the timer's interval to @a ms milliseconds.
+
+	@param[in] ms The timer's interval in milliseconds.
+	*/
+	explicit Timer(tick_type ms = 1000);
 
 public:
+
+	/// @brief Get the timer's interval.
+	/**
+	@return The timer's interval in milliseconds.
+	*/
 	tick_type interval() const;
+
+
+	/// @brief Is time interval elapsed?
+	/**
+	@return @b true if timer's interval is elapsed, otherwise @b false.
+	*/
 	bool elapsed() const;
+
+
+	/// @brief Force elapsed.
+	/**
+			This method forces the timer, so next
+		elapsed() method call will return @b true.
+	*/
 	void force();
 
 private:
-	mutable tick_type m_ref_point;
-	        tick_type m_interval;
+	mutable tick_type m_ref_point; ///< @brief The last time point.
+	        tick_type m_interval; ///< @brief The interval.
 };
 
 	} // Timer
@@ -88,11 +111,11 @@ private:
 	namespace misc
 	{
 
-///////////////////////////////////////////////////////////////////////////////
-/// @brief The Events template class.
+////////////////////////////////////////////////////////////////////////////////////
+/// @brief The Events class template.
 /**
 	This class is used to manage subscribers, i.e. insert or remove.
-To emit some events use EventsDriver class.
+To emit some events use EventsImpl class.
 
 	The Callback interface is used to provide a set of callback methods.
 
@@ -112,7 +135,7 @@ public:
 	}
 
 private:
-	omni::misc::EventsDriver<MyEvents> m_events;
+	omni::misc::EventsImpl<MyEvents> m_events;
 
 	void doChaning()
 	{
@@ -145,6 +168,7 @@ public:
 	Events()
 	{}
 
+
 	/// @brief The trivial destructor.
 	~Events()
 	{}
@@ -170,9 +194,9 @@ public:
 	*/
 	bool remove(CallbackPtr const& subscriber)
 	{
-		typedef typename CallbackList::reverse_iterator RevIterator;
-		RevIterator i = m_subscribers.rbegin();
-		RevIterator const ie = m_subscribers.rend();
+		typedef typename CallbackList::reverse_iterator Iterator;
+		Iterator i = m_subscribers.rbegin();
+		Iterator const ie = m_subscribers.rend();
 
 		// we do not use std::find() here
 		// to minimize number of included header files
@@ -209,7 +233,7 @@ public:
 	*/
 	ThisType& operator-=(CallbackPtr const& subscriber)
 	{
-		remove(handler);
+		remove(subscriber);
 		return *this;
 	}
 
@@ -220,15 +244,15 @@ protected:
 };
 
 
-///////////////////////////////////////////////////////////////////////////////
-/// @brief The EventsDriver template class.
+////////////////////////////////////////////////////////////////////////////////////
+/// @brief The EventsImpl class template.
 /**
 	This class is used to emit events.
 
 @see Events
 */
 template<typename Callback, typename CallbackPtr = Callback*>
-class EventsDriver:
+class EventsImpl:
 	public Events<Callback, CallbackPtr>
 {
 	typedef typename CallbackList::const_iterator Iterator;
@@ -241,8 +265,8 @@ public:
 	*/
 	void emit(void (Callback::*f)()) const
 	{
-		Iterator i = m_subscribers.begin();
-		Iterator const ie = m_subscribers.end();
+		Iterator i = this->m_subscribers.begin();
+		Iterator const ie = this->m_subscribers.end();
 
 		for (; i != ie; ++i)
 			((*i)->*f)();
@@ -257,8 +281,8 @@ public:
 	template<typename A>
 	void emit(void (Callback::*f)(A), A a) const
 	{
-		Iterator i = m_subscribers.begin();
-		Iterator const ie = m_subscribers.end();
+		Iterator i = this->m_subscribers.begin();
+		Iterator const ie = this->m_subscribers.end();
 
 		for (; i != ie; ++i)
 			((*i)->*f)(a);
@@ -274,8 +298,8 @@ public:
 	template<typename A, typename B>
 	void emit(void (Callback::*f)(A,B), A a, B b) const
 	{
-		Iterator i = m_subscribers.begin();
-		Iterator const ie = m_subscribers.end();
+		Iterator i = this->m_subscribers.begin();
+		Iterator const ie = this->m_subscribers.end();
 
 		for (; i != ie; ++i)
 			((*i)->*f)(a, b);
@@ -292,11 +316,30 @@ public:
 	template<typename A, typename B, typename C>
 	void emit(void (Callback::*f)(A,B,C), A a, B b, C c) const
 	{
-		Iterator i = m_subscribers.begin();
-		Iterator const ie = m_subscribers.end();
+		Iterator i = this->m_subscribers.begin();
+		Iterator const ie = this->m_subscribers.end();
 
 		for (; i != ie; ++i)
 			((*i)->*f)(a, b, c);
+	}
+
+
+	/// @brief Emit event (four arguments).
+	/**
+	@param[in] f The callback method to call.
+	@param[in] a The first argument.
+	@param[in] b The second argument.
+	@param[in] c The third argument.
+	@param[in] d The fourth argument.
+	*/
+	template<typename A, typename B, typename C, typename D>
+	void emit(void (Callback::*f)(A,B,C,D), A a, B b, C c, D d) const
+	{
+		Iterator i = this->m_subscribers.begin();
+		Iterator const ie = this->m_subscribers.end();
+
+		for (; i != ie; ++i)
+			((*i)->*f)(a, b, c, d);
 	}
 };
 

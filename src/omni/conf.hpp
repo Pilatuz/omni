@@ -2900,8 +2900,12 @@ template<typename Ch, typename Tr, typename Str> inline
 		namespace details
 		{
 
+template<typename Ch>
+	class CharConst;
+
+
 ///////////////////////////////////////////////////////////////////////////////
-/// @brief The character constants.
+/// @brief The character constants (wchar_t).
 /**
 		This template class contains the set of character constants
 	specialized for @b wchar_t and @b char. These constants are used
@@ -2910,11 +2914,6 @@ template<typename Ch, typename Tr, typename Str> inline
 		The name separator SEPARATOR() is used
 	by omni::conf::ItemT::fullName() method.
 */
-template<typename Ch>
-	class CharConst;
-
-
-// CharConst<wchar_t> specialization
 template<>
 	class CharConst<wchar_t>
 {
@@ -2976,7 +2975,16 @@ public: // char constants
 };
 
 
-// CharConst<char> specialization
+///////////////////////////////////////////////////////////////////////////////
+/// @brief The character constants (char).
+/**
+		This template class contains the set of character constants
+	specialized for @b wchar_t and @b char. These constants are used
+	during configuration parsing and/or writing.
+
+		The name separator SEPARATOR() is used
+	by omni::conf::ItemT::fullName() method.
+*/
 template<>
 	class CharConst<char>
 {

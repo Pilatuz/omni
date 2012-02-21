@@ -28,7 +28,7 @@
 
 namespace omni
 {
-	/// @brief Auxiliary constants and functions.
+	/// @brief Utility.
 	/**
 			This namespace contains some useful
 		constants and auxiliary functions.
@@ -223,7 +223,7 @@ double mps2kph(double mps);
 /// @name Power of two and parity
 /// @{
 
-		// shift helper
+		/// @brief Utility: implementation.
 		namespace details
 		{
 			/// @brief Type size check.

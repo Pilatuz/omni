@@ -111,6 +111,7 @@
     <ClInclude Include="..\src\omni\util.hpp" />
     <ClInclude Include="..\src\test\calc.hpp" />
     <ClInclude Include="..\src\test\conf.hpp" />
+    <ClInclude Include="..\src\test\misc.hpp" />
     <ClInclude Include="..\src\test\test.hpp" />
     <ClInclude Include="..\src\test\util.hpp" />
   </ItemGroup>

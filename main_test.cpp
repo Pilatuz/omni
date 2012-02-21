@@ -4,6 +4,7 @@
 #include <test/calc.hpp>
 #include <test/conf.hpp>
 #include <test/util.hpp>
+#include <test/misc.hpp>
 
 #include <iostream>
 
