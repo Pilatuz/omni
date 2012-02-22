@@ -23,6 +23,7 @@
 #include <omni/defs.hpp>
 #include <omni/calc.hpp>
 #include <omni/conf.hpp>
+#include <omni/misc.hpp>
 #include <omni/util.hpp>
 
 #endif // __OMNI_HPP_

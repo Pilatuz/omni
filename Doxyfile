@@ -106,9 +106,10 @@ WARN_LOGFILE           = omni.log
 INPUT                  = ./src/omni/
 INPUT_ENCODING         = CP1251
 FILE_PATTERNS          = defs.* \
-                         util.* \
+                         calc.* \
+                         conf.* \
                          misc.* \
-                         conf.*
+                         util.*
 RECURSIVE              = NO
 EXCLUDE                =
 EXCLUDE_SYMLINKS       = NO
