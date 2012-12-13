@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //		This material is provided "as is", with absolutely no warranty
 //	expressed or implied. Any use is at your own risk.
 //
@@ -9,10 +9,9 @@
 //	the code was modified is included with the above copyright notice.
 //
 //		https://bitbucket.org/pilatuz/omni
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /** @file
 @brief Fast memory management.
-
 @author Sergey Polichnoy <pilatuz@gmail.com>
 @see @ref omni_pool
 */
@@ -20,20 +19,12 @@
 
 namespace omni
 {
-
-//////////////////////////////////////////////////////////////////////////
-/// @brief Fast memory manager.
-/**
-		This namespace contains fast memory manager tools.
-
-@see @ref omni_pool
-*/
 	namespace pool
 	{
 		namespace details
 		{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief %RAW memory operations.
 /**
 		This class makes %RAW memory read/write operations easy.
@@ -60,7 +51,7 @@ public:
 
 public:
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Write the value.
 /**
 	This method writes the value @a x at the custom address @a p.
@@ -74,7 +65,7 @@ public:
 	}
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Read the value.
 /**
 	This method reads the value at the custom address @a p.
@@ -94,7 +85,7 @@ typedef omni::pool::Manager<sizeof(void*),
 	sizeof(void*), 1024, DEFAULT_CHUNK_SIZE> GManager;
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Get the global pool manager.
 /**
 		This function returns reference to the global pool manager.
@@ -120,7 +111,7 @@ namespace omni
 		using details::g_pool;
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /**
 		This function allocates the memory block of @a buf_size bytes.
 	If the memory block size is less than or equal to 4 Kbytes, then global
@@ -152,7 +143,7 @@ void* mem_get(size_t buf_size)
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /**
 		This function releases the memory block @a buf of @a buf_size bytes.
 	If the memory block size is less than or equal to 4 Kbytes, then global
@@ -178,7 +169,7 @@ void mem_put(void *buf, size_t buf_size)
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /**
 		This function allocates the memory block of @a buf_size bytes.
 	If the memory block size is less than or equal to 4 Kbytes, then global
@@ -208,7 +199,7 @@ void* mem_get_sized(size_t buf_size)
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /**
 		This function releases the memory block @a buf.
 	If the memory block size is less than or equal to 4 Kbytes, then global
@@ -239,19 +230,19 @@ void mem_put_sized(void *buf)
 	namespace pool
 	{
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Trivial constructor.
 FastObj::FastObj()
 {}
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Trivial virtual destructor.
 FastObj::~FastObj()
 {}
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The memory allocation.
 /**
 		This operator allocates the @a buf_size bytes memory block
@@ -267,7 +258,7 @@ void* FastObj::operator new(size_t buf_size) // throw(std::bad_alloc)
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The memory allocation.
 /**
 		This operator allocates the @a buf_size bytes memory block
@@ -292,7 +283,7 @@ void* FastObj::operator new(size_t buf_size, std::nothrow_t const&) // throw()
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Placement new operator.
 /**
 		This operator is used only for correct overloading of
@@ -308,7 +299,7 @@ void* FastObj::operator new(size_t buf_size, void *p) // throw()
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The memory deallocation.
 /**
 		This operator deallocates the @a buf memory block
@@ -322,7 +313,7 @@ void FastObj::operator delete(void *buf)
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief The memory deallocation.
 /**
 		This operator deallocates the @a buf memory block
@@ -336,7 +327,7 @@ void FastObj::operator delete(void *buf, std::nothrow_t const&) // throw()
 }
 
 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /// @brief Placement delete operator?
 /**
 		This operator is used only for correct overloading of
@@ -353,30 +344,3 @@ void FastObj::operator delete(void *buf, void *p) // throw()
 	} // FastObj
 
 } // omni namespace
-
-
-
-//////////////////////////////////////////////////////////////////////////
-/** @page omni_pool Fast memory management.
-
-		The pool is useful if your program contains many number of small objects.
-	These objects (for example, data packets) are created and destroyed dynamically.
-	In this case the standard memory manager is not effective enough,
-	because it is designed for various memory block sizes. The pool (also known
-	as "node allocator") in this case is more effective, because it doesn't use
-	real memory allocation/deallocation so often.
-
-		The omni::pool::ObjPool class is a pool for one memory block size.
-	The omni::pool::Manager class contains several pool objects, and
-	therefore can manage memory blocks of various sizes (within a specific range).
-	The omni::pool::FastObjT class overrides @b new / @b delete operators
-	and contains a pool object. So if your class is derived from
-	omni::pool::FastObjT, then fast memory management will be used.
-
-		There are one global pool. The omni::pool::mem_get() and
-	omni::pool::mem_put() functions use this global pool to allocate
-	and deallocate memory blocks. The omni::pool::FastObj class overrides
-	@b new / @b delete operators and uses the global pool.
-	The omni::pool::Allocator can be used with STL containers, so these
-	containers will use the global pool.
-*/
