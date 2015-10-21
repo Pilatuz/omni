@@ -14,7 +14,7 @@
 	@brief Discrete Fourie Transform
 	@author Sergey Polichnoy
 */
-#include <omni/DFT.h>
+#include <omni/dsp/DFT.h>
 #include <omni/util.hpp>
 
 #include <functional>

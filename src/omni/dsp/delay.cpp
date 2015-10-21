@@ -15,7 +15,7 @@
 
 @author Sergey Polichnoy <pilatuz@gmail.com>
 */
-#include <omni/delay.h>
+#include <omni/dsp/delay.h>
 
 template class omni::dsp::DelayLine<double>;
 template class omni::dsp::DelayLine<int>;

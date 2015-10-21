@@ -16,7 +16,7 @@
 @see @ref omni_turbo
 @author Sergey Polichnoy
 */
-#include <omni/turbo.h>
+#include <omni/dsp/turbo.h>
 
 #include <math.h>
 

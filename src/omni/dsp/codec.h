@@ -341,6 +341,7 @@ public: // encoding
 		}
 
 		assert(start_state==state && "invalid final state");
+		return out;
 	}
 
 public:

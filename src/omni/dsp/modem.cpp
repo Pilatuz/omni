@@ -15,7 +15,7 @@
 
 @author Sergey Polichnoy <pilatuz@gmail.com>
 */
-#include <omni/modem.h>
+#include <omni/dsp/modem.h>
 
 #include <cmath>
 

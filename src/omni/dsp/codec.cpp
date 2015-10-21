@@ -16,7 +16,7 @@
 @see @ref omni_codec
 @author Sergey Polichnoy <pilatuz@gmail.com>
 */
-#include <omni/codec.h>
+#include <omni/dsp/codec.h>
 #include <omni/calc.hpp>
 
 #include <algorithm>

@@ -21,11 +21,11 @@
 #include <omni/defs.hpp>
 
 #include <assert.h>
-#include <memory.h>
 
+#include <memory>
 #include <new>
 
-std::shared_ptr<>
+#include <Windows.h>
 
 namespace omni
 {
@@ -139,7 +139,7 @@ public:
 	enum Const
 	{
 		///< @brief The base alignemnt. @hideinitializer
-		BASE_ALIGNMENT = details::CLP2<A>::RES,
+		BASE_ALIGNMENT = details::CLP2<A>::RESULT,
 
 		/// @brief Alignment of memory blocks. @hideinitializer
 		ALIGNMENT = BASE_ALIGNMENT < MEMORY_ALLOCATION_ALIGNMENT
@@ -207,7 +207,7 @@ public:
 @param[in] obj_size The memory block size in bytes.
 @param[in] chunk_size Approximate memory chunk size in bytes.
 */
-	void grow(size_type obj_size, size_type chunk_size = details::DEFAULT_CHUNK_SIZE)
+	void grow(size_type obj_size, size_type chunk_size = details::DEF_CHUNK_SIZE)
 	{
 		const size_type ptr_size = sizeof(SLIST_ENTRY);
 		const size_type aux_size = ptr_size + ALIGNMENT-1;

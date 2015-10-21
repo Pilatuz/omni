@@ -13,7 +13,7 @@
 /** @file
 	@brief Fast Hadamard Transorm.
 */
-#include <omni/FHT.hpp>
+#include <omni/dsp/FHT.hpp>
 
 namespace omni
 {

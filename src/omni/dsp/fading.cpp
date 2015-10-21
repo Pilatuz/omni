@@ -17,11 +17,11 @@
 @author Sergey Polichnoy
 @see @ref omni_calc
 */
-#include <omni/fading.h>
+#include <omni/dsp/fading.h>
 
 #include <omni/util.hpp>
 #include <omni/rand.hpp>
-#include <omni/FHT.hpp>
+#include <omni/dsp/FHT.hpp>
 
 #include <assert.h>
 #include <math.h>

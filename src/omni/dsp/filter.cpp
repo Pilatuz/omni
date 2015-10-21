@@ -15,7 +15,7 @@
 
 @author Сергей Поличной
 */
-#include <omni/filter.h>
+#include <omni/dsp/filter.h>
 #include <omni/util.hpp>
 
 namespace omni
