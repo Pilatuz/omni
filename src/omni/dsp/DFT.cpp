@@ -152,7 +152,7 @@ private:
 	// find table (create if not exists)
 	Item& find(size_type N)
 	{
-		std::vector<Item>::iterator found = std::lower_bound(
+		typename std::vector<Item>::iterator found = std::lower_bound(
 			m_tables.begin(), m_tables.end(), N, FindCmp());
 
 		if (found == m_tables.end() || (*found).table->size() != N)
