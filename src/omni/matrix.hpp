@@ -36,8 +36,12 @@
 
 // default allocator
 #if !defined(OMNI_MATRIX_ALLOCATOR)
-#	define OMNI_MATRIX_ALLOCATOR(T)  omni::pool::Allocator<T> 
-#	include <omni/pool.hpp>
+#	if defined(OMNI_MATRIC_STD_ALLOCATOR)
+#		define OMNI_MATRIX_ALLOCATOR(T)  std::allocator<T>
+#	else
+#		define OMNI_MATRIX_ALLOCATOR(T)  omni::pool::Allocator<T>
+#		include <omni/pool.hpp>
+#	endif // OMNI_MATRIX_STD_ALLOCATOR
 #endif
 
 namespace omni

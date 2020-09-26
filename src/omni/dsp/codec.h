@@ -26,6 +26,16 @@
 #include <limits>
 #include <vector>
 
+// default allocator
+#if !defined(OMNI_CODEC_ALLOCATOR)
+#	if defined(OMNI_CODEC_STD_ALLOCATOR)
+#		define OMNI_CODEC_ALLOCATOR(T)  std::allocator<T>
+#	else
+#		define OMNI_CODEC_ALLOCATOR(T)  omni::pool::Allocator<T>
+#		include <omni/pool.hpp>
+#	endif // OMNI_CODEC_STD_ALLOCATOR
+#endif
+
 namespace omni
 {
 	// Trellis
@@ -432,8 +442,8 @@ public:
 	}
 
 private:
-	typedef std::vector<double, pool::Allocator<double> > metric_vector;
-	typedef std::vector<int,    pool::Allocator<int> >       bit_vector;
+	typedef std::vector<double, OMNI_CODEC_ALLOCATOR(double) > metric_vector;
+	typedef std::vector<int,    OMNI_CODEC_ALLOCATOR(int) >       bit_vector;
 
 	// TODO: matrix row/column major adaptation
 	typedef mx::Matrix<state_type>  XPathMem;

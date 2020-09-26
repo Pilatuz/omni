@@ -42,7 +42,7 @@ double MaxLogMAP::operator()(double x, double y) const
 {
 	return (y < x) ? x : y;
 }
-	} 
+	}
 
 
 	// Turbo_WiMAX
@@ -481,7 +481,7 @@ void Turbo_WCDMA::make_irule(size_type blockSize) const
 		}
 	};
 
-	typedef std::vector<int, pool::Allocator<int> > int_vector;
+	typedef std::vector<int, OMNI_CODEC_ALLOCATOR(int) > int_vector;
 
 	// primes and associated primitive roots:
 	static const int PRIMES[] =

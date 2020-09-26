@@ -19,7 +19,7 @@
 #ifndef __OMNI_TURBO_H_
 #define __OMNI_TURBO_H_
 
-#include <omni/codec.h>
+#include <omni/dsp/codec.h>
 
 namespace omni
 {
@@ -262,9 +262,9 @@ private:
 	};
 
 private:
-	typedef std::vector<size_t, pool::Allocator<size_t> > bit_vector;
-	typedef std::vector<double, pool::Allocator<double> > LLR_vector;
-	typedef std::vector<DuoLLR, pool::Allocator<DuoLLR> > DuoLLR_vector;
+	typedef std::vector<size_t, OMNI_CODEC_ALLOCATOR(size_t) > bit_vector;
+	typedef std::vector<double, OMNI_CODEC_ALLOCATOR(double) > LLR_vector;
+	typedef std::vector<DuoLLR, OMNI_CODEC_ALLOCATOR(DuoLLR) > DuoLLR_vector;
 
 private:
 	static state_type start_state(size_type blockSize, state_type end_state);
@@ -315,9 +315,9 @@ private:
 	void CRSC_decode(const M &metric, size_type Ncouples,
 		const DuoLLR *Li, const T *Lw, const T *Ly, DuoLLR *Lo) const
 	{
-		std::vector< Alpha, pool::Allocator<Alpha> > alpha(Ncouples+1);
-		std::vector<  Beta, pool::Allocator< Beta> >  beta(Ncouples+1);
-		std::vector< Gamma, pool::Allocator<Gamma> > gamma(Ncouples+0);
+		std::vector< Alpha, OMNI_CODEC_ALLOCATOR(Alpha) > alpha(Ncouples+1);
+		std::vector<  Beta, OMNI_CODEC_ALLOCATOR( Beta) >  beta(Ncouples+1);
+		std::vector< Gamma, OMNI_CODEC_ALLOCATOR(Gamma) > gamma(Ncouples+0);
 
 		const double ALPHA_DIFF = 1.0e-2;
 		const double  BETA_DIFF = 1.0e-2;
@@ -722,8 +722,8 @@ private:
 	};
 
 private:
-	typedef std::vector<size_t, pool::Allocator<size_t> > bit_vector;
-	typedef std::vector<double, pool::Allocator<double> > LLR_vector;
+	typedef std::vector<size_t, OMNI_CODEC_ALLOCATOR(size_t) > bit_vector;
+	typedef std::vector<double, OMNI_CODEC_ALLOCATOR(double) > LLR_vector;
 
 private: // interleaving
 	void make_irule(size_type blockSize) const;
@@ -784,9 +784,9 @@ private:
 		const LLR_vector &Lx, const LLR_vector &Lz,
 		const LLR_vector &Ei, LLR_vector &Eo) const
 	{
-		std::vector< Alpha, pool::Allocator<Alpha> > alpha(blockSize+NO_TAILS+1);
-		std::vector<  Beta, pool::Allocator< Beta> >  beta(blockSize+NO_TAILS+1);
-		std::vector< Gamma, pool::Allocator<Gamma> > gamma(blockSize+NO_TAILS);
+		std::vector< Alpha, OMNI_CODEC_ALLOCATOR(Alpha) > alpha(blockSize+NO_TAILS+1);
+		std::vector<  Beta, OMNI_CODEC_ALLOCATOR( Beta) >  beta(blockSize+NO_TAILS+1);
+		std::vector< Gamma, OMNI_CODEC_ALLOCATOR(Gamma) > gamma(blockSize+NO_TAILS);
 
 		// calculate gamma...
 		for (size_type k = 0; k < blockSize; ++k)
